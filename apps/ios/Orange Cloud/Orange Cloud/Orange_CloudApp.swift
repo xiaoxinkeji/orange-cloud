@@ -1,0 +1,55 @@
+//
+//  Orange_CloudApp.swift
+//  Orange Cloud
+//
+//  Created by 陳柘 on 2026/6/10.
+//
+
+import SwiftUI
+import SwiftData
+import TipKit
+import CoreSpotlight
+
+@main
+struct Orange_CloudApp: App {
+
+    @State private var authManager: AuthManager
+    @Environment(\.scenePhase) private var scenePhase
+
+    @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.system.rawValue
+
+    let sharedModelContainer = CacheContainer.shared
+
+    init() {
+        let manager = AuthManager()
+        _authManager = State(initialValue: manager)
+        BackgroundRefresh.register(authManager: manager)
+        EntitlementStore.shared.start()
+        try? Tips.configure()
+    }
+
+    var body: some Scene {
+        WindowGroup {
+            ContentView()
+                .environment(authManager)
+                .environment(EntitlementStore.shared)
+                .tint(.ocOrange)   // 全局品牌橙（Cloudflare #F48120）
+                .preferredColorScheme(AppAppearance(rawValue: appearanceRaw)?.colorScheme)
+                .onContinueUserActivity(CSSearchableItemActionType) { activity in
+                    handleSpotlightTap(activity)
+                }
+        }
+        .modelContainer(sharedModelContainer)
+        .onChange(of: scenePhase) {
+            if scenePhase == .background {
+                BackgroundRefresh.schedule()
+            }
+        }
+    }
+
+    /// Spotlight 搜索结果点击：跳到对应模块（Zone/DNS 都归属 Zones Tab）
+    private func handleSpotlightTap(_ activity: NSUserActivity) {
+        guard activity.userInfo?[CSSearchableItemActivityIdentifier] is String else { return }
+        AppRouter.shared.pendingModule = .zones
+    }
+}

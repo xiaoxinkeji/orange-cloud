@@ -1,0 +1,33 @@
+//
+//  CacheContainer.swift
+//  Orange Cloud
+//
+//  全局共享的 SwiftData 容器：App 主界面与 App Intents 共用同一存储。
+//
+
+import Foundation
+import SwiftData
+
+nonisolated enum CacheContainer {
+
+    static let shared: ModelContainer = {
+        let schema = Schema([
+            CachedZone.self,
+            CachedDNSRecord.self,
+            CachedWorkerScript.self,
+        ])
+        // cloudKitDatabase 必须显式 .none：App 带 iCloud entitlement 时 .automatic 会
+        // 强制开启 CloudKit 同步，而 CloudKit 不允许非可选属性和 @Attribute(.unique)。
+        // 缓存数据本就按账号实时拉取，无需跨设备同步。
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+        do {
+            return try ModelContainer(for: schema, configurations: [configuration])
+        } catch {
+            fatalError("Could not create ModelContainer: \(error)")
+        }
+    }()
+}

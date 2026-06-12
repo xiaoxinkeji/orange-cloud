@@ -1,0 +1,89 @@
+//
+//  ZoneActionsViewModel.swift
+//  Orange Cloud
+//
+//  Zone 详情页「操作」区：Under Attack / 开发模式开关 + 缓存清理。
+//
+
+import Foundation
+import Observation
+
+@Observable
+@MainActor
+final class ZoneActionsViewModel {
+
+    private(set) var underAttack = false
+    private(set) var devMode = false
+    private(set) var settingsLoaded = false
+
+    var isTogglingUnderAttack = false
+    var isTogglingDevMode = false
+    var isPurging = false
+    var didPurge = false       // sensoryFeedback / 提示触发器
+    var error: String?
+
+    private let service: ZoneSettingsService
+    private let zoneId: String
+
+    init(service: ZoneSettingsService, zoneId: String) {
+        self.service = service
+        self.zoneId = zoneId
+    }
+
+    func loadSettings() async {
+        guard !settingsLoaded else { return }
+        async let securityTask = service.getSetting(zoneId: zoneId, setting: "security_level")
+        async let devTask = service.getSetting(zoneId: zoneId, setting: "development_mode")
+        // 读不到（无 zone-settings.read 等）就保持未加载态，开关显示为锁定
+        guard let security = try? await securityTask, let dev = try? await devTask else { return }
+        underAttack = security == "under_attack"
+        devMode = dev == "on"
+        settingsLoaded = true
+    }
+
+    func setUnderAttack(_ on: Bool) async {
+        guard !isTogglingUnderAttack else { return }
+        isTogglingUnderAttack = true
+        error = nil
+        do {
+            // 关闭时恢复为 medium（Cloudflare 默认安全级别；API 不记录开启前的旧值）
+            let value = try await service.setSetting(
+                zoneId: zoneId, setting: "security_level",
+                value: on ? "under_attack" : "medium"
+            )
+            underAttack = value == "under_attack"
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isTogglingUnderAttack = false
+    }
+
+    func setDevMode(_ on: Bool) async {
+        guard !isTogglingDevMode else { return }
+        isTogglingDevMode = true
+        error = nil
+        do {
+            let value = try await service.setSetting(
+                zoneId: zoneId, setting: "development_mode",
+                value: on ? "on" : "off"
+            )
+            devMode = value == "on"
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isTogglingDevMode = false
+    }
+
+    func purgeCache() async {
+        guard !isPurging else { return }
+        isPurging = true
+        error = nil
+        do {
+            try await service.purgeAllCache(zoneId: zoneId)
+            didPurge.toggle()
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isPurging = false
+    }
+}

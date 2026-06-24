@@ -150,6 +150,15 @@ extension FeaturePermission {
             editScopes: [],
             isRequired: false
         ),
+        .init(
+            id: "load_balancers",
+            title: String(localized: "负载均衡"),
+            description: String(localized: "查看负载均衡器、源站池与健康检查"),
+            icon: "arrow.triangle.branch",
+            readScopes: ["zone.load_balancers:read"],
+            editScopes: ["zone.load_balancers:write"],
+            isRequired: false
+        ),
     ]
 
     // MARK: - Scope 构建

@@ -30,6 +30,7 @@ final class SessionStore {
     let firewallRuleService: FirewallRuleService
     let bulkRedirectService: BulkRedirectService
     let transformRuleService: TransformRuleService
+    let loadBalancerService: LoadBalancerService
 
     var accounts: [Account] = []
     var selectedAccount: Account? {
@@ -68,6 +69,7 @@ final class SessionStore {
         self.firewallRuleService = FirewallRuleService(client: client)
         self.bulkRedirectService = BulkRedirectService(client: client)
         self.transformRuleService = TransformRuleService(client: client)
+        self.loadBalancerService = LoadBalancerService(client: client)
     }
 
     /// 幂等加载账号列表，首个账号设为当前账号

@@ -134,6 +134,16 @@ struct ZoneDetailView: View {
                     ) {
                         TransformRulesView(zoneId: zone.id, zoneName: zone.name, session: session)
                     }
+
+                    ProGatedNavigationLink(
+                        label: String(localized: "负载均衡"),
+                        systemImage: "arrow.triangle.branch",
+                        requiredScope: "zone-settings.read",
+                        tint: .indigo,
+                        showsChevron: true
+                    ) {
+                        LoadBalancerListView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
                 }
 
                 sslCertificatesSection

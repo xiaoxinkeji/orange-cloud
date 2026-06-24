@@ -1,12 +1,17 @@
 name: Build Unsigned IPA
 
 on:
+  push:
+    tags: ['v*']
   workflow_dispatch:
     inputs:
       version:
         description: 'Release version tag (e.g. v1.0.0)'
         required: true
         default: 'v1.0.0'
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -19,77 +24,37 @@ jobs:
 
       - name: Select Xcode
         run: |
-          # 列出可用 Xcode 版本，选择 26.x
           ls /Applications/ | grep Xcode
           sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer || \
           sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer || \
           sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | head -1)/Contents/Developer"
           xcodebuild -version
 
-      - name: Inject OPENSOURCE_UNLOCKED & disable signing
+      - name: Set version tag
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Disable code signing
         working-directory: apps/ios/Orange Cloud
         run: |
-          PROJECT="Orange Cloud.xcodeproj/project.pbxproj"
-
-          # 1. 为所有 Release 配置注入 OPENSOURCE_UNLOCKED 编译条件
-          #    将 Release 配置中的 SWIFT_ACTIVE_COMPILATION_CONDITIONS 加上 OPENSOURCE_UNLOCKED
-          sed -i '' 's/SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"/SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)"/g' "$PROJECT"
-
-          # 用 Python 精确处理：在 Release buildSettings 中注入 OPENSOURCE_UNLOCKED
           python3 << 'PYEOF'
-          import re
-
           with open("Orange Cloud.xcodeproj/project.pbxproj", "r") as f:
               content = f.read()
-
-          # 在所有 buildSettings 块中添加 OPENSOURCE_UNLOCKED（如果没有 SWIFT_ACTIVE_COMPILATION_CONDITIONS 则添加）
-          # 对于 Release 配置，替换或添加编译条件
-          lines = content.split('\n')
-          result = []
-          in_build_settings = False
-          found_swift_conditions = False
-          brace_depth = 0
-
-          for i, line in enumerate(lines):
-              if 'buildSettings = {' in line:
-                  in_build_settings = True
-                  brace_depth = 1
-                  found_swift_conditions = False
-                  result.append(line)
-                  continue
-
-              if in_build_settings:
-                  brace_depth += line.count('{') - line.count('}')
-                  if 'SWIFT_ACTIVE_COMPILATION_CONDITIONS' in line:
-                      found_swift_conditions = True
-                      if 'OPENSOURCE_UNLOCKED' not in line:
-                          line = line.replace('";', ' OPENSOURCE_UNLOCKED";')
-                      result.append(line)
-                  elif brace_depth <= 0:
-                      # End of buildSettings
-                      if not found_swift_conditions:
-                          result.append('\t\t\t\tSWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) OPENSOURCE_UNLOCKED";')
-                      in_build_settings = False
-                      result.append(line)
-                  else:
-                      result.append(line)
-              else:
-                  result.append(line)
-
-          # 禁用代码签名（用于导出未签名 IPA）
-          content = '\n'.join(result)
           content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
           content = content.replace('DEVELOPMENT_TEAM = 6G78MMY657;', 'DEVELOPMENT_TEAM = "";')
-          # 添加无签名身份
           content = content.replace(
               'CODE_SIGN_STYLE = Manual;',
               'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "-";'
           )
-
           with open("Orange Cloud.xcodeproj/project.pbxproj", "w") as f:
               f.write(content)
-
-          print("✅ Injected OPENSOURCE_UNLOCKED + disabled code signing")
+          print("✅ Disabled code signing")
           PYEOF
 
       - name: Build archive
@@ -107,7 +72,6 @@ jobs:
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             DEVELOPMENT_TEAM="" \
             PROVISIONING_PROFILE_SPECIFIER="" \
-            SWIFT_ACTIVE_COMPILATION_CONDITIONS='$(inherited) OPENSOURCE_UNLOCKED' \
             | tee build.log | tail -20
 
           echo "✅ Archive completed"
@@ -121,24 +85,24 @@ jobs:
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          zip -r -9 "OrangeCloud-${{ github.event.inputs.version }}-unsigned.ipa" Payload/
+          zip -r -9 "OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa" Payload/
 
-          ls -lh "OrangeCloud-${{ github.event.inputs.version }}-unsigned.ipa"
+          ls -lh "OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
           echo "✅ IPA created"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
           name: OrangeCloud-unsigned-ipa
-          path: ${{ runner.temp }}/OrangeCloud-${{ github.event.inputs.version }}-unsigned.ipa
+          path: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Orange Cloud ${{ github.event.inputs.version }}
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Orange Cloud ${{ steps.version.outputs.tag }}
           body: |
-            ## Orange Cloud ${{ github.event.inputs.version }}
+            ## Orange Cloud ${{ steps.version.outputs.tag }}
 
             ⚠️ **未签名 IPA** — 需要自行使用签名工具签名后安装。
 
@@ -148,11 +112,9 @@ jobs:
             - **企业签名 / 开发者签名** — 自行配置
 
             ### 编译信息
-            - 全功能解锁（OPENSOURCE_UNLOCKED）
-            - 基于 `${{ github.sha }}` 构建
+            - 全功能解锁（默认 Pro，无会员机制）
+            - 基于 `${{ steps.version.outputs.sha }}` 构建
             - Xcode 26 / iOS 26 SDK
-          files: ${{ runner.temp }}/OrangeCloud-${{ github.event.inputs.version }}-unsigned.ipa
+          files: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

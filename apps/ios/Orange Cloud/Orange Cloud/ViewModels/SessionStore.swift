@@ -25,6 +25,7 @@ final class SessionStore {
     let tunnelService:     TunnelService
     let wafService:        WAFService
     let zoneSettingsService: ZoneSettingsService
+    let pagesService:      PagesService
 
     var accounts: [Account] = []
     var selectedAccount: Account? {
@@ -58,6 +59,7 @@ final class SessionStore {
         self.tunnelService     = TunnelService(client: client)
         self.wafService        = WAFService(client: client)
         self.zoneSettingsService = ZoneSettingsService(client: client)
+        self.pagesService      = PagesService(client: client)
     }
 
     /// 幂等加载账号列表，首个账号设为当前账号

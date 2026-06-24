@@ -132,6 +132,15 @@ extension FeaturePermission {
         ),
         // Pages 是后续功能，实现后再加回（最小权限：不为未实现功能申请 scope）
         .init(
+            id: "pages",
+            title: String(localized: "Pages"),
+            description: String(localized: "查看和管理 Cloudflare Pages 项目"),
+            icon: "doc.richtext",
+            readScopes: ["pages.read"],
+            editScopes: ["pages.write"],
+            isRequired: false
+        ),
+        .init(
             id: "analytics",
             title: String(localized: "流量分析"),
             description: String(localized: "查看账号与域名的流量和安全分析"),

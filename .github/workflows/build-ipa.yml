@@ -85,17 +85,21 @@ jobs:
 
       - name: Create unsigned IPA
         run: |
+          set -eo pipefail
           ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
           PAYLOAD="$RUNNER_TEMP/Payload"
+          IPA_PATH="$RUNNER_TEMP/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
 
           mkdir -p "$PAYLOAD"
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          zip -r -9 "OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa" Payload/
+          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
 
-          ls -lh "OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
-          echo "✅ IPA created"
+          # Verify zip integrity
+          unzip -t "$IPA_PATH"
+          ls -lh "$IPA_PATH"
+          echo "✅ IPA created and verified"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4

@@ -2,8 +2,7 @@
 //  EntitlementStore.swift
 //  Orange Cloud
 //
-//  Pro 解锁状态（StoreKit 2）：有效订阅（月/年）或买断任一存在即 Pro。
-//  开源自编译构建：OPENSOURCE_UNLOCKED 编译条件直接全功能，运行时不发起任何 StoreKit 调用。
+//  自签编译构建默认全功能解锁（Pro 始终为 true），不依赖 StoreKit 权限验证。
 //
 
 import Foundation
@@ -37,27 +36,11 @@ final class EntitlementStore {
     private var updatesTask: Task<Void, Never>?
 
     var isPro: Bool {
-        #if OPENSOURCE_UNLOCKED
-        return true
-        #else
-        return entitled
-        #endif
+        true
     }
 
-    /// App 启动时调用一次：恢复当前 entitlement 并监听后续交易（含外部购买/退款）
     func start() {
-        #if !OPENSOURCE_UNLOCKED
-        guard updatesTask == nil else { return }
-        updatesTask = Task {
-            await refreshEntitlements()
-            for await update in Transaction.updates {
-                if case .verified(let transaction) = update {
-                    await transaction.finish()
-                }
-                await refreshEntitlements()
-            }
-        }
-        #endif
+        // Pro 始终解锁，无需监听 StoreKit 交易更新
     }
 
     func loadProducts() async {

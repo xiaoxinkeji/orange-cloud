@@ -12,11 +12,8 @@ struct SettingsView: View {
 
     @Environment(AuthManager.self) private var auth
     @Environment(SessionStore.self) private var session
-    @Environment(EntitlementStore.self) private var entitlements
 
     @State private var showAddAccount = false
-    @State private var showProPaywall = false
-    @State private var showAddAccountPaywall = false
     @State private var iCloudSync = UserDefaults.standard.bool(forKey: AuthManager.iCloudSyncKey)
 
     /// 「今日」用量的日界口径（App Group，与 Widget 共享），默认 UTC
@@ -46,21 +43,12 @@ struct SettingsView: View {
                     }
 
                     Button {
-                        // 多账号是 Pro 功能：已有身份且未解锁时走付费墙
-                        if !entitlements.isPro && !auth.sessions.isEmpty {
-                            showAddAccountPaywall = true
-                        } else {
-                            showAddAccount = true
-                        }
+                        showAddAccount = true
                     } label: {
                         HStack(spacing: 12) {
                             TintIcon(systemImage: "plus", color: .ocOrange, size: 38)
                             Text("添加账号")
                                 .foregroundStyle(Color.ocOrange)
-                            if !entitlements.isPro && !auth.sessions.isEmpty {
-                                Spacer()
-                                ProBadge()
-                            }
                         }
                         .padding(.vertical, 2)
                     }
@@ -70,37 +58,6 @@ struct SettingsView: View {
                     Text("每个账号独立登录授权。点击账号查看权限与退出登录。")
                 }
                 .glassRow()
-
-                // ── Orange Cloud Pro（开源自编译构建无此入口）──
-                #if !OPENSOURCE_UNLOCKED
-                Section {
-                    Button {
-                        showProPaywall = true
-                    } label: {
-                        HStack(spacing: 12) {
-                            TintIcon(systemImage: "sparkles", color: .ocOrange)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Orange Cloud Pro")
-                                    .foregroundStyle(.primary)
-                                Text(entitlements.isPro ? "已解锁，感谢支持" : "多账号与专业功能")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer()
-                            if entitlements.isPro {
-                                Image(systemName: "checkmark.seal.fill")
-                                    .foregroundStyle(Color.ocOrange)
-                            } else {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.tertiary)
-                            }
-                        }
-                        .padding(.vertical, 2)
-                    }
-                }
-                .glassRow()
-                #endif
 
                 // ── 同步 ──
                 Section {
@@ -220,12 +177,6 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showAddAccount) {
                 AddAccountSheet()
-            }
-            .sheet(isPresented: $showProPaywall) {
-                PaywallView()
-            }
-            .sheet(isPresented: $showAddAccountPaywall) {
-                PaywallView(feature: .multiAccount)
             }
         }
     }

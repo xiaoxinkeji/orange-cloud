@@ -309,12 +309,6 @@ final class AuthManager {
         let name:  String?
     }
 
-    nonisolated private struct TokenVerifyResult: Codable {
-        let id: String
-        let status: String
-        let email: String?
-    }
-
     // MARK: - Token 交换与刷新
 
     nonisolated private struct TokenResponse: Codable {
@@ -428,16 +422,24 @@ final class AuthManager {
 
     /// 验证 API Token 并返回用户邮箱（用于标签）。调用 /user/tokens/verify
     func verifyToken(_ token: String) async -> String? {
-        var request = URLRequest(url: URL(string: "https://api.cloudflare.com/client/v4/user/tokens/verify")!)
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        guard let (data, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200,
-              let result = try? JSONDecoder().decode(CFAPIResponse<TokenVerifyResult>.self, from: data),
-              result.success, let verify = result.result,
-              verify.status == "active" else {
+        guard let url = URL(string: "https://api.cloudflare.com/client/v4/user/tokens/verify") else {
             return nil
         }
-        return verify.email ?? verify.id
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  (json["success"] as? Bool) == true,
+                  let result = json["result"] as? [String: Any],
+                  (result["status"] as? String) == "active" else {
+                return nil
+            }
+            return (result["email"] as? String) ?? (result["id"] as? String)
+        } catch {
+            return nil
+        }
     }
 
     /// 添加 API Token 身份

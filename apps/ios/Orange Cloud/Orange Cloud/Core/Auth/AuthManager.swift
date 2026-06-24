@@ -309,6 +309,149 @@ final class AuthManager {
         let name:  String?
     }
 
+    nonisolated private struct TokenVerifyResult: Codable {
+        let id: String
+        let status: String
+        let email: String?
+    }
+
+    // MARK: - Token 交换与刷新
+
+    nonisolated private struct TokenResponse: Codable {
+        let accessToken:  String
+        let expiresIn:    Int
+        let refreshToken: String?
+        let scope:        String?
+
+        enum CodingKeys: String, CodingKey {
+            case accessToken  = "access_token"
+            case expiresIn    = "expires_in"
+            case refreshToken = "refresh_token"
+            case scope
+        }
+    }
+
+    private func exchangeCodeForToken(code: String, verifier: String) async throws -> TokenStore.StoredToken {
+        let response = try await requestToken(parameters: [
+            "grant_type":    "authorization_code",
+            "client_id":     OAuthConfig.clientID,
+            "code":          code,
+            "redirect_uri":  OAuthConfig.redirectURI,
+            "code_verifier": verifier,
+        ])
+        return TokenStore.StoredToken(
+            accessToken:  response.accessToken,
+            refreshToken: response.refreshToken,
+            expiresAt:    Date().addingTimeInterval(TimeInterval(response.expiresIn)),
+            scope:        response.scope ?? ""
+        )
+    }
+
+    /// 刷新当前身份的 access_token。并发去重：多个临期/401 请求只触发一次网络刷新，
+    /// 否则刷新令牌轮换（每次刷新作废上一枚）会让并发请求互相把令牌作废，导致误登出。
+    func refreshAccessToken() async throws -> String {
+        if let inFlight = refreshTask {
+            return try await inFlight.value
+        }
+        let task = Task<String, Error> { [weak self] in
+            guard let self else { throw AuthError.notLoggedIn }
+            return try await self.performTokenRefresh()
+        }
+        refreshTask = task
+        defer { refreshTask = nil }
+        return try await task.value
+    }
+
+    /// 实际刷新逻辑：仅在刷新令牌确已失效（token 端点 400）时移除该身份；
+    /// 网络中断 / 超时 / 5xx / 429 等瞬时失败保留身份并原样抛出，交由调用方稍后重试，
+    /// 避免一次网络抖动就把用户登出（其他身份始终不受影响）。
+    private func performTokenRefresh() async throws -> String {
+        guard let sessionId = currentSessionId,
+              let stored = TokenStore.load(sessionId: sessionId) else {
+            if let id = currentSessionId {
+                removeSession(id)
+            }
+            throw AuthError.notLoggedIn
+        }
+        guard let refreshToken = stored.refreshToken else {
+            if currentSession?.authType == .apiToken {
+                return stored.accessToken
+            }
+            // 没有刷新令牌则无从续期，只能重新授权
+            removeSession(sessionId)
+            throw AuthError.notLoggedIn
+        }
+        do {
+            let response = try await requestToken(parameters: [
+                "grant_type":    "refresh_token",
+                "client_id":     OAuthConfig.clientID,
+                "refresh_token": refreshToken,
+            ])
+            let newToken = TokenStore.StoredToken(
+                accessToken:  response.accessToken,
+                refreshToken: response.refreshToken ?? refreshToken,
+                expiresAt:    Date().addingTimeInterval(TimeInterval(response.expiresIn)),
+                scope:        response.scope ?? stored.scope
+            )
+            TokenStore.save(newToken, sessionId: sessionId)
+            return newToken.accessToken
+        } catch let AuthError.tokenEndpointError(status, _) where status == 400 {
+            // OAuth 标准：刷新令牌失效 / 被撤销 / 过期返回 400，确需重新授权
+            removeSession(sessionId)
+            throw AuthError.notLoggedIn
+        }
+        // 其它错误（网络 / 超时 / 5xx / 429）：保留身份，原样向上抛出
+    }
+
+    private func requestToken(parameters: [String: String]) async throws -> TokenResponse {
+        var request = URLRequest(url: OAuthConfig.tokenURL)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        request.httpBody = Self.formBody(parameters)
+
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let http = response as? HTTPURLResponse else {
+            throw AuthError.tokenExchangeFailed(String(localized: "无效响应"))
+        }
+        guard (200...299).contains(http.statusCode) else {
+            let body = String(data: data, encoding: .utf8) ?? ""
+            throw AuthError.tokenEndpointError(status: http.statusCode, body: body)
+        }
+        do {
+            return try JSONDecoder().decode(TokenResponse.self, from: data)
+        } catch {
+            throw AuthError.tokenExchangeFailed(String(localized: "响应解析失败"))
+        }
+    }
+
+    // MARK: - API Token 登录
+
+    /// 验证 API Token 并返回用户邮箱（用于标签）。调用 /user/tokens/verify
+    func verifyToken(_ token: String) async -> String? {
+        var request = URLRequest(url: URL(string: "https://api.cloudflare.com/client/v4/user/tokens/verify")!)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              (response as? HTTPURLResponse)?.statusCode == 200,
+              let result = try? JSONDecoder().decode(CFAPIResponse<TokenVerifyResult>.self, from: data),
+              result.success, let verify = result.result,
+              verify.status == "active" else {
+            return nil
+        }
+        return verify.email ?? verify.id
+    }
+
+    /// 添加 API Token 身份
+    func addAPIToken(_ token: String, label: String) {
+        let id = UUID()
+        TokenStore.save(
+            .init(accessToken: token, refreshToken: nil, expiresAt: .distantFuture, scope: ""),
+            sessionId: id
+        )
+        sessions.append(AuthSessionMeta(id: id, label: label, scopes: [], authType: .apiToken))
+        currentSessionId = id
+        persist()
+    }
+
     // MARK: - 退出单个身份
 
     func logout(sessionId: UUID, revoke: Bool = true) async {

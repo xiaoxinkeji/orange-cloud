@@ -130,16 +130,6 @@ extension FeaturePermission {
             editScopes: ["zone-settings.write", "cache.purge"],
             isRequired: false
         ),
-        // Pages 是后续功能，实现后再加回（最小权限：不为未实现功能申请 scope）
-        .init(
-            id: "pages",
-            title: String(localized: "Pages"),
-            description: String(localized: "查看和管理 Cloudflare Pages 项目"),
-            icon: "doc.richtext",
-            readScopes: ["pages.read"],
-            editScopes: ["pages.write"],
-            isRequired: false
-        ),
         .init(
             id: "analytics",
             title: String(localized: "流量分析"),
@@ -148,15 +138,6 @@ extension FeaturePermission {
             // 账号级 + Zone 级（GraphQL Analytics API 查 Zone 流量需要 analytics.read）
             readScopes: ["account-analytics.read", "analytics.read"],
             editScopes: [],
-            isRequired: false
-        ),
-        .init(
-            id: "load_balancers",
-            title: String(localized: "负载均衡"),
-            description: String(localized: "查看负载均衡器、源站池与健康检查"),
-            icon: "arrow.triangle.branch",
-            readScopes: ["zone.load_balancers:read"],
-            editScopes: ["zone.load_balancers:write"],
             isRequired: false
         ),
     ]

@@ -31,6 +31,7 @@ final class SessionStore {
     let bulkRedirectService: BulkRedirectService
     let transformRuleService: TransformRuleService
     let loadBalancerService: LoadBalancerService
+    let cacheRuleService:    CacheRuleService
 
     var accounts: [Account] = []
     var selectedAccount: Account? {
@@ -70,6 +71,7 @@ final class SessionStore {
         self.bulkRedirectService = BulkRedirectService(client: client)
         self.transformRuleService = TransformRuleService(client: client)
         self.loadBalancerService = LoadBalancerService(client: client)
+        self.cacheRuleService    = CacheRuleService(client: client)
     }
 
     /// 幂等加载账号列表，首个账号设为当前账号

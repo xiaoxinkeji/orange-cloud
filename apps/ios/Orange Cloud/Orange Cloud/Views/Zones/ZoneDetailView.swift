@@ -144,6 +144,16 @@ struct ZoneDetailView: View {
                     ) {
                         LoadBalancerListView(zoneId: zone.id, zoneName: zone.name, session: session)
                     }
+
+                    ProGatedNavigationLink(
+                        label: String(localized: "Cache Rules"),
+                        systemImage: "clock.arrow.circlepath",
+                        requiredScope: "zone-settings.read",
+                        tint: .teal,
+                        showsChevron: true
+                    ) {
+                        CacheRulesView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
                 }
 
                 sslCertificatesSection

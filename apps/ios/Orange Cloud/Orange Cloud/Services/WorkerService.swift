@@ -120,7 +120,7 @@ nonisolated struct WorkerRouteInput: Codable, Sendable {
     }
 }
 
-private struct WorkerRoutesUpdateRequest: Codable {
+private struct WorkerRoutesUpdateRequest: Codable, Sendable {
     let routes: [WorkerRouteInput]
 }
 
@@ -154,11 +154,11 @@ nonisolated struct WorkerScheduleInput: Codable, Sendable {
     let cron: String
 }
 
-private struct WorkerSchedulesUpdateRequest: Codable {
+private struct WorkerSchedulesUpdateRequest: Codable, Sendable {
     let schedules: [WorkerScheduleInput]
 }
 
-private struct WorkerScheduleList: Codable {
+private struct WorkerScheduleList: Codable, Sendable {
     let schedules: [WorkerSchedule]?
 }
 

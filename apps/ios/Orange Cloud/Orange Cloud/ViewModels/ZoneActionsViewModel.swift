@@ -59,17 +59,6 @@ final class ZoneActionsViewModel {
         settingsLoaded = true
     }
 
-    func loadSettings() async {
-        guard !settingsLoaded else { return }
-        async let securityTask = service.getSetting(zoneId: zoneId, setting: "security_level")
-        async let devTask = service.getSetting(zoneId: zoneId, setting: "development_mode")
-        // 读不到（无 zone-settings.read 等）就保持未加载态，开关显示为锁定
-        guard let security = try? await securityTask, let dev = try? await devTask else { return }
-        underAttack = security == "under_attack"
-        devMode = dev == "on"
-        settingsLoaded = true
-    }
-
     func setUnderAttack(_ on: Bool) async {
         guard !isTogglingUnderAttack else { return }
         isTogglingUnderAttack = true

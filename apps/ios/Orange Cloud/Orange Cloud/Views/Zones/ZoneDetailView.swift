@@ -104,6 +104,26 @@ struct ZoneDetailView: View {
                     ) {
                         WAFRuleListView(zoneId: zone.id, zoneName: zone.name, session: session)
                     }
+
+                    ProGatedNavigationLink(
+                        label: String(localized: "IP 访问规则"),
+                        systemImage: "hand.raised",
+                        requiredScope: "zone-waf.read",
+                        tint: .red,
+                        showsChevron: true
+                    ) {
+                        IPRulesListView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
+
+                    ProGatedNavigationLink(
+                        label: String(localized: "URL 转发"),
+                        systemImage: "arrow.triangle.swap",
+                        requiredScope: "zone-settings.read",
+                        tint: .orange,
+                        showsChevron: true
+                    ) {
+                        BulkRedirectsView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
                 }
 
                 sslCertificatesSection

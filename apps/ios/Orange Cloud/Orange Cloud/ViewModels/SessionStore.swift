@@ -27,6 +27,8 @@ final class SessionStore {
     let zoneSettingsService: ZoneSettingsService
     let sslCertService:    SSLCertificateService
     let pagesService:      PagesService
+    let firewallRuleService: FirewallRuleService
+    let bulkRedirectService: BulkRedirectService
 
     var accounts: [Account] = []
     var selectedAccount: Account? {
@@ -62,6 +64,8 @@ final class SessionStore {
         self.zoneSettingsService = ZoneSettingsService(client: client)
         self.sslCertService    = SSLCertificateService(client: client)
         self.pagesService      = PagesService(client: client)
+        self.firewallRuleService = FirewallRuleService(client: client)
+        self.bulkRedirectService = BulkRedirectService(client: client)
     }
 
     /// 幂等加载账号列表，首个账号设为当前账号

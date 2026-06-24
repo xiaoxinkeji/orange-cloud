@@ -16,7 +16,7 @@ permissions:
 jobs:
   build:
     runs-on: macos-26
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -29,6 +29,13 @@ jobs:
           sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer || \
           sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | head -1)/Contents/Developer"
           xcodebuild -version
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Developer/Xcode/DerivedData
+          key: xcode-derived-${{ runner.os }}-${{ hashFiles('apps/ios/Orange Cloud/Orange Cloud.xcodeproj/project.pbxproj') }}
+          restore-keys: xcode-derived-${{ runner.os }}-
 
       - name: Set version tag
         id: version
@@ -47,11 +54,12 @@ jobs:
           with open("Orange Cloud.xcodeproj/project.pbxproj", "r") as f:
               content = f.read()
           content = content.replace('CODE_SIGN_STYLE = Automatic;', 'CODE_SIGN_STYLE = Manual;')
-          content = content.replace('DEVELOPMENT_TEAM = 6G78MMY657;', 'DEVELOPMENT_TEAM = "";')
-          content = content.replace(
-              'CODE_SIGN_STYLE = Manual;',
-              'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "-";'
-          )
+          # Only add CODE_SIGN_IDENTITY if not already present
+          if 'CODE_SIGN_IDENTITY' not in content:
+              content = content.replace(
+                  'CODE_SIGN_STYLE = Manual;',
+                  'CODE_SIGN_STYLE = Manual;\n\t\t\t\tCODE_SIGN_IDENTITY = "-";'
+              )
           with open("Orange Cloud.xcodeproj/project.pbxproj", "w") as f:
               f.write(content)
           print("✅ Disabled code signing")
@@ -60,6 +68,7 @@ jobs:
       - name: Build archive
         working-directory: apps/ios/Orange Cloud
         run: |
+          set -eo pipefail
           xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
             -scheme "Orange Cloud" \
@@ -70,8 +79,6 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            DEVELOPMENT_TEAM="" \
-            PROVISIONING_PROFILE_SPECIFIER="" \
             | tee build.log | tail -20
 
           echo "✅ Archive completed"
@@ -104,7 +111,7 @@ jobs:
           body: |
             ## Orange Cloud ${{ steps.version.outputs.tag }}
 
-            ⚠️ **未签名 IPA** — 需要自行使用签名工具签名后安装。
+            未签名 IPA — 需要自行使用签名工具签名后安装。
 
             ### 签名方式
             - **AltStore / SideStore** — 使用 Apple ID 免费签名（7 天有效期）

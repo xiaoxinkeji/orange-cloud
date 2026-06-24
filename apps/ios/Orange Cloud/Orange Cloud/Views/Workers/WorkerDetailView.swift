@@ -58,8 +58,7 @@ struct WorkerDetailView: View {
                 ProGatedNavigationLink(
                     label: String(localized: "实时日志"),
                     systemImage: "text.alignleft",
-                    requiredScope: "workers-tail.read",
-                    feature: .workerTail
+                    requiredScope: "workers-tail.read"
                 ) {
                     WorkerTailView(accountId: script.accountId, scriptName: script.id, session: session)
                 }

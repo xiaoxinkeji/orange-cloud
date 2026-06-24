@@ -81,9 +81,9 @@ struct LoginView: View {
                         HStack(spacing: 6) {
                             Text("版本 \(appVersion)")
                             Text("·")
-                            Link("隐私政策", destination: URL(string: "https://orange-cloud.chatiro.app/privacy")!)
+                            Link("隐私政策", destination: OAuthConfig.privacyPolicyURL)
                             Text("·")
-                            Link("使用条款", destination: URL(string: "https://orange-cloud.chatiro.app/terms")!)
+                            Link("使用条款", destination: OAuthConfig.termsOfUseURL)
                         }
                         .font(.caption2)
                         .foregroundStyle(.tertiary)

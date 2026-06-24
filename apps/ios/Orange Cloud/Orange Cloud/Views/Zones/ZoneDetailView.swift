@@ -94,7 +94,6 @@ struct ZoneDetailView: View {
                         label: String(localized: "WAF 防火墙"),
                         systemImage: "shield",
                         requiredScope: "zone-waf.read",
-                        feature: .waf,
                         tint: .purple,
                         showsChevron: true
                     ) {

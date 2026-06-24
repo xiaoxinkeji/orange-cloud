@@ -14,9 +14,7 @@ struct ZoneAnalyticsSection: View {
 
     /// 宿主页持有（@State）并传入，宿主的下拉刷新与本区共用同一实例
     let viewModel: ZoneAnalyticsViewModel
-    @Environment(EntitlementStore.self) private var entitlements
     @State private var selectedDate: Date?
-    @State private var rangePaywallPresented = false
 
     var body: some View {
         VStack(spacing: 14) {
@@ -38,14 +36,7 @@ struct ZoneAnalyticsSection: View {
             }
         }
         .task {
-            // 订阅回落后把残留的 7d/30d 选择拉回免费档
-            if !entitlements.isPro && viewModel.selectedRange != .last24h {
-                viewModel.selectedRange = .last24h
-            }
             await viewModel.load()
-        }
-        .sheet(isPresented: $rangePaywallPresented) {
-            PaywallView(feature: .analyticsRange)
         }
         .onChange(of: viewModel.selectedRange) {
             selectedDate = nil
@@ -115,12 +106,7 @@ struct ZoneAnalyticsSection: View {
         Picker("时间范围", selection: Binding(
             get: { viewModel.selectedRange },
             set: { newRange in
-                // 7d/30d 是 Pro 功能：未解锁时弹付费墙并停留在 24h
-                if newRange != .last24h && !entitlements.isPro {
-                    rangePaywallPresented = true
-                } else {
-                    viewModel.selectedRange = newRange
-                }
+                viewModel.selectedRange = newRange
             }
         )) {
             ForEach(AnalyticsTimeRange.allCases) { range in

@@ -952,7 +952,6 @@ struct DashboardView: View {
             label: "Cloudflare Tunnel",
             systemImage: "arrow.triangle.2.circlepath",
             requiredScope: "argotunnel.read",
-            feature: .tunnel,
             showsChevron: true
         ) {
             TunnelListView(session: session)

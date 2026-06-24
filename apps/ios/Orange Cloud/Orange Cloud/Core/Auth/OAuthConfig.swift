@@ -28,4 +28,8 @@ nonisolated enum OAuthConfig {
     static let tokenURL         = URL(string: "https://dash.cloudflare.com/oauth2/token")!
     static let revokeURL        = URL(string: "https://dash.cloudflare.com/oauth2/revoke")!
     static let userInfoURL      = URL(string: "https://dash.cloudflare.com/oauth2/userinfo")!
+
+    // App 法律与支持链接
+    static let privacyPolicyURL = URL(string: "https://orange-cloud.chatiro.app/privacy")!
+    static let termsOfUseURL    = URL(string: "https://orange-cloud.chatiro.app/terms")!
 }

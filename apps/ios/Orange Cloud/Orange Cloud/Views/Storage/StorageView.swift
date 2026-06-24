@@ -35,7 +35,6 @@ struct StorageView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(AuthManager.self) private var auth
-    @Environment(EntitlementStore.self) private var entitlements
 
     @State private var kind: StorageKind = .r2
     @State private var r2ViewModel: R2BucketListViewModel
@@ -51,13 +50,7 @@ struct StorageView: View {
     var body: some View {
         NavigationStack {
             Group {
-                // 整模块 Pro 闸门：免费层不展示存储内容
-                if entitlements.isPro {
-                    proContent
-                } else {
-                    ProLockedView(feature: .storage)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
+                proContent
             }
             .background { SkyBackground() }
             .navigationTitle("存储")

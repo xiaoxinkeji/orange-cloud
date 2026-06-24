@@ -159,8 +159,8 @@ struct SettingsView: View {
                         Text(appVersion)
                             .foregroundStyle(.secondary)
                     }
-                    aboutLink("隐私政策", icon: "doc.text", url: "https://orange-cloud.chatiro.app/privacy")
-                    aboutLink("使用条款", icon: "doc.plaintext", url: "https://orange-cloud.chatiro.app/terms")
+                    aboutLink("隐私政策", icon: "doc.text", url: OAuthConfig.privacyPolicyURL)
+                    aboutLink("使用条款", icon: "doc.plaintext", url: OAuthConfig.termsOfUseURL)
                 } header: {
                     Text("关于")
                 } footer: {
@@ -220,8 +220,8 @@ struct SettingsView: View {
         .padding(.vertical, 2)
     }
 
-    private func aboutLink(_ title: String, icon: String, url: String) -> some View {
-        Link(destination: URL(string: url)!) {
+    private func aboutLink(_ title: String, icon: String, url: URL) -> some View {
+        Link(destination: url) {
             HStack(spacing: 12) {
                 TintIcon(systemImage: icon, color: .gray)
                 Text(title)

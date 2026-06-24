@@ -124,6 +124,16 @@ struct ZoneDetailView: View {
                     ) {
                         BulkRedirectsView(zoneId: zone.id, zoneName: zone.name, session: session)
                     }
+
+                    ProGatedNavigationLink(
+                        label: String(localized: "Transform Rules"),
+                        systemImage: "arrow.triangle.pull",
+                        requiredScope: "zone-settings.read",
+                        tint: .blue,
+                        showsChevron: true
+                    ) {
+                        TransformRulesView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
                 }
 
                 sslCertificatesSection

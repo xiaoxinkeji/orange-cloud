@@ -25,6 +25,7 @@ final class SessionStore {
     let tunnelService:     TunnelService
     let wafService:        WAFService
     let zoneSettingsService: ZoneSettingsService
+    let sslCertService:    SSLCertificateService
     let pagesService:      PagesService
 
     var accounts: [Account] = []
@@ -59,6 +60,7 @@ final class SessionStore {
         self.tunnelService     = TunnelService(client: client)
         self.wafService        = WAFService(client: client)
         self.zoneSettingsService = ZoneSettingsService(client: client)
+        self.sslCertService    = SSLCertificateService(client: client)
         self.pagesService      = PagesService(client: client)
     }
 

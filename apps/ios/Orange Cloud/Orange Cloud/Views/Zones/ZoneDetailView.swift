@@ -30,6 +30,10 @@ struct ZoneDetailView: View {
     @State private var deniedScopeHint = ""
     /// 开关类操作先收口到这里，confirmationDialog 确认后才调 API
     @State private var pendingAction: PendingZoneAction?
+    @State private var edgeCerts: [EdgeCertificate] = []
+    @State private var customCerts: [CustomCertificate] = []
+    @State private var universalSSLEnabled = false
+    @State private var certsLoaded = false
 
     init(zone: CachedZone, session: SessionStore) {
         self.zone = zone
@@ -101,6 +105,8 @@ struct ZoneDetailView: View {
                         WAFRuleListView(zoneId: zone.id, zoneName: zone.name, session: session)
                     }
                 }
+
+                sslCertificatesSection
 
                 sectionCard(String(localized: "操作")) {
                     settingToggleRow(
@@ -197,6 +203,10 @@ struct ZoneDetailView: View {
                     }
                 }
 
+                networkOptimizationSection
+
+                cachingSection
+
                 if !zone.nameServers.isEmpty {
                     sectionCard("Name Servers") {
                         VStack(alignment: .leading, spacing: 8) {
@@ -240,7 +250,9 @@ struct ZoneDetailView: View {
         .task {
             if canReadSettings {
                 await actionsViewModel.loadSettings()
+                await loadCertificates()
             }
+            await actionsViewModel.loadNetworkSettings()
         }
         .refreshable {
             if auth.hasScope("analytics.read") {
@@ -248,7 +260,9 @@ struct ZoneDetailView: View {
             }
             if canReadSettings {
                 await actionsViewModel.loadSettings()
+                await loadCertificates()
             }
+            await actionsViewModel.loadNetworkSettings()
         }
         .confirmationDialog(
             pendingAction?.title ?? "",
@@ -396,6 +410,239 @@ struct ZoneDetailView: View {
         }
     }
 
+    private func loadCertificates() async {
+        guard !certsLoaded else { return }
+        async let edgeTask = session.sslCertService.listEdgeCertificates(zoneId: zone.id)
+        async let customTask = session.sslCertService.listCustomCertificates(zoneId: zone.id)
+        async let usslTask = session.sslCertService.getUniversalSSL(zoneId: zone.id)
+
+        edgeCerts = (try? await edgeTask) ?? []
+        customCerts = (try? await customTask) ?? []
+        universalSSLEnabled = (try? await usslTask)?.enabled ?? false
+        certsLoaded = true
+    }
+
+    private func networkToggleRow(
+        title: String, subtitle: String, icon: String, tint: Color, isOn: Bool, setting: String
+    ) -> some View {
+        HStack(spacing: 12) {
+            TintIcon(systemImage: icon, color: tint)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            if actionsViewModel.isTogglingNetwork {
+                ProgressView()
+            } else if canEditSettings {
+                Toggle("", isOn: Binding(
+                    get: { isOn },
+                    set: { _ in Task { await actionsViewModel.toggleSetting(setting, current: isOn) } }
+                ))
+                .labelsHidden()
+            } else {
+                Button {
+                    deniedScopeHint = "zone-settings.write"
+                    showActionDenied = true
+                } label: {
+                    Text(isOn ? String(localized: "开") : String(localized: "关"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var sslCertificatesSection: some View {
+        Group {
+            if !edgeCerts.isEmpty || !customCerts.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("SSL/TLS 证书")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .textCase(.uppercase)
+                        .padding(.horizontal, 4)
+
+                    VStack(spacing: 0) {
+                        LabeledContent("Universal SSL") {
+                            HStack(spacing: 4) {
+                                StatusDot(status: universalSSLEnabled ? "active" : "paused", size: 6)
+                                Text(universalSSLEnabled ? String(localized: "已启用") : String(localized: "未启用"))
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 9)
+
+                        if let first = edgeCerts.first {
+                            Divider().padding(.leading, 14)
+                            LabeledContent("边缘证书") {
+                                certStatusBadge(first.status)
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            if let expires = EdgeCertificate.parseDate(first.expiresOn) {
+                                Divider().padding(.leading, 14)
+                                LabeledContent("到期时间") {
+                                    Text(expires, format: .dateTime.year().month().day())
+                                        .foregroundStyle(expires.timeIntervalSinceNow < 30*24*3600 ? .orange : .secondary)
+                                        .monospacedDigit()
+                                }
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 9)
+                            }
+                        }
+
+                        if !customCerts.isEmpty {
+                            Divider().padding(.leading, 14)
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("自定义证书 · \(customCerts.count) 个")
+                                    .font(.subheadline.weight(.medium))
+                                ForEach(customCerts) { cert in
+                                    HStack {
+                                        if let hosts = cert.hosts {
+                                            Text(hosts.joined(separator: ", "))
+                                                .font(.caption)
+                                                .lineLimit(1)
+                                        }
+                                        Spacer()
+                                        certStatusBadge(cert.status)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                        }
+                    }
+                    .glassIsland(cornerRadius: OCLayout.chipRadius)
+                }
+            }
+        }
+    }
+
+    private var networkOptimizationSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("网络优化")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                networkToggleRow(
+                    title: "HTTP/2", subtitle: String(localized: "多路复用、头部压缩"),
+                    icon: "arrow.left.arrow.right", tint: .blue,
+                    isOn: actionsViewModel.http2Enabled, setting: "http2"
+                )
+                Divider().padding(.leading, 46)
+                networkToggleRow(
+                    title: "HTTP/3", subtitle: String(localized: "基于 QUIC 的新一代协议"),
+                    icon: "arrow.up.arrow.down", tint: .teal,
+                    isOn: actionsViewModel.http3Enabled, setting: "http3"
+                )
+                Divider().padding(.leading, 46)
+                networkToggleRow(
+                    title: "WebSockets", subtitle: String(localized: "允许 WebSocket 连接通过边缘"),
+                    icon: "point.3.connected.trianglepath.dotted", tint: .green,
+                    isOn: actionsViewModel.websocketsEnabled, setting: "websockets"
+                )
+                Divider().padding(.leading, 46)
+                networkToggleRow(
+                    title: "IPv6", subtitle: String(localized: "启用 IPv6 兼容"),
+                    icon: "network", tint: .indigo,
+                    isOn: actionsViewModel.ipv6Enabled, setting: "ipv6"
+                )
+                Divider().padding(.leading, 46)
+                networkToggleRow(
+                    title: "Brotli", subtitle: String(localized: "比 Gzip 压缩率高 15-20%"),
+                    icon: "shippingbox", tint: .purple,
+                    isOn: actionsViewModel.brotliEnabled, setting: "brotli"
+                )
+                Divider().padding(.leading, 46)
+                networkToggleRow(
+                    title: "Early Hints", subtitle: String(localized: "提前推送关键资源链接"),
+                    icon: "lightbulb", tint: .yellow,
+                    isOn: actionsViewModel.earlyHintsEnabled, setting: "early_hints"
+                )
+            }
+            .glassIsland(cornerRadius: OCLayout.chipRadius)
+        }
+    }
+
+    private var cachingSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("缓存")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .textCase(.uppercase)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 0) {
+                networkToggleRow(
+                    title: "Always Online", subtitle: String(localized: "源站不可用时展示缓存快照"),
+                    icon: "clock.arrow.2.circlepath", tint: .orange,
+                    isOn: actionsViewModel.alwaysOnlineEnabled, setting: "always_online"
+                )
+
+                if !actionsViewModel.cachingLevel.isEmpty {
+                    Divider().padding(.leading, 46)
+                    HStack(spacing: 12) {
+                        TintIcon(systemImage: "tray.full", color: .blue)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("缓存级别")
+                            Text("控制查询字符串对缓存的影响")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if canEditSettings {
+                            Picker("", selection: Binding(
+                                get: { actionsViewModel.cachingLevel },
+                                set: { level in
+                                    Task { await actionsViewModel.setCachingLevel(level) }
+                                }
+                            )) {
+                                Text("标准").tag("standard")
+                                Text("忽略查询").tag("no_query")
+                                Text("激进").tag("aggressive")
+                            }
+                            .pickerStyle(.menu)
+                            .labelsHidden()
+                        } else {
+                            Text(actionsViewModel.cachingLevelLabel)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                }
+            }
+            .glassIsland(cornerRadius: OCLayout.chipRadius)
+        }
+    }
+
+    private func certStatusBadge(_ status: String?) -> some View {
+        let s = status ?? "unknown"
+        let color: Color = {
+            switch s {
+            case "active":      return .green
+            case "pending":     return .orange
+            case "expired":     return .red
+            default:            return .secondary
+            }
+        }()
+        return Text(s)
+            .font(.caption2)
+            .fontWeight(.medium)
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 2)
+            .background(color.opacity(0.12), in: Capsule())
+    }
 }
 
 // MARK: - 操作区待确认动作

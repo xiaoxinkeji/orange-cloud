@@ -2,7 +2,7 @@
 //  ZoneActionsViewModel.swift
 //  Orange Cloud
 //
-//  Zone 详情页「操作」区：Under Attack / 开发模式开关 + 缓存清理。
+//  Zone 设置：安全开关、SSL/TLS、网络优化、缓存控制。
 //
 
 import Foundation
@@ -17,12 +17,24 @@ final class ZoneActionsViewModel {
     private(set) var alwaysUseHTTPS = false
     private(set) var autoHTTPSRewrites = false
     private(set) var sslMode: String = ""
+
+    private(set) var http2Enabled = true
+    private(set) var http3Enabled = true
+    private(set) var websocketsEnabled = true
+    private(set) var ipv6Enabled = true
+    private(set) var brotliEnabled = true
+    private(set) var earlyHintsEnabled = false
+    private(set) var alwaysOnlineEnabled = false
+    private(set) var cachingLevel: String = ""
+
     private(set) var settingsLoaded = false
+    private(set) var networkSettingsLoaded = false
 
     var isTogglingUnderAttack = false
     var isTogglingDevMode = false
     var isTogglingAlwaysHTTPS = false
     var isTogglingAutoHTTPS = false
+    var isTogglingNetwork = false
     var isPurging = false
     var didPurge = false
     var error: String?
@@ -59,12 +71,87 @@ final class ZoneActionsViewModel {
         settingsLoaded = true
     }
 
+    func loadNetworkSettings() async {
+        guard !networkSettingsLoaded else { return }
+        async let h2Task = service.getSetting(zoneId: zoneId, setting: "http2")
+        async let h3Task = service.getSetting(zoneId: zoneId, setting: "http3")
+        async let wsTask = service.getSetting(zoneId: zoneId, setting: "websockets")
+        async let v6Task = service.getSetting(zoneId: zoneId, setting: "ipv6")
+        async let brTask = service.getSetting(zoneId: zoneId, setting: "brotli")
+        async let ehTask = service.getSetting(zoneId: zoneId, setting: "early_hints")
+        async let aoTask = service.getSetting(zoneId: zoneId, setting: "always_online")
+        async let clTask = service.getSetting(zoneId: zoneId, setting: "caching_level")
+
+        let h2  = try? await h2Task
+        let h3  = try? await h3Task
+        let ws  = try? await wsTask
+        let v6  = try? await v6Task
+        let br  = try? await brTask
+        let eh  = try? await ehTask
+        let ao  = try? await aoTask
+        let cl  = try? await clTask
+
+        guard h2 != nil || h3 != nil || ws != nil else { return }
+
+        http2Enabled = h2 == "on"
+        http3Enabled = h3 == "on"
+        websocketsEnabled = ws == "on"
+        ipv6Enabled = v6 == "on"
+        brotliEnabled = br == "on"
+        earlyHintsEnabled = eh == "on"
+        alwaysOnlineEnabled = ao == "on"
+        cachingLevel = cl ?? ""
+        networkSettingsLoaded = true
+    }
+
+    func toggleSetting(_ setting: String, current: Bool) async {
+        guard !isTogglingNetwork else { return }
+        isTogglingNetwork = true
+        error = nil
+        do {
+            let on = !current
+            let value = try await service.setSetting(
+                zoneId: zoneId, setting: setting,
+                value: on ? "on" : "off"
+            )
+            let result = value == "on"
+            switch setting {
+            case "http2":                     http2Enabled = result
+            case "http3":                     http3Enabled = result
+            case "websockets":                websocketsEnabled = result
+            case "ipv6":                      ipv6Enabled = result
+            case "brotli":                    brotliEnabled = result
+            case "early_hints":               earlyHintsEnabled = result
+            case "always_online":             alwaysOnlineEnabled = result
+            default:                          break
+            }
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isTogglingNetwork = false
+    }
+
+    func setCachingLevel(_ level: String) async {
+        guard !isTogglingNetwork else { return }
+        isTogglingNetwork = true
+        error = nil
+        do {
+            let value = try await service.setSetting(
+                zoneId: zoneId, setting: "caching_level",
+                value: level
+            )
+            cachingLevel = value
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isTogglingNetwork = false
+    }
+
     func setUnderAttack(_ on: Bool) async {
         guard !isTogglingUnderAttack else { return }
         isTogglingUnderAttack = true
         error = nil
         do {
-            // 关闭时恢复为 medium（Cloudflare 默认安全级别；API 不记录开启前的旧值）
             let value = try await service.setSetting(
                 zoneId: zoneId, setting: "security_level",
                 value: on ? "under_attack" : "medium"
@@ -144,6 +231,15 @@ final class ZoneActionsViewModel {
         case "full":    String(localized: "严格")
         case "strict":  String(localized: "完全（严格）")
         default:        sslMode.isEmpty ? String(localized: "未知") : sslMode
+        }
+    }
+
+    var cachingLevelLabel: String {
+        switch cachingLevel {
+        case "standard":   String(localized: "标准")
+        case "no_query":   String(localized: "忽略查询字符串")
+        case "aggressive": String(localized: "激进")
+        default:          cachingLevel.isEmpty ? String(localized: "—") : cachingLevel
         }
     }
 }

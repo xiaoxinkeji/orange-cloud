@@ -14,12 +14,17 @@ final class ZoneActionsViewModel {
 
     private(set) var underAttack = false
     private(set) var devMode = false
+    private(set) var alwaysUseHTTPS = false
+    private(set) var autoHTTPSRewrites = false
+    private(set) var sslMode: String = ""
     private(set) var settingsLoaded = false
 
     var isTogglingUnderAttack = false
     var isTogglingDevMode = false
+    var isTogglingAlwaysHTTPS = false
+    var isTogglingAutoHTTPS = false
     var isPurging = false
-    var didPurge = false       // sensoryFeedback / 提示触发器
+    var didPurge = false
     var error: String?
 
     private let service: ZoneSettingsService
@@ -28,6 +33,30 @@ final class ZoneActionsViewModel {
     init(service: ZoneSettingsService, zoneId: String) {
         self.service = service
         self.zoneId = zoneId
+    }
+
+    func loadSettings() async {
+        guard !settingsLoaded else { return }
+        async let securityTask = service.getSetting(zoneId: zoneId, setting: "security_level")
+        async let devTask = service.getSetting(zoneId: zoneId, setting: "development_mode")
+        async let sslTask = service.getSetting(zoneId: zoneId, setting: "ssl")
+        async let httpsTask = service.getSetting(zoneId: zoneId, setting: "always_use_https")
+        async let rewritesTask = service.getSetting(zoneId: zoneId, setting: "automatic_https_rewrites")
+
+        let security = try? await securityTask
+        let dev = try? await devTask
+        let ssl = try? await sslTask
+        let https = try? await httpsTask
+        let rewrites = try? await rewritesTask
+
+        guard security != nil || dev != nil || ssl != nil else { return }
+
+        underAttack = security == "under_attack"
+        devMode = dev == "on"
+        sslMode = ssl ?? ""
+        alwaysUseHTTPS = https == "on"
+        autoHTTPSRewrites = rewrites == "on"
+        settingsLoaded = true
     }
 
     func loadSettings() async {
@@ -85,5 +114,47 @@ final class ZoneActionsViewModel {
             self.error = error.localizedDescription
         }
         isPurging = false
+    }
+
+    func setAlwaysUseHTTPS(_ on: Bool) async {
+        guard !isTogglingAlwaysHTTPS else { return }
+        isTogglingAlwaysHTTPS = true
+        error = nil
+        do {
+            let value = try await service.setSetting(
+                zoneId: zoneId, setting: "always_use_https",
+                value: on ? "on" : "off"
+            )
+            alwaysUseHTTPS = value == "on"
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isTogglingAlwaysHTTPS = false
+    }
+
+    func setAutoHTTPSRewrites(_ on: Bool) async {
+        guard !isTogglingAutoHTTPS else { return }
+        isTogglingAutoHTTPS = true
+        error = nil
+        do {
+            let value = try await service.setSetting(
+                zoneId: zoneId, setting: "automatic_https_rewrites",
+                value: on ? "on" : "off"
+            )
+            autoHTTPSRewrites = value == "on"
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isTogglingAutoHTTPS = false
+    }
+
+    var sslModeLabel: String {
+        switch sslMode {
+        case "off":     String(localized: "关闭（仅 HTTP）")
+        case "flexible": String(localized: "灵活")
+        case "full":    String(localized: "严格")
+        case "strict":  String(localized: "完全（严格）")
+        default:        sslMode.isEmpty ? String(localized: "未知") : sslMode
+        }
     }
 }

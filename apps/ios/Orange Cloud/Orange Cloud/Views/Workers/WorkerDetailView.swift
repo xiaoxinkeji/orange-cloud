@@ -68,6 +68,21 @@ struct WorkerDetailView: View {
         .daybreakList()
         .navigationTitle(script.id)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                if auth.hasScope("workers-scripts.write") {
+                    NavigationLink {
+                        WorkerEditorView(
+                            accountId: script.accountId,
+                            scriptName: script.id,
+                            session: session
+                        )
+                    } label: {
+                        Label("编辑", systemImage: "pencil")
+                    }
+                }
+            }
+        }
         .task(id: metricsViewModel.range) {
             guard canViewMetrics else { return }
             await metricsViewModel.load()

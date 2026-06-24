@@ -25,6 +25,7 @@ struct ZoneDetailView: View {
     @State private var actionsViewModel: ZoneActionsViewModel
     @State private var showPurgeConfirm = false
     @State private var showPurgeDone = false
+    @State private var showPurgeURLSheet = false
     @State private var showActionDenied = false
     @State private var deniedScopeHint = ""
     /// 开关类操作先收口到这里，confirmationDialog 确认后才调 API
@@ -122,6 +123,34 @@ struct ZoneDetailView: View {
                         requestToggle: { on in pendingAction = .devMode(on) }
                     )
 
+                    if !actionsViewModel.sslMode.isEmpty {
+                        LabeledContent("TLS 加密模式") {
+                            Text(actionsViewModel.sslModeLabel)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.vertical, 2)
+                    }
+
+                    settingToggleRow(
+                        title: String(localized: "始终使用 HTTPS"),
+                        subtitle: String(localized: "将所有 HTTP 请求重定向到 HTTPS"),
+                        icon: "lock.fill",
+                        tint: .green,
+                        isOn: actionsViewModel.alwaysUseHTTPS,
+                        isBusy: actionsViewModel.isTogglingAlwaysHTTPS,
+                        requestToggle: { on in pendingAction = .alwaysHTTPS(on) }
+                    )
+
+                    settingToggleRow(
+                        title: String(localized: "自动 HTTPS 重写"),
+                        subtitle: String(localized: "自动将 HTTP 链接替换为 HTTPS"),
+                        icon: "arrow.triangle.swap",
+                        tint: .teal,
+                        isOn: actionsViewModel.autoHTTPSRewrites,
+                        isBusy: actionsViewModel.isTogglingAutoHTTPS,
+                        requestToggle: { on in pendingAction = .autoHTTPSRewrites(on) }
+                    )
+
                     Button {
                         if canPurge {
                             showPurgeConfirm = true
@@ -144,7 +173,28 @@ struct ZoneDetailView: View {
                             }
                         }
                     }
-                    .disabled(actionsViewModel.isPurging)
+                    .disabled(actionsViewModel.isPurging || actionsViewModel.isTogglingAlwaysHTTPS || actionsViewModel.isTogglingAutoHTTPS)
+
+                    Button {
+                        if canPurge {
+                            showPurgeURLSheet = true
+                        } else {
+                            deniedScopeHint = "cache.purge"
+                            showActionDenied = true
+                        }
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "link", color: .orange)
+                            Text("清除指定 URL 缓存")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            if !canPurge {
+                                Image(systemName: "lock.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                    }
                 }
 
                 if !zone.nameServers.isEmpty {
@@ -212,8 +262,10 @@ struct ZoneDetailView: View {
             Button(action.confirmLabel) {
                 Task {
                     switch action {
-                    case .underAttack(let on): await actionsViewModel.setUnderAttack(on)
-                    case .devMode(let on):     await actionsViewModel.setDevMode(on)
+                    case .underAttack(let on):     await actionsViewModel.setUnderAttack(on)
+                    case .devMode(let on):         await actionsViewModel.setDevMode(on)
+                    case .alwaysHTTPS(let on):     await actionsViewModel.setAlwaysUseHTTPS(on)
+                    case .autoHTTPSRewrites(let on): await actionsViewModel.setAutoHTTPSRewrites(on)
                     }
                 }
             }
@@ -247,6 +299,9 @@ struct ZoneDetailView: View {
             Button("好", role: .cancel) {}
         } message: {
             Text(actionsViewModel.error ?? "")
+        }
+        .sheet(isPresented: $showPurgeURLSheet) {
+            PurgeURLSheet(zoneId: zone.id, zoneName: zone.name, session: session)
         }
     }
 
@@ -349,11 +404,15 @@ struct ZoneDetailView: View {
 private nonisolated enum PendingZoneAction: Identifiable {
     case underAttack(Bool)
     case devMode(Bool)
+    case alwaysHTTPS(Bool)
+    case autoHTTPSRewrites(Bool)
 
     var id: String {
         switch self {
-        case .underAttack(let on): "underAttack-\(on)"
-        case .devMode(let on):     "devMode-\(on)"
+        case .underAttack(let on):   "underAttack-\(on)"
+        case .devMode(let on):       "devMode-\(on)"
+        case .alwaysHTTPS(let on):   "alwaysHTTPS-\(on)"
+        case .autoHTTPSRewrites(let on): "autoHTTPS-\(on)"
         }
     }
 
@@ -363,13 +422,19 @@ private nonisolated enum PendingZoneAction: Identifiable {
         case .underAttack(false): String(localized: "关闭 Under Attack 模式？")
         case .devMode(true):      String(localized: "开启开发模式？")
         case .devMode(false):     String(localized: "关闭开发模式？")
+        case .alwaysHTTPS(true):  String(localized: "开启始终使用 HTTPS？")
+        case .alwaysHTTPS(false): String(localized: "关闭始终使用 HTTPS？")
+        case .autoHTTPSRewrites(true):  String(localized: "开启自动 HTTPS 重写？")
+        case .autoHTTPSRewrites(false): String(localized: "关闭自动 HTTPS 重写？")
         }
     }
 
     var confirmLabel: String {
         switch self {
-        case .underAttack(true), .devMode(true):   String(localized: "确认开启")
-        case .underAttack(false), .devMode(false): String(localized: "确认关闭")
+        case .underAttack(true), .devMode(true), .alwaysHTTPS(true), .autoHTTPSRewrites(true):
+            String(localized: "确认开启")
+        case .underAttack(false), .devMode(false), .alwaysHTTPS(false), .autoHTTPSRewrites(false):
+            String(localized: "确认关闭")
         }
     }
 
@@ -383,6 +448,14 @@ private nonisolated enum PendingZoneAction: Identifiable {
             String(localized: "开启后，\(zoneName) 将临时绕过 Cloudflare 缓存，源站负载会上升；3 小时后自动关闭。")
         case .devMode(false):
             String(localized: "关闭后，\(zoneName) 立即恢复缓存加速。")
+        case .alwaysHTTPS(true):
+            String(localized: "开启后，所有对 \(zoneName) 的 HTTP 请求将被 301 重定向到 HTTPS。")
+        case .alwaysHTTPS(false):
+            String(localized: "关闭后，\(zoneName) 将不再强制重定向 HTTP 到 HTTPS。")
+        case .autoHTTPSRewrites(true):
+            String(localized: "开启后，\(zoneName) 页面中的 HTTP 链接将被自动替换为 HTTPS。")
+        case .autoHTTPSRewrites(false):
+            String(localized: "关闭后，\(zoneName) 页面中的 HTTP 链接将保持原样。")
         }
     }
 }
@@ -398,6 +471,114 @@ private extension View {
                 .foregroundStyle(.secondary)
                 .padding(.trailing, 24)
                 .allowsHitTesting(false)
+        }
+    }
+}
+
+// MARK: - 按 URL 清除缓存
+
+private struct PurgeURLSheet: View {
+
+    let zoneId: String
+    let zoneName: String
+    let session: SessionStore
+
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var urlText = ""
+    @State private var isPurging = false
+    @State private var error: String?
+    @State private var didPurge = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                if didPurge {
+                    VStack(spacing: 12) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.green)
+                        Text("缓存已清理")
+                            .font(.headline)
+                        Text("指定的 URL 将在边缘节点完成清理。")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxHeight: .infinity)
+                } else {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("输入要清除缓存的完整 URL")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+
+                        TextField("https://\(zoneName)/path", text: $urlText)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.URL)
+                            .autocapitalization(.none)
+                            .autocorrectionDisabled()
+
+                        Text("一次可输入多个 URL，每行一个")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal)
+
+                    Spacer()
+
+                    Button {
+                        Task { await purge() }
+                    } label: {
+                        HStack {
+                            if isPurging {
+                                ProgressView()
+                            }
+                            Text("清除缓存")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(urlText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isPurging)
+                    .padding(.horizontal)
+                    .padding(.bottom)
+                }
+            }
+            .navigationTitle("清除指定缓存")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+            .alert("清除失败", isPresented: .init(
+                get: { error != nil },
+                set: { if !$0 { error = nil } }
+            )) {
+                Button("好", role: .cancel) {}
+            } message: {
+                Text(error ?? "")
+            }
+        }
+    }
+
+    private func purge() async {
+        let lines = urlText
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        guard !lines.isEmpty else { return }
+        isPurging = true
+        defer { isPurging = false }
+        do {
+            _ = try await session.zoneSettingsService.purgeByURL(
+                zoneId: zoneId,
+                urls: lines
+            )
+            didPurge = true
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 }

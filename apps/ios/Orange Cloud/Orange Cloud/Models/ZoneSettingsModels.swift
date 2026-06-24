@@ -19,10 +19,42 @@ nonisolated struct ZoneSettingUpdate: Codable, Sendable {
 
 /// POST /zones/{id}/purge_cache
 nonisolated struct PurgeRequest: Codable, Sendable {
-    let purgeEverything: Bool
+    let purgeEverything: Bool?
+    let files: [String]?
+    let tags: [String]?
+    let hosts: [String]?
+
+    init(purgeEverything: Bool) {
+        self.purgeEverything = purgeEverything
+        self.files = nil
+        self.tags = nil
+        self.hosts = nil
+    }
+
+    init(files: [String]) {
+        self.purgeEverything = nil
+        self.files = files
+        self.tags = nil
+        self.hosts = nil
+    }
+
+    init(tags: [String]) {
+        self.purgeEverything = nil
+        self.files = nil
+        self.tags = tags
+        self.hosts = nil
+    }
+
+    init(hosts: [String]) {
+        self.purgeEverything = nil
+        self.files = nil
+        self.tags = nil
+        self.hosts = hosts
+    }
 
     enum CodingKeys: String, CodingKey {
         case purgeEverything = "purge_everything"
+        case files, tags, hosts
     }
 }
 

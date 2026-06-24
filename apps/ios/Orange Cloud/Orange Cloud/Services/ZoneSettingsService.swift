@@ -48,4 +48,28 @@ struct ZoneSettingsService {
             throw response.toAPIError()
         }
     }
+
+    /// 按 URL 清除缓存
+    func purgeByURL(zoneId: String, urls: [String]) async throws -> PurgeResult {
+        let response: CFAPIResponse<PurgeResult> = try await client.post(
+            "zones/\(zoneId)/purge_cache",
+            body: PurgeRequest(files: urls)
+        )
+        guard response.success, let result = response.result else {
+            throw response.toAPIError()
+        }
+        return result
+    }
+
+    /// 按 Tag 清除缓存
+    func purgeByTag(zoneId: String, tags: [String]) async throws -> PurgeResult {
+        let response: CFAPIResponse<PurgeResult> = try await client.post(
+            "zones/\(zoneId)/purge_cache",
+            body: PurgeRequest(tags: tags)
+        )
+        guard response.success, let result = response.result else {
+            throw response.toAPIError()
+        }
+        return result
+    }
 }

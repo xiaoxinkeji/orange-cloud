@@ -13,7 +13,6 @@ struct WorkerService {
         self.client = client
     }
 
-    /// 账号下全部 Workers 脚本（该端点不分页）
     func listScripts(accountId: String) async throws -> [WorkerScript] {
         let response: CFAPIResponseArray<WorkerScript> = try await client.get(
             "accounts/\(accountId)/workers/scripts"
@@ -22,5 +21,158 @@ struct WorkerService {
             throw response.toAPIError()
         }
         return response.result ?? []
+    }
+
+    // MARK: - 脚本内容
+
+    func getScriptContent(accountId: String, scriptName: String) async throws -> String {
+        let data = try await client.getRaw(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)"
+        )
+        guard let content = String(data: data, encoding: .utf8) else {
+            throw APIError.decodingError(URLError(.cannotDecodeContentData))
+        }
+        return content
+    }
+
+    func updateScript(accountId: String, scriptName: String, content: String, metadata: WorkerScriptMetadata) async throws -> WorkerScript {
+        guard let body = content.data(using: .utf8) else {
+            throw APIError.decodingError(URLError(.cannotDecodeContentData))
+        }
+        let response: CFAPIResponse<WorkerScript> = try await client.putRaw(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)",
+            body: body,
+            contentType: "application/javascript"
+        )
+        guard response.success, let result = response.result else {
+            throw response.toAPIError()
+        }
+        return result
+    }
+
+    // MARK: - 路由
+
+    func listRoutes(accountId: String) async throws -> [WorkerRoute] {
+        let response: CFAPIResponseArray<WorkerRoute> = try await client.get(
+            "accounts/\(accountId)/workers/routes"
+        )
+        guard response.success else {
+            throw response.toAPIError()
+        }
+        return response.result ?? []
+    }
+
+    func updateRoutes(accountId: String, scriptName: String, routes: [WorkerRouteInput]) async throws {
+        let body = WorkerRoutesUpdateRequest(routes: routes)
+        let response: CFAPIResponse<EmptyResponse> = try await client.put(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/routes",
+            body: body
+        )
+        guard response.success else {
+            throw response.toAPIError()
+        }
+    }
+
+    // MARK: - 定时触发器
+
+    func getSchedules(accountId: String, scriptName: String) async throws -> [WorkerSchedule] {
+        let response: CFAPIResponse<WorkerScheduleList> = try await client.get(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/schedules"
+        )
+        guard response.success, let result = response.result else {
+            throw response.toAPIError()
+        }
+        return result.schedules ?? []
+    }
+
+    func updateSchedules(accountId: String, scriptName: String, schedules: [WorkerScheduleInput]) async throws {
+        let body = WorkerSchedulesUpdateRequest(schedules: schedules)
+        let response: CFAPIResponse<EmptyResponse> = try await client.put(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/schedules",
+            body: body
+        )
+        guard response.success else {
+            throw response.toAPIError()
+        }
+    }
+}
+
+// MARK: - 路由模型
+
+nonisolated struct WorkerRoute: Codable, Identifiable, Sendable {
+    let id: String?
+    let pattern: String
+    let script: String?
+    let requestLimitFailOpen: Bool?
+
+    enum CodingKeys: String, CodingKey {
+        case id, pattern, script
+        case requestLimitFailOpen = "request_limit_fail_open"
+    }
+}
+
+nonisolated struct WorkerRouteInput: Codable, Sendable {
+    let pattern: String
+    let script: String?
+
+    enum CodingKeys: String, CodingKey {
+        case pattern, script
+    }
+}
+
+private struct WorkerRoutesUpdateRequest: Codable {
+    let routes: [WorkerRouteInput]
+}
+
+nonisolated struct WorkerScriptMetadata: Codable, Sendable {
+    var bodyPart: String = "script"
+    var bindings: [WorkerBinding]? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case bodyPart = "body_part"
+        case bindings
+    }
+}
+
+// MARK: - 定时触发器模型
+
+nonisolated struct WorkerSchedule: Codable, Identifiable, Sendable {
+    let cron: String
+    let createdOn: String?
+    let modifiedOn: String?
+
+    var id: String { cron }
+
+    enum CodingKeys: String, CodingKey {
+        case cron
+        case createdOn  = "created_on"
+        case modifiedOn = "modified_on"
+    }
+}
+
+nonisolated struct WorkerScheduleInput: Codable, Sendable {
+    let cron: String
+}
+
+private struct WorkerSchedulesUpdateRequest: Codable {
+    let schedules: [WorkerScheduleInput]
+}
+
+private struct WorkerScheduleList: Codable {
+    let schedules: [WorkerSchedule]?
+}
+
+// MARK: - 绑定模型
+
+nonisolated struct WorkerBinding: Codable, Identifiable, Sendable {
+    let type: String
+    let name: String
+    let namespaceId: String?
+
+    var id: String { "\(type)-\(name)" }
+
+    enum CodingKeys: String, CodingKey {
+        case type, name
+        case namespaceId = "namespace_id"
     }
 }

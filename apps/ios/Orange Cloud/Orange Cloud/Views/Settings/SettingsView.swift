@@ -159,6 +159,7 @@ struct SettingsView: View {
                         Text(appVersion)
                             .foregroundStyle(.secondary)
                     }
+                    updateCheckRow
                     aboutLink("隐私政策", icon: "doc.text", url: OAuthConfig.privacyPolicyURL)
                     aboutLink("使用条款", icon: "doc.plaintext", url: OAuthConfig.termsOfUseURL)
                 } header: {
@@ -174,11 +175,56 @@ struct SettingsView: View {
             .navigationTitle("设置")
             .task {
                 await session.ensureAccounts()
+                updateResult = await UpdateService.checkForUpdate()
             }
             .sheet(isPresented: $showAddAccount) {
                 AddAccountSheet()
             }
         }
+    }
+
+    // MARK: - 更新检测
+
+    @State private var updateResult: UpdateService.UpdateResult = .unknown
+
+    @ViewBuilder
+    private var updateCheckRow: some View {
+        Button {
+            Task {
+                updateResult = .unknown
+                updateResult = await UpdateService.checkForUpdate()
+            }
+        } label: {
+            HStack(spacing: 12) {
+                TintIcon(systemImage: "arrow.down.circle", color: .green)
+                Text("检查更新")
+                    .foregroundStyle(.primary)
+                Spacer()
+                switch updateResult {
+                case .unknown:
+                    Text("点击检查")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                case .upToDate:
+                    Text("已是最新")
+                        .font(.caption)
+                        .foregroundStyle(.green)
+                case .updateAvailable(let version, _):
+                    Text(version)
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                    Image(systemName: "arrow.down.to.line")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                case .error(let msg):
+                    Text(msg)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .lineLimit(1)
+                }
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - 身份行

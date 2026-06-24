@@ -11,9 +11,17 @@ struct PermissionSelectionView: View {
 
     /// 添加第二个身份时必须为 true（强制全新登录页，避免复用浏览器 Cookie）
     var freshLogin = false
+    /// 预选中的 scope 集合（用于重新授权场景，显示已有的权限）
+    var preselectedScopes: Set<String>?
 
     @Environment(AuthManager.self) private var auth
-    @State private var viewModel = PermissionSelectionViewModel()
+    @State private var viewModel: PermissionSelectionViewModel
+
+    init(freshLogin: Bool = false, preselectedScopes: Set<String>? = nil) {
+        self.freshLogin = freshLogin
+        self.preselectedScopes = preselectedScopes
+        self._viewModel = State(initialValue: PermissionSelectionViewModel(preselectScopes: preselectedScopes))
+    }
     @State private var showScopeDetail = false
 
     var body: some View {

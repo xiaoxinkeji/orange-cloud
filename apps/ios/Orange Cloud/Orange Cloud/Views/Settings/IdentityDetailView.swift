@@ -17,6 +17,7 @@ struct IdentityDetailView: View {
 
     @State private var showSignOutConfirm = false
     @State private var isSigningOut = false
+    @State private var showAddPermissions = false
 
     private var isCurrent: Bool {
         auth.currentSessionId == identity.id
@@ -97,9 +98,33 @@ struct IdentityDetailView: View {
             } header: {
                 Text("已授权权限")
             } footer: {
-                Text("权限在登录时授予，无法在 App 内单独修改。如需调整请退出后重新登录，或在 Cloudflare Dashboard → Authorized Applications 中撤销。")
+                Text("权限在登录时授予。如需添加更多权限，点击下方按钮重新授权，已授权的不受影响。")
             }
             .glassRow()
+
+            // ── 请求额外权限 ──
+            Section {
+                Button {
+                    showAddPermissions = true
+                } label: {
+                    HStack(spacing: 12) {
+                        TintIcon(systemImage: "plus.key", color: .ocOrange)
+                        Text("请求额外权限")
+                            .foregroundStyle(.primary)
+                    }
+                }
+            } footer: {
+                Text("将打开 Cloudflare 授权页面，选择需要新增的权限后登录。新凭据将替换当前身份。")
+            }
+            .glassRow()
+            .sheet(isPresented: $showAddPermissions) {
+                NavigationStack {
+                    PermissionSelectionView(
+                        freshLogin: true,
+                        preselectedScopes: Set(identity.scopes)
+                    )
+                }
+            }
 
             // ── 退出登录 ──
             Section {

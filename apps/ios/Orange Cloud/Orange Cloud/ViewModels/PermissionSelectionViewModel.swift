@@ -10,7 +10,20 @@ import Observation
 @MainActor
 final class PermissionSelectionViewModel {
 
-    var permissions: [FeaturePermission] = FeaturePermission.allFeatures
+    var permissions: [FeaturePermission]
+
+    init(preselectScopes: Set<String>? = nil) {
+        var features = FeaturePermission.allFeatures
+        if let existing = preselectScopes {
+            for i in features.indices {
+                let readGranted = features[i].readScopes.contains(where: { existing.contains($0) })
+                let editGranted = features[i].editScopes.contains(where: { existing.contains($0) })
+                features[i].isEnabled = features[i].isRequired || readGranted || editGranted
+                features[i].canEdit = editGranted
+            }
+        }
+        self.permissions = features
+    }
 
     // 当前选中的 scope ID 列表（用于预览）
     var selectedScopes: [String] {

@@ -17,7 +17,7 @@ struct PagesListView: View {
     @State private var error: String?
     @State private var searchText = ""
 
-    private var canReadPages: Bool { auth.hasScope("pages.read") }
+    private var canReadPages: Bool { auth.hasScope("workers-scripts.read") }
 
     var body: some View {
         NavigationStack {
@@ -25,7 +25,7 @@ struct PagesListView: View {
                 if !canReadPages {
                     PermissionDeniedView(
                         featureName: "Pages",
-                        requiredScope: "pages.read"
+                        requiredScope: "workers-scripts.read"
                     )
                 } else if isLoading && projects.isEmpty {
                     SkeletonList(rows: 6, trailing: true)

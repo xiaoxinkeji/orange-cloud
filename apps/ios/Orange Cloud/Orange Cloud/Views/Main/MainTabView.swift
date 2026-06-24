@@ -42,14 +42,14 @@ struct MainTabView: View {
                 }
             }
             Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                if auth.hasScope("pages.read") {
+                if auth.hasScope("workers-scripts.read") {
                     PagesListView()
                         .id(session.selectedAccount?.id)
                 } else {
                     NavigationStack {
                         PermissionDeniedView(
                             featureName: "Pages",
-                            requiredScope: "pages.read"
+                            requiredScope: "workers-scripts.read"
                         )
                         .navigationTitle("Pages")
                     }

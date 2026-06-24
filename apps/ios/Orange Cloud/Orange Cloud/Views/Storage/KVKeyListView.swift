@@ -18,6 +18,9 @@ struct KVKeyListView: View {
     @State private var searchText = ""
     @State private var keyToDelete: KVKey?
     @State private var showDenied = false
+    @State private var showCreateSheet = false
+    @State private var newKeyName = ""
+    @State private var newKeyValue = ""
 
     init(namespace: KVNamespace, session: SessionStore) {
         self.namespace = namespace
@@ -54,6 +57,14 @@ struct KVKeyListView: View {
         .background { SkyBackground() }
         .navigationTitle(namespace.title)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("新建", systemImage: "plus") {
+                    showCreateSheet = true
+                }
+                .disabled(!canWrite)
+            }
+        }
         .searchable(text: $searchText, prompt: "搜索键名")
         .task { await viewModel.load() }
         .confirmationDialog(
@@ -85,6 +96,55 @@ struct KVKeyListView: View {
         } message: {
             Text(viewModel.error ?? "")
         }
+        .sheet(isPresented: $showCreateSheet) {
+            createSheet
+        }
+    }
+
+    // MARK: - Create Sheet
+
+    private var createSheet: some View {
+        NavigationStack {
+            Form {
+                Section("键名") {
+                    TextField("例如 api-key", text: $newKeyName)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                }
+                Section("值") {
+                    TextEditor(text: $newKeyValue)
+                        .font(.callout.monospaced())
+                        .frame(minHeight: 120)
+                }
+            }
+            .navigationTitle("新建键")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        newKeyName = ""
+                        newKeyValue = ""
+                        showCreateSheet = false
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("创建") {
+                        let name = newKeyName.trimmingCharacters(in: .whitespaces)
+                        guard !name.isEmpty else { return }
+                        Task {
+                            let ok = await viewModel.create(key: name, value: newKeyValue)
+                            if ok {
+                                newKeyName = ""
+                                newKeyValue = ""
+                                showCreateSheet = false
+                            }
+                        }
+                    }
+                    .disabled(newKeyName.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium])
     }
 
     private var keyList: some View {

@@ -459,6 +459,20 @@ final class KVKeyListViewModel {
             return false
         }
     }
+
+    func create(key: String, value: String) async -> Bool {
+        do {
+            try await service.putValue(
+                accountId: accountId, namespaceId: namespaceId,
+                key: key, value: value
+            )
+            keys.insert(KVKey(name: key, expiration: nil), at: 0)
+            return true
+        } catch {
+            self.error = error.localizedDescription
+            return false
+        }
+    }
 }
 
 @Observable

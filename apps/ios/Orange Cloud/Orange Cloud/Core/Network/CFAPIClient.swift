@@ -191,10 +191,13 @@ actor CFAPIClient {
         }
     }
 
-    /// 返回当前身份的有效 Token（临期则先刷新）
+    /// 返回当前身份的有效 Token（临期则先刷新；API Token 无过期直接返回）
     private func validAccessToken() async throws -> String {
         guard let token = await authManager.currentToken else {
             throw APIError.unauthorized
+        }
+        if token.refreshToken == nil {
+            return token.accessToken        // API Token：无过期 / 无刷新
         }
         if token.expiresAt.timeIntervalSinceNow < 60 {  // 提前 60 秒刷新
             do {

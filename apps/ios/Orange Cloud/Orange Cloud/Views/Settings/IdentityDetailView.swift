@@ -51,9 +51,10 @@ struct IdentityDetailView: View {
                         )
                     Text(identity.label)
                         .font(.title3.bold())
-                    Label("OAuth 2.0", systemImage: "checkmark.seal.fill")
+                    Label(identity.authType == .apiToken ? "API Token" : "OAuth 2.0",
+                          systemImage: identity.authType == .apiToken ? "key.fill" : "checkmark.seal.fill")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(identity.authType == .apiToken ? Color.ocSky : .green)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
@@ -77,52 +78,56 @@ struct IdentityDetailView: View {
             }
             .glassRow()
 
-            // ── 已授权权限 ──
-            Section {
-                if grantedFeatures.isEmpty {
-                    Text("无权限信息")
-                        .foregroundStyle(.secondary)
-                } else {
-                    ForEach(grantedFeatures, id: \.title) { feature in
-                        HStack(spacing: 12) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .foregroundStyle(.green)
-                            Text(feature.title)
-                            Spacer()
-                            Text(feature.note)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+            // ── 已授权权限（OAuth 专属）──
+            if identity.authType == .oauth {
+                Section {
+                    if grantedFeatures.isEmpty {
+                        Text("无权限信息")
+                            .foregroundStyle(.secondary)
+                    } else {
+                        ForEach(grantedFeatures, id: \.title) { feature in
+                            HStack(spacing: 12) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(.green)
+                                Text(feature.title)
+                                Spacer()
+                                Text(feature.note)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
+                } header: {
+                    Text("已授权权限")
+                } footer: {
+                    Text("权限在登录时授予。如需添加更多权限，点击下方按钮重新授权，已授权的不受影响。")
                 }
-            } header: {
-                Text("已授权权限")
-            } footer: {
-                Text("权限在登录时授予。如需添加更多权限，点击下方按钮重新授权，已授权的不受影响。")
+                .glassRow()
             }
-            .glassRow()
 
-            // ── 请求额外权限 ──
-            Section {
-                Button {
-                    showAddPermissions = true
-                } label: {
-                    HStack(spacing: 12) {
-                        TintIcon(systemImage: "plus.key", color: .ocOrange)
-                        Text("请求额外权限")
-                            .foregroundStyle(.primary)
+            // ── 请求额外权限（OAuth 专属）──
+            if identity.authType == .oauth {
+                Section {
+                    Button {
+                        showAddPermissions = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "plus.key", color: .ocOrange)
+                            Text("请求额外权限")
+                                .foregroundStyle(.primary)
+                        }
                     }
+                } footer: {
+                    Text("将打开 Cloudflare 授权页面，选择需要新增的权限后登录。新凭据将替换当前身份。")
                 }
-            } footer: {
-                Text("将打开 Cloudflare 授权页面，选择需要新增的权限后登录。新凭据将替换当前身份。")
-            }
-            .glassRow()
-            .sheet(isPresented: $showAddPermissions) {
-                NavigationStack {
-                    PermissionSelectionView(
-                        freshLogin: true,
-                        preselectedScopes: Set(identity.scopes)
-                    )
+                .glassRow()
+                .sheet(isPresented: $showAddPermissions) {
+                    NavigationStack {
+                        PermissionSelectionView(
+                            freshLogin: true,
+                            preselectedScopes: Set(identity.scopes)
+                        )
+                    }
                 }
             }
 
@@ -132,8 +137,12 @@ struct IdentityDetailView: View {
                     showSignOutConfirm = true
                 } label: {
                     HStack(spacing: 12) {
-                        TintIcon(systemImage: "rectangle.portrait.and.arrow.right", color: .red)
-                        Text("退出登录")
+                        TintIcon(
+                            systemImage: identity.authType == .apiToken
+                                ? "trash" : "rectangle.portrait.and.arrow.right",
+                            color: .red
+                        )
+                        Text(identity.authType == .apiToken ? "删除 Token" : "退出登录")
                         if isSigningOut {
                             Spacer()
                             ProgressView()
@@ -142,21 +151,31 @@ struct IdentityDetailView: View {
                 }
                 .disabled(isSigningOut)
             } footer: {
-                Text("仅退出此账号并撤销其授权，其他已登录账号不受影响。")
+                Text(identity.authType == .apiToken
+                     ? "删除此 API Token 身份，不影响其他已登录账号。"
+                     : "仅退出此账号并撤销其授权，其他已登录账号不受影响。")
             }
             .glassRow()
         }
         .daybreakList()
         .navigationTitle(identity.label)
         .navigationBarTitleDisplayMode(.inline)
-        .confirmationDialog("退出此账号？", isPresented: $showSignOutConfirm, titleVisibility: .visible) {
-            Button("退出 \(identity.label)", role: .destructive) {
+        .confirmationDialog(
+            identity.authType == .apiToken ? "删除此 Token？" : "退出此账号？",
+            isPresented: $showSignOutConfirm, titleVisibility: .visible
+        ) {
+            Button(identity.authType == .apiToken ? "删除 \(identity.label)" : "退出 \(identity.label)",
+                   role: .destructive) {
                 Task { await signOut() }
             }
         } message: {
-            Text(auth.sessions.count <= 1
-                 ? String(localized: "这是最后一个账号，退出后将返回登录页。")
-                 : String(localized: "此账号的 Token 将被撤销并从 App 移除。"))
+            Text(identity.authType == .apiToken
+                 ? (auth.sessions.count <= 1
+                    ? String(localized: "这是最后一个身份，删除后将返回登录页。")
+                    : String(localized: "此 Token 将从 App 移除，不会撤销（需在 Cloudflare Dashboard 内手动管理）。"))
+                 : (auth.sessions.count <= 1
+                    ? String(localized: "这是最后一个账号，退出后将返回登录页。")
+                    : String(localized: "此账号的 Token 将被撤销并从 App 移除。")))
         }
     }
 

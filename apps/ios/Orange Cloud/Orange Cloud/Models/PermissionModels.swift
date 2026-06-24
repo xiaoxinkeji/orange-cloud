@@ -19,6 +19,7 @@ nonisolated struct FeaturePermission: Identifiable, Sendable {
     /// 编辑所需的 OAuth scope ID 列表（空 = 不支持编辑）
     let editScopes:  [String]
     let isRequired:  Bool
+    var tokenOnly:   Bool = false   // OAuth 无此 scope，仅 API Token 可用
 
     var isEnabled:   Bool = true
     var canEdit:     Bool = false
@@ -138,7 +139,18 @@ extension FeaturePermission {
             // 账号级 + Zone 级（GraphQL Analytics API 查 Zone 流量需要 analytics.read）
             readScopes: ["account-analytics.read", "analytics.read"],
             editScopes: [],
-            isRequired: false
+            isRequired: false,
+            tokenOnly: false
+        ),
+        .init(
+            id: "pages",
+            title: String(localized: "Pages 站点"),
+            description: String(localized: "查看和部署 Cloudflare Pages 项目"),
+            icon: "doc.richtext",
+            readScopes: [],
+            editScopes: [],
+            isRequired: false,
+            tokenOnly: true     // Cloudflare 未提供 OAuth scope，仅 API Token 可用
         ),
     ]
 

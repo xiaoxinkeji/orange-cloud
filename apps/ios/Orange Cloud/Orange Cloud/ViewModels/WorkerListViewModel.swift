@@ -34,4 +34,40 @@ final class WorkerListViewModel {
         }
         isLoading = false
     }
+
+    func createScript(accountId: String, name: String, context: ModelContext) async -> Bool {
+        isLoading = true
+        error = nil
+        do {
+            let boilerplate = """
+            export default {
+              async fetch(request, env, ctx) {
+                return new Response("Hello from \\(request.url)");
+              }
+            }
+            """
+            let script = try await workerService.createScript(
+                accountId: accountId, scriptName: name, content: boilerplate
+            )
+            try CacheSync.syncWorkers([script], accountId: accountId, context: context)
+            isLoading = false
+            return true
+        } catch {
+            self.error = error.localizedDescription
+            isLoading = false
+            return false
+        }
+    }
+
+    func deleteScript(accountId: String, name: String, context: ModelContext) async {
+        isLoading = true
+        error = nil
+        do {
+            try await workerService.deleteScript(accountId: accountId, scriptName: name)
+            try CacheSync.removeWorker(name: name, accountId: accountId, context: context)
+        } catch {
+            self.error = error.localizedDescription
+        }
+        isLoading = false
+    }
 }

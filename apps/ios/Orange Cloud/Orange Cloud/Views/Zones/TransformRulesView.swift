@@ -18,11 +18,23 @@ struct TransformRulesView: View {
     @State private var rules: [TransformRule] = []
     @State private var isLoading = true
     @State private var error: String?
+    @State private var searchText = ""
+
+    private var filteredRules: [TransformRule] {
+        if searchText.isEmpty { return rules }
+        return rules.filter { rule in
+            rule.expression?.localizedCaseInsensitiveContains(searchText) == true ||
+            rule.description?.localizedCaseInsensitiveContains(searchText) == true ||
+            rule.actionLabel.localizedCaseInsensitiveContains(searchText)
+        }
+    }
 
     var body: some View {
         Group {
             if isLoading && rules.isEmpty {
                 SkeletonList(rows: 6, trailing: true)
+            } else if !searchText.isEmpty && filteredRules.isEmpty {
+                ContentUnavailableView.search(text: searchText)
             } else if rules.isEmpty {
                 emptyState
             } else {
@@ -30,6 +42,7 @@ struct TransformRulesView: View {
             }
         }
         .background { SkyBackground() }
+        .searchable(text: $searchText, prompt: "搜索规则")
         .navigationTitle("Transform Rules")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -53,7 +66,7 @@ struct TransformRulesView: View {
 
     private var rulesList: some View {
         List {
-            ForEach(rules) { rule in
+            ForEach(filteredRules) { rule in
                 ruleRow(rule)
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 12)

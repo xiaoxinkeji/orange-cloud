@@ -20,11 +20,22 @@ struct LoadBalancerListView: View {
     @State private var loadBalancers: [LoadBalancer] = []
     @State private var isLoading = true
     @State private var error: String?
+    @State private var searchText = ""
+
+    private var filteredBalancers: [LoadBalancer] {
+        guard !searchText.isEmpty else { return loadBalancers }
+        return loadBalancers.filter { lb in
+            (lb.name ?? "").localizedCaseInsensitiveContains(searchText) ||
+            (lb.description ?? "").localizedCaseInsensitiveContains(searchText)
+        }
+    }
 
     var body: some View {
         Group {
             if isLoading && loadBalancers.isEmpty {
                 SkeletonList(rows: 6, trailing: true)
+            } else if !searchText.isEmpty && filteredBalancers.isEmpty {
+                ContentUnavailableView.search(text: searchText)
             } else if loadBalancers.isEmpty {
                 emptyState
             } else {
@@ -32,6 +43,7 @@ struct LoadBalancerListView: View {
             }
         }
         .background { SkyBackground() }
+        .searchable(text: $searchText, prompt: "搜索负载均衡器")
         .navigationTitle("负载均衡")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -55,7 +67,7 @@ struct LoadBalancerListView: View {
 
     private var lbList: some View {
         List {
-            ForEach(loadBalancers) { lb in
+            ForEach(filteredBalancers) { lb in
                 NavigationLink {
                     LoadBalancerDetailView(
                         loadBalancer: lb,

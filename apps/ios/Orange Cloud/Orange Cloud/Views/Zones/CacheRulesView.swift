@@ -18,11 +18,22 @@ struct CacheRulesView: View {
     @State private var rules: [CacheRule] = []
     @State private var isLoading = true
     @State private var error: String?
+    @State private var searchText = ""
+
+    private var filteredRules: [CacheRule] {
+        guard !searchText.isEmpty else { return rules }
+        return rules.filter { rule in
+            rule.expression?.localizedCaseInsensitiveContains(searchText) == true
+            || rule.description?.localizedCaseInsensitiveContains(searchText) == true
+        }
+    }
 
     var body: some View {
         Group {
             if isLoading && rules.isEmpty {
                 SkeletonList(rows: 6, trailing: true)
+            } else if !searchText.isEmpty && filteredRules.isEmpty {
+                ContentUnavailableView.search(text: searchText)
             } else if rules.isEmpty {
                 emptyState
             } else {
@@ -41,6 +52,7 @@ struct CacheRulesView: View {
             }
         }
         .task { await load() }
+        .searchable(text: $searchText, prompt: "搜索规则")
         .alert("加载失败", isPresented: .init(
             get: { error != nil },
             set: { if !$0 { error = nil } }
@@ -53,7 +65,7 @@ struct CacheRulesView: View {
 
     private var rulesList: some View {
         List {
-            ForEach(rules) { rule in
+            ForEach(filteredRules) { rule in
                 ruleRow(rule)
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 12)

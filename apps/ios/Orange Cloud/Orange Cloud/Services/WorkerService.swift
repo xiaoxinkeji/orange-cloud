@@ -95,6 +95,27 @@ struct WorkerService {
             throw response.toAPIError()
         }
     }
+
+    // MARK: - 创建 / 删除
+
+    func createScript(accountId: String, scriptName: String, content: String) async throws -> WorkerScript {
+        guard let body = content.data(using: .utf8) else {
+            throw APIError.decodingError(URLError(.cannotDecodeContentData))
+        }
+        let response: CFAPIResponse<WorkerScript> = try await client.putRaw(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)",
+            body: body,
+            contentType: "application/javascript"
+        )
+        guard response.success, let result = response.result else {
+            throw response.toAPIError()
+        }
+        return result
+    }
+
+    func deleteScript(accountId: String, scriptName: String) async throws {
+        try await client.delete("accounts/\(accountId)/workers/scripts/\(scriptName)")
+    }
 }
 
 // MARK: - 路由模型

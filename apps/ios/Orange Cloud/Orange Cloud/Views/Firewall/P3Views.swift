@@ -18,11 +18,23 @@ struct IPRulesListView: View {
     @State private var rules: [IPAccessRule] = []
     @State private var isLoading = true
     @State private var error: String?
+    @State private var searchText = ""
+
+    private var filteredRules: [IPAccessRule] {
+        if searchText.isEmpty { return rules }
+        return rules.filter { rule in
+            rule.configuration.value.localizedCaseInsensitiveContains(searchText) ||
+            rule.mode.localizedCaseInsensitiveContains(searchText) ||
+            (rule.notes?.localizedCaseInsensitiveContains(searchText) ?? false)
+        }
+    }
 
     var body: some View {
         Group {
             if isLoading && rules.isEmpty {
                 SkeletonList(rows: 6, trailing: true)
+            } else if !searchText.isEmpty && filteredRules.isEmpty {
+                ContentUnavailableView.search(text: searchText)
             } else if rules.isEmpty {
                 emptyState
             } else {
@@ -30,6 +42,7 @@ struct IPRulesListView: View {
             }
         }
         .background { SkyBackground() }
+        .searchable(text: $searchText, prompt: "搜索 IP 或备注")
         .navigationTitle("IP 访问规则")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -53,7 +66,7 @@ struct IPRulesListView: View {
 
     private var rulesList: some View {
         List {
-            ForEach(rules) { rule in
+            ForEach(filteredRules) { rule in
                 ruleRow(rule)
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 12)
@@ -155,11 +168,23 @@ struct BulkRedirectsView: View {
     @State private var rules: [BulkRedirectRule] = []
     @State private var isLoading = true
     @State private var error: String?
+    @State private var searchText = ""
+
+    private var filteredRules: [BulkRedirectRule] {
+        if searchText.isEmpty { return rules }
+        return rules.filter { rule in
+            (rule.actionParameters?.fromValue?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+            (rule.actionParameters?.toValue?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+            (rule.description?.localizedCaseInsensitiveContains(searchText) ?? false)
+        }
+    }
 
     var body: some View {
         Group {
             if isLoading && rules.isEmpty {
                 SkeletonList(rows: 6, trailing: true)
+            } else if !searchText.isEmpty && filteredRules.isEmpty {
+                ContentUnavailableView.search(text: searchText)
             } else if rules.isEmpty {
                 emptyState
             } else {
@@ -167,6 +192,7 @@ struct BulkRedirectsView: View {
             }
         }
         .background { SkyBackground() }
+        .searchable(text: $searchText, prompt: "搜索 URL")
         .navigationTitle("URL 转发")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -190,7 +216,7 @@ struct BulkRedirectsView: View {
 
     private var rulesList: some View {
         List {
-            ForEach(rules) { rule in
+            ForEach(filteredRules) { rule in
                 redirectRow(rule)
                     .listRowBackground(
                         RoundedRectangle(cornerRadius: 12)

@@ -16,6 +16,7 @@ struct WAFRuleListView: View {
     @State private var showDenied = false
     @State private var showForm = false
     @State private var ruleToDelete: WAFRule?
+    @State private var searchText = ""
 
     init(zoneId: String, zoneName: String, session: SessionStore) {
         self.zoneName = zoneName
@@ -23,6 +24,16 @@ struct WAFRuleListView: View {
     }
 
     private var canWrite: Bool { auth.hasScope("zone-waf.write") }
+
+    private var filteredRules: [WAFRule] {
+        let trimmed = searchText.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty else { return viewModel.rules }
+        return viewModel.rules.filter { rule in
+            (rule.description?.localizedCaseInsensitiveContains(trimmed) ?? false)
+                || (rule.expression?.localizedCaseInsensitiveContains(trimmed) ?? false)
+                || (rule.action?.localizedCaseInsensitiveContains(trimmed) ?? false)
+        }
+    }
 
     var body: some View {
         Group {
@@ -42,9 +53,16 @@ struct WAFRuleListView: View {
                     }
                 }
             } else {
-                List {
-                    Section {
-                        ForEach(viewModel.rules) { rule in
+                if filteredRules.isEmpty {
+                    ContentUnavailableView {
+                        Label("未找到匹配的规则", systemImage: "magnifyingglass")
+                    } description: {
+                        Text("尝试其他搜索词")
+                    }
+                } else {
+                    List {
+                        Section {
+                            ForEach(filteredRules) { rule in
                             WAFRuleRow(
                                 rule: rule,
                                 canWrite: canWrite,
@@ -75,9 +93,11 @@ struct WAFRuleListView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .refreshable { await viewModel.load() }
+                }
             }
         }
         .background { SkyBackground() }
+        .searchable(text: $searchText, prompt: "搜索规则")
         .navigationTitle("WAF 防火墙")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

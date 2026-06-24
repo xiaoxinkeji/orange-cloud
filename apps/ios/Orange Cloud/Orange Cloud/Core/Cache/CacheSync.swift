@@ -65,4 +65,13 @@ enum CacheSync {
         }
         try context.save()
     }
+
+    static func removeWorker(name: String, accountId: String, context: ModelContext) throws {
+        let predicate = #Predicate<CachedWorkerScript> { $0.id == name && $0.accountId == accountId }
+        let fetched = try context.fetch(FetchDescriptor<CachedWorkerScript>(predicate: predicate))
+        for item in fetched {
+            context.delete(item)
+        }
+        try context.save()
+    }
 }

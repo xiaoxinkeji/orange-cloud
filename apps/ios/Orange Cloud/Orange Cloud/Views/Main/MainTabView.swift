@@ -41,20 +41,6 @@ struct MainTabView: View {
                     }
                 }
             }
-            Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                if auth.hasScope("workers-scripts.read") {
-                    PagesListView()
-                        .id(session.selectedAccount?.id)
-                } else {
-                    NavigationStack {
-                        PermissionDeniedView(
-                            featureName: "Pages",
-                            requiredScope: "workers-scripts.read"
-                        )
-                        .navigationTitle("Pages")
-                    }
-                }
-            }
             Tab("存储", systemImage: "externaldrive", value: .storage) {
                 StorageView(session: session)
                     .id(session.selectedAccount?.id)
@@ -87,6 +73,6 @@ struct MainTabView: View {
     }
 
     enum AppTab: Hashable {
-        case dashboard, zones, workers, pages, storage, settings
+        case dashboard, zones, workers, storage, settings
     }
 }

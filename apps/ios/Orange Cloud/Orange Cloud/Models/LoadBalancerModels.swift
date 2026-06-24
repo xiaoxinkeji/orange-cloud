@@ -97,7 +97,7 @@ nonisolated struct LBOrigin: Codable, Identifiable, Sendable {
     let enabled: Bool?
     let weight: Double?
 
-    var uid: String { name ?? address ?? UUID().uuidString }
+    var id: String { name ?? address ?? UUID().uuidString }
 
     var weightLabel: String {
         guard let w = weight else { return "" }

@@ -168,7 +168,7 @@ struct LoadBalancerDetailView: View {
 
     @Environment(AuthManager.self)    private var auth
     @State private var pools: [LBPool] = []
-    @State private var monitors: [LBMonitor] = [:]
+    @State private var monitors: [String: LBMonitor] = [:]
     @State private var isLoading = true
     @State private var error: String?
 

@@ -94,6 +94,7 @@ struct TokenEntryView: View {
         .presentationDetents([.medium, .large])
     }
 
+    @MainActor
     private func verifyAndAdd() async {
         let token = tokenText.trimmingCharacters(in: .whitespaces)
         guard !token.isEmpty else { return }

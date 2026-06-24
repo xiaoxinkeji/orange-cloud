@@ -22,7 +22,7 @@ nonisolated struct IPAccessRule: Codable, Identifiable, Sendable {
     }
 
     static func modeLabel(_ mode: String) -> String {
-        switch mode {
+        return switch mode {
         case "block":              String(localized: "阻止")
         case "challenge":          String(localized: "质询")
         case "whitelist":          String(localized: "允许")
@@ -33,14 +33,13 @@ nonisolated struct IPAccessRule: Codable, Identifiable, Sendable {
     }
 
     var targetLabel: String {
-        let t = configuration.target
-        switch t {
+        switch configuration.target {
         case "ip":        String(localized: "IP")
         case "ip6":       String(localized: "IPv6")
         case "ip_range":  String(localized: "IP 段")
         case "asn":       String(localized: "ASN")
         case "country":   String(localized: "国家")
-        default:          t
+        default:          configuration.target
         }
     }
 

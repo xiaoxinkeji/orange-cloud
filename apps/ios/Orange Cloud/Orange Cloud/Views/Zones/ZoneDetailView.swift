@@ -432,9 +432,10 @@ struct ZoneDetailView: View {
 
     private func loadCertificates() async {
         guard !certsLoaded else { return }
-        async let edgeTask = session.sslCertService.listEdgeCertificates(zoneId: zone.id)
-        async let customTask = session.sslCertService.listCustomCertificates(zoneId: zone.id)
-        async let usslTask = session.sslCertService.getUniversalSSL(zoneId: zone.id)
+        let zoneId = zone.id
+        async let edgeTask = session.sslCertService.listEdgeCertificates(zoneId: zoneId)
+        async let customTask = session.sslCertService.listCustomCertificates(zoneId: zoneId)
+        async let usslTask = session.sslCertService.getUniversalSSL(zoneId: zoneId)
 
         edgeCerts = (try? await edgeTask) ?? []
         customCerts = (try? await customTask) ?? []

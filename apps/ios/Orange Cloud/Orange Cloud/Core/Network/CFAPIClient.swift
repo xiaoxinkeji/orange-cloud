@@ -44,8 +44,8 @@ actor CFAPIClient {
     }
 
     /// 返回原始响应体（KV value 等非 JSON 信封端点）
-    func getRaw(_ path: String, queryItems: [URLQueryItem] = []) async throws -> Data {
-        try await performRequest(method: "GET", path: path, queryItems: queryItems, body: nil, contentType: nil)
+    func getRaw(_ path: String, queryItems: [URLQueryItem] = [], accept: String? = nil) async throws -> Data {
+        try await performRequest(method: "GET", path: path, queryItems: queryItems, body: nil, contentType: nil, accept: accept)
     }
 
     /// 原始字节 PUT（R2 对象上传等），自带 Content-Type
@@ -126,6 +126,7 @@ actor CFAPIClient {
         queryItems: [URLQueryItem],
         body: Data?,
         contentType: String?,
+        accept: String? = nil,
         isRetry: Bool = false
     ) async throws -> Data {
 
@@ -146,6 +147,9 @@ actor CFAPIClient {
         if let contentType {
             urlRequest.setValue(contentType, forHTTPHeaderField: "Content-Type")
         }
+        if let accept {
+            urlRequest.setValue(accept, forHTTPHeaderField: "Accept")
+        }
         urlRequest.httpBody = body
 
         // 3. 执行请求
@@ -165,7 +169,7 @@ actor CFAPIClient {
             _ = try await authManager.refreshAccessToken()
             return try await performRequest(
                 method: method, path: path, queryItems: queryItems,
-                body: body, contentType: contentType, isRetry: true
+                body: body, contentType: contentType, accept: accept, isRetry: true
             )
         }
 

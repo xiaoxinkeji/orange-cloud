@@ -32,7 +32,10 @@ struct UpdateService {
         do {
             let (d, r) = try await URLSession.shared.data(for: request)
             data = d
-            httpResponse = r as! HTTPURLResponse
+            guard let hr = r as? HTTPURLResponse else {
+                return .error("非 HTTP 响应")
+            }
+            httpResponse = hr
         } catch {
             return .error(error.localizedDescription)
         }

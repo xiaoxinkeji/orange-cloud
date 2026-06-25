@@ -108,7 +108,10 @@ struct PagesListView: View {
     }
 
     private func load() async {
-        guard let accountId = session.selectedAccount?.id else { return }
+        guard let accountId = session.selectedAccount?.id else {
+            error = String(localized: "未选择账号")
+            return
+        }
         isLoading = true
         error = nil
         do {
@@ -375,7 +378,10 @@ struct PagesDetailView: View {
     }
 
     private func load() async {
-        guard let accountId = session.selectedAccount?.id else { return }
+        guard let accountId = session.selectedAccount?.id else {
+            error = String(localized: "未选择账号")
+            return
+        }
         isLoading = true
         error = nil
         do {

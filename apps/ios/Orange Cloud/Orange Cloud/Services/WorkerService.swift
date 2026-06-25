@@ -27,7 +27,8 @@ struct WorkerService {
 
     func getScriptContent(accountId: String, scriptName: String) async throws -> String {
         let data = try await client.getRaw(
-            "accounts/\(accountId)/workers/scripts/\(scriptName)"
+            "accounts/\(accountId)/workers/scripts/\(scriptName)",
+            accept: "application/javascript"
         )
         guard let content = String(data: data, encoding: .utf8) else {
             throw APIError.decodingError(URLError(.cannotDecodeContentData))
@@ -36,13 +37,13 @@ struct WorkerService {
     }
 
     func updateScript(accountId: String, scriptName: String, content: String, metadata: WorkerScriptMetadata) async throws -> WorkerScript {
-        guard let body = content.data(using: .utf8) else {
-            throw APIError.decodingError(URLError(.cannotDecodeContentData))
-        }
-        let response: CFAPIResponse<WorkerScript> = try await client.putRaw(
+        var fields: [String: String] = [
+            "metadata": metadata.jsonString,
+        ]
+        fields[metadata.bodyPart] = content
+        let response: CFAPIResponse<WorkerScript> = try await client.putMultipart(
             "accounts/\(accountId)/workers/scripts/\(scriptName)",
-            body: body,
-            contentType: "application/javascript"
+            fields: fields
         )
         guard response.success, let result = response.result else {
             throw response.toAPIError()
@@ -99,13 +100,14 @@ struct WorkerService {
     // MARK: - 创建 / 删除
 
     func createScript(accountId: String, scriptName: String, content: String) async throws -> WorkerScript {
-        guard let body = content.data(using: .utf8) else {
-            throw APIError.decodingError(URLError(.cannotDecodeContentData))
-        }
-        let response: CFAPIResponse<WorkerScript> = try await client.putRaw(
+        let meta = WorkerScriptMetadata()
+        var fields: [String: String] = [
+            "metadata": meta.jsonString,
+        ]
+        fields[meta.bodyPart] = content
+        let response: CFAPIResponse<WorkerScript> = try await client.putMultipart(
             "accounts/\(accountId)/workers/scripts/\(scriptName)",
-            body: body,
-            contentType: "application/javascript"
+            fields: fields
         )
         guard response.success, let result = response.result else {
             throw response.toAPIError()
@@ -152,6 +154,15 @@ nonisolated struct WorkerScriptMetadata: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case bodyPart = "body_part"
         case bindings
+    }
+
+    var jsonString: String {
+        let encoder = JSONEncoder()
+        guard let data = try? encoder.encode(self),
+              let json = String(data: data, encoding: .utf8) else {
+            return "{}"
+        }
+        return json
     }
 }
 

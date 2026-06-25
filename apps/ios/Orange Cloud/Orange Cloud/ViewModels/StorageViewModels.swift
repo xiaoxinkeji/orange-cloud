@@ -344,7 +344,8 @@ final class D1TableViewModel {
         do {
             let assignments = changes.keys.map { "\(quoted($0)) = ?" }.joined(separator: ", ")
             let sql = "UPDATE \(quotedTable) SET \(assignments) WHERE rowid = ?"
-            let params = changes.keys.map { changes[$0]! } + [rowid]
+            let paramValues = changes.values.map { $0 } + [rowid]
+            let params = paramValues
             _ = try await service.query(accountId: accountId, databaseId: databaseId, sql: sql, params: params)
             didSave.toggle()
             await load()

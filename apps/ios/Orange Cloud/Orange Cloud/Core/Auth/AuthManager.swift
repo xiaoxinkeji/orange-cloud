@@ -499,10 +499,10 @@ final class AuthManager {
     nonisolated private static func formBody(_ parameters: [String: String]) -> Data {
         var allowed = CharacterSet.alphanumerics
         allowed.insert(charactersIn: "-._~")
-        return parameters
+        let encoded = parameters
             .map { "\($0.key)=\($0.value.addingPercentEncoding(withAllowedCharacters: allowed) ?? $0.value)" }
             .joined(separator: "&")
-            .data(using: .utf8)!
+        return encoded.data(using: .utf8) ?? Data()
     }
 }
 

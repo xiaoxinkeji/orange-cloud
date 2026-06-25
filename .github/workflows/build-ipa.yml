@@ -98,6 +98,12 @@ jobs:
           mkdir -p "$PAYLOAD"
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
+          # Strip widget extension for import compatibility test
+          rm -rf "$PAYLOAD/Orange Cloud.app/PlugIns" || true
+          rm -rf "$PAYLOAD/Orange Cloud.app/Metadata.appintents" || true
+          rm -rf "$PAYLOAD/Orange Cloud.app/"*.lproj/nlu.appintents || true
+          echo "✅ Stripped PlugIns and AppIntents metadata"
+
           cd "$RUNNER_TEMP"
           ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
 

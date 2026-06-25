@@ -55,6 +55,15 @@ struct IdentityDetailView: View {
                           systemImage: identity.authType == .apiToken ? "key.fill" : "checkmark.seal.fill")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(identity.authType == .apiToken ? .blue : .green)
+
+                    if auth.hasAPITokenAvailable && identity.authType == .apiToken {
+                        Text("推荐优先使用")
+                            .font(.caption2.weight(.medium))
+                            .foregroundStyle(.blue)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(.blue.opacity(0.1), in: Capsule())
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)

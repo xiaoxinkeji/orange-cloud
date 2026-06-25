@@ -258,12 +258,25 @@ struct SettingsView: View {
                 )
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(identity.label)
-                    .font(.body)
-                    .lineLimit(1)
-                Text("\(identity.scopes.count) 项权限")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text(identity.label)
+                        .font(.body)
+                        .lineLimit(1)
+                    if identity.authType == .apiToken {
+                        Image(systemName: "key.fill")
+                            .font(.caption2)
+                            .foregroundStyle(.blue)
+                    }
+                }
+                if identity.authType == .apiToken {
+                    Text("全权限")
+                        .font(.caption)
+                        .foregroundStyle(.blue)
+                } else {
+                    Text("\(identity.scopes.count) 项权限")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Spacer()

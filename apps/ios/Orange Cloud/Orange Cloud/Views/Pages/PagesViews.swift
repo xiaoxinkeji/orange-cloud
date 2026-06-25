@@ -11,11 +11,16 @@ import SwiftUI
 struct PagesListView: View {
 
     @Environment(SessionStore.self) private var session
+    @Environment(AuthManager.self) private var auth
 
     @State private var projects: [PagesProject] = []
     @State private var isLoading = true
     @State private var error: String?
     @State private var searchText = ""
+
+    private var needsAPIToken: Bool {
+        auth.hasAPITokenAvailable && !auth.isAPIToken
+    }
 
     var body: some View {
         NavigationStack {
@@ -47,13 +52,29 @@ struct PagesListView: View {
                 set: { if !$0 { error = nil } }
             )) {
                 Button("好", role: .cancel) {}
+                if needsAPIToken {
+                    Button("切换到 API Token") {
+                        switchToAPIToken()
+                    }
+                }
             } message: {
-                Text(error ?? "")
+                if needsAPIToken {
+                    Text("\(error ?? "")\n\n当前使用 OAuth 身份，部分 API 需要 API Token。已有可用 API Token，建议切换后重试。")
+                } else {
+                    Text(error ?? "")
+                }
             }
             .navigationDestination(for: PagesProject.self) { project in
                 PagesDetailView(project: project)
             }
         }
+    }
+
+    private func switchToAPIToken() {
+        guard let tokenSession = auth.sessions.first(where: { $0.authType == .apiToken }) else { return }
+        auth.switchSession(tokenSession.id)
+        error = nil
+        Task { await load() }
     }
 
     private var filteredProjects: [PagesProject] {

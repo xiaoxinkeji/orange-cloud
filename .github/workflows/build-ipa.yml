@@ -49,6 +49,7 @@ jobs:
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           V=$(echo "$RAW" | sed 's/^v//')
           echo "number=$V" >> $GITHUB_OUTPUT
+          echo "build=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - name: Disable code signing
         working-directory: apps/ios/Orange Cloud
@@ -79,7 +80,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/OrangeCloud.xcarchive" \
             -destination "generic/platform=iOS" \
             MARKETING_VERSION=${{ steps.version.outputs.number }} \
-            CURRENT_PROJECT_VERSION=${{ steps.version.outputs.number }} \
+            CURRENT_PROJECT_VERSION=${{ steps.version.outputs.build }} \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -146,6 +147,7 @@ jobs:
             ### 编译信息
             - 全功能解锁（默认 Pro，无会员机制）
             - 基于 `${{ steps.version.outputs.sha }}` 构建
+            - 版本号 `${{ steps.version.outputs.number }}` (build `${{ steps.version.outputs.build }}`)
             - Xcode 26 / iOS 26 SDK
           files: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
           draft: false

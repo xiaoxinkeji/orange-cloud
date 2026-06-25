@@ -22,7 +22,7 @@ final class AppRouter {
 }
 
 nonisolated enum AppModule: String, AppEnum {
-    case dashboard, zones, workers, storage, settings
+    case dashboard, zones, workers, pages, storage, settings
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "模块"
 
@@ -30,6 +30,7 @@ nonisolated enum AppModule: String, AppEnum {
         .dashboard: "概览",
         .zones:     "域名",
         .workers:   "Workers",
+        .pages:     "Pages",
         .storage:   "存储",
         .settings:  "设置",
     ]

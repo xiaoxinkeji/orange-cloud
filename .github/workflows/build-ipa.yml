@@ -89,6 +89,7 @@ jobs:
           echo "✅ Archive completed"
 
       - name: Create unsigned IPA
+        id: ipa
         run: |
           set -eo pipefail
           ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
@@ -99,22 +100,16 @@ jobs:
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          python3 -c "
-          import zipfile, os
-          ipa = os.environ['IPA_PATH']
-          with zipfile.ZipFile(ipa, 'w', zipfile.ZIP_DEFLATED) as z:
-              for root, dirs, files in os.walk('Payload'):
-                  for fn in files:
-                      fp = os.path.join(root, fn)
-                      z.write(fp, fp)
-          print(f'IPA written: {os.path.getsize(ipa)} bytes')
-          "
+          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
 
           # Verify zip integrity
           unzip -t "$IPA_PATH"
-          shasum -a 256 "$IPA_PATH"
           ls -lh "$IPA_PATH"
-          echo "✅ IPA created and verified"
+
+          # Generate SHA256 for user download verification
+          CKSUM=$(shasum -a 256 "$IPA_PATH" | awk '{print $1}')
+          echo "checksum=$CKSUM" >> $GITHUB_OUTPUT
+          echo "IPA created and verified | SHA256: $CKSUM"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
@@ -132,6 +127,14 @@ jobs:
 
             未签名 IPA — 需要自行使用签名工具签名后安装。
 
+            ### 下载校验
+            SHA256: `${{ steps.ipa.outputs.checksum }}`
+
+            下载后请验证文件完整性。若无法导入，请确认哈希值匹配：
+            ```
+            shasum -a 256 OrangeCloud-*.ipa
+            ```
+
             ### 签名方式
             - **AltStore / SideStore** — 使用 Apple ID 免费签名（7 天有效期）
             - **TrollStore** — 永久免签安装（需设备支持）
@@ -144,3 +147,21 @@ jobs:
           files: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
           draft: false
           prerelease: false
+
+      - name: Verify release asset download
+        run: |
+          sleep 10
+          DL_URL="https://github.com/xiaoxinkeji/orange-cloud/releases/download/${{ steps.version.outputs.tag }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
+          echo "Downloading $DL_URL"
+          curl -sL -o /tmp/verify.ipa "$DL_URL"
+          echo "Verifying..."
+          unzip -t /tmp/verify.ipa
+          EXPECTED="${{ steps.ipa.outputs.checksum }}"
+          ACTUAL=$(shasum -a 256 /tmp/verify.ipa | awk '{print $1}')
+          if [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "CHECKSUM MISMATCH!"
+            echo "Expected: $EXPECTED"
+            echo "Actual:   $ACTUAL"
+            exit 1
+          fi
+          echo "Asset verified: checksum match, zip valid"

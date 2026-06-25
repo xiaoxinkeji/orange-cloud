@@ -55,9 +55,16 @@ jobs:
         env:
           APP_VERSION: ${{ steps.version.outputs.number }}
         run: |
-          plutil -replace CFBundleShortVersionString -string "${APP_VERSION}" Info.plist
-          plutil -replace CFBundleVersion -string "${APP_VERSION}" Info.plist
-          echo "Info.plist version set to ${APP_VERSION}"
+          python3 << PYEOF
+          import plistlib
+          with open("Info.plist", "rb") as f:
+              pl = plistlib.load(f)
+          pl["CFBundleShortVersionString"] = "${APP_VERSION}"
+          pl["CFBundleVersion"] = "${APP_VERSION}"
+          with open("Info.plist", "wb") as f:
+              plistlib.dump(pl, f)
+          print(f"Info.plist version set to ${APP_VERSION}")
+          PYEOF
 
       - name: Disable code signing
         working-directory: apps/ios/Orange Cloud

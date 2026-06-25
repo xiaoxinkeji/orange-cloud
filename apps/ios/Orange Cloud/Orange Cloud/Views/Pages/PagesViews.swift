@@ -11,24 +11,16 @@ import SwiftUI
 struct PagesListView: View {
 
     @Environment(SessionStore.self) private var session
-    @Environment(AuthManager.self) private var auth
 
     @State private var projects: [PagesProject] = []
     @State private var isLoading = true
     @State private var error: String?
     @State private var searchText = ""
 
-    private var canReadPages: Bool { auth.hasScope("workers-scripts.read") }
-
     var body: some View {
         NavigationStack {
             Group {
-                if !canReadPages {
-                    PermissionDeniedView(
-                        featureName: "Pages",
-                        requiredScope: "workers-scripts.read"
-                    )
-                } else if isLoading && projects.isEmpty {
+                if isLoading && projects.isEmpty {
                     SkeletonList(rows: 6, trailing: true)
                 } else if projects.isEmpty {
                     emptyState
@@ -181,7 +173,6 @@ struct PagesDetailView: View {
     let project: PagesProject
 
     @Environment(SessionStore.self) private var session
-    @Environment(AuthManager.self) private var auth
 
     @State private var fullProject: PagesProject?
     @State private var deployments: [PagesDeployment] = []

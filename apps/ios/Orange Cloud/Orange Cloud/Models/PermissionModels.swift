@@ -19,6 +19,7 @@ nonisolated struct FeaturePermission: Identifiable, Sendable {
     /// 编辑所需的 OAuth scope ID 列表（空 = 不支持编辑）
     let editScopes:  [String]
     let isRequired:  Bool
+    var tokenOnly:   Bool = false
 
     var isEnabled:   Bool = true
     var canEdit:     Bool = false
@@ -139,6 +140,16 @@ extension FeaturePermission {
             readScopes: ["account-analytics.read", "analytics.read"],
             editScopes: [],
             isRequired: false
+        ),
+        .init(
+            id: "pages",
+            title: String(localized: "Pages 站点"),
+            description: String(localized: "查看和部署 Cloudflare Pages 项目"),
+            icon: "doc.richtext",
+            readScopes: [],
+            editScopes: [],
+            isRequired: false,
+            tokenOnly: true
         ),
     ]
 

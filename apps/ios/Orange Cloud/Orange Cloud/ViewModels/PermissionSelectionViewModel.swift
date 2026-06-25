@@ -13,7 +13,7 @@ final class PermissionSelectionViewModel {
     var permissions: [FeaturePermission]
 
     init(preselectScopes: Set<String>? = nil) {
-        var features = FeaturePermission.allFeatures
+        var features = FeaturePermission.allFeatures.filter { !$0.tokenOnly }
         if let existing = preselectScopes {
             for i in features.indices {
                 let readGranted = features[i].readScopes.contains(where: { existing.contains($0) })

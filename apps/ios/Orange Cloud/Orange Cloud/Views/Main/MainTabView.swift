@@ -42,8 +42,7 @@ struct MainTabView: View {
                 }
             }
             Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                PagesListView(session: session)
-                    .id(session.selectedAccount?.id)
+                PagesListView()
             }
             Tab("存储", systemImage: "externaldrive", value: .storage) {
                 StorageView(session: session)

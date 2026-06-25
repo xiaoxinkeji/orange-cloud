@@ -14,6 +14,7 @@ struct SettingsView: View {
     @Environment(SessionStore.self) private var session
 
     @State private var showAddAccount = false
+    @State private var showTokenEntry = false
     @State private var iCloudSync = UserDefaults.standard.bool(forKey: AuthManager.iCloudSyncKey)
 
     /// 「今日」用量的日界口径（App Group，与 Widget 共享），默认 UTC
@@ -49,6 +50,16 @@ struct SettingsView: View {
                             TintIcon(systemImage: "plus", color: .ocOrange, size: 38)
                             Text("添加账号")
                                 .foregroundStyle(Color.ocOrange)
+                        }
+                        .padding(.vertical, 2)
+                    }
+                    Button {
+                        showTokenEntry = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "key", color: .blue, size: 38)
+                            Text("使用 API Token")
+                                .foregroundStyle(.blue)
                         }
                         .padding(.vertical, 2)
                     }
@@ -179,6 +190,9 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showAddAccount) {
                 AddAccountSheet()
+            }
+            .sheet(isPresented: $showTokenEntry) {
+                TokenEntryView()
             }
         }
     }

@@ -69,7 +69,7 @@ final class EntitlementStore: EntitlementProviding {
     private var activeEntitlements: Set<String> = []
 
     /// Transaction.updates 监听任务
-    private var transactionListenerTask: Task<Void, Never>? = nil
+    nonisolated(unsafe) private var transactionListenerTask: Task<Void, Never>? = nil
     #endif
 
     // MARK: - Lifecycle

@@ -4,7 +4,6 @@ import os.log
 /// Lightweight crash & diagnostic reporter using Apple MetricKit.
 /// MetricKit delivers crash reports, hang reports, and CPU exceptions
 /// automatically — no third-party SDK required.
-@MainActor
 final class CrashReporter: NSObject, MXMetricManagerSubscriber {
     static let shared = CrashReporter()
 
@@ -19,13 +18,13 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
 
     // MARK: - MXMetricManagerSubscriber
 
-    nonisolated func didReceive(_ payloads: [MXMetricPayload]) {
+    func didReceive(_ payloads: [MXMetricPayload]) {
         for payload in payloads {
             processMetricPayload(payload)
         }
     }
 
-    nonisolated func didReceive(_ payloads: [MXDiagnosticPayload]) {
+    func didReceive(_ payloads: [MXDiagnosticPayload]) {
         for payload in payloads {
             processDiagnosticPayload(payload)
         }
@@ -34,7 +33,7 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
     // MARK: - Processing
 
     private func processMetricPayload(_ payload: MXMetricPayload) {
-        logger.info("Received metric payload: applicationVersion=\(payload.applicationVersion, privacy: .public)")
+        logger.info("Received metric payload")
 
         // Log cellular/network conditions at time of metrics
         if let cellular = payload.cellularConditionMetrics {
@@ -52,8 +51,10 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
         if let crashes = payload.crashDiagnostics {
             for diagnostic in crashes {
                 logger.error("CRASH: \(diagnostic.callStackTree, privacy: .public)")
-                logger.error("  version: \(diagnostic.applicationVersion, privacy: .public)")
-                logger.error("  virtualMemory: \(diagnostic.virtualMemoryRegionInfo)")
+                logger.error("  version: \(diagnostic.applicationVersion ?? "unknown", privacy: .public)")
+                if let vmInfo = diagnostic.virtualMemoryRegionInfo {
+                    logger.error("  virtualMemory: \(vmInfo, privacy: .public)")
+                }
             }
         }
 

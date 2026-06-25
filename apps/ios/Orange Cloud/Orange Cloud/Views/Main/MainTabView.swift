@@ -7,12 +7,17 @@
 
 import SwiftUI
 
+@MainActor
 struct MainTabView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(AuthManager.self) private var auth
     @State private var selectedTab: AppTab = .dashboard
     private let router = AppRouter.shared
+
+    private var hasAPITokenSession: Bool {
+        auth.sessions.contains { $0.authType == .apiToken }
+    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -41,6 +46,12 @@ struct MainTabView: View {
                     }
                 }
             }
+            if hasAPITokenSession {
+                Tab("Pages", systemImage: "doc.richtext", value: .pages) {
+                    PagesListView(session: session)
+                        .id(session.selectedAccount?.id)
+                }
+            }
             Tab("存储", systemImage: "externaldrive", value: .storage) {
                 StorageView(session: session)
                     .id(session.selectedAccount?.id)
@@ -67,12 +78,13 @@ struct MainTabView: View {
         case .dashboard: .dashboard
         case .zones:     .zones
         case .workers:   .workers
+        case .pages:     .pages
         case .storage:   .storage
         case .settings:  .settings
         }
     }
 
     enum AppTab: Hashable {
-        case dashboard, zones, workers, storage, settings
+        case dashboard, zones, workers, pages, storage, settings
     }
 }

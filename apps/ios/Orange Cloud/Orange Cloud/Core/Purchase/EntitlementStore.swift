@@ -69,7 +69,7 @@ final class EntitlementStore: EntitlementProviding {
     private var activeEntitlements: Set<String> = []
 
     /// Transaction.updates 监听任务
-    nonisolated private var transactionListenerTask: Task<Void, Never>? = nil
+    nonisolated(unsafe) private var transactionListenerTask: Task<Void, Never>? = nil
     #endif
 
     // MARK: - Lifecycle
@@ -198,15 +198,15 @@ final class EntitlementStore: EntitlementProviding {
         Task.detached { [weak self] in
             for await result in Transaction.updates {
                 await MainActor.run {
-                    guard let store = self else { return }
+                    guard let self else { return }
                     do {
-                        let transaction = try store.checkVerified(result)
+                        let transaction = try self.checkVerified(result)
                         Task {
                             await transaction.finish()
-                            await store.checkCurrentEntitlements()
+                            await self.checkCurrentEntitlements()
                         }
                     } catch {
-                        store.errorMessage = "交易验证失败：\(error.localizedDescription)"
+                        self.errorMessage = "交易验证失败：\(error.localizedDescription)"
                     }
                 }
             }

@@ -51,7 +51,7 @@ final class CrashReporter: NSObject, MXMetricManagerSubscriber {
         if let crashes = payload.crashDiagnostics {
             for diagnostic in crashes {
                 logger.error("CRASH: \(diagnostic.callStackTree, privacy: .public)")
-                logger.error("  version: \(diagnostic.applicationVersion, privacy: .public)")
+                logger.error("  version: \(diagnostic.applicationVersion ?? "unknown", privacy: .public)")
                 if let vmInfo = diagnostic.virtualMemoryRegionInfo {
                     logger.error("  virtualMemory: \(vmInfo, privacy: .public)")
                 }

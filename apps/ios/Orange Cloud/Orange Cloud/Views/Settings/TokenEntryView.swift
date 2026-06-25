@@ -12,13 +12,13 @@ struct TokenEntryView: View {
 
     @Environment(AuthManager.self) private var auth
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     @State private var tokenText = ""
     @State private var label = ""
     @State private var isVerifying = false
     @State private var verifyError: String?
     @State private var verifiedEmail: String?
+    @State private var showBrowser = false
 
     private static let apiTokenURL = URL(string: "https://dash.cloudflare.com/profile/api-tokens")!
 
@@ -27,19 +27,19 @@ struct TokenEntryView: View {
             Form {
                 Section {
                     Button {
-                        openURL(Self.apiTokenURL)
+                        showBrowser = true
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "safari")
                                 .font(.title3)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("在浏览器中创建 Token")
-                                Text("前往 Cloudflare 控制台生成 API Token，复制后返回此处粘贴。")
+                                Text("在 App 内创建 Token")
+                                Text("内嵌浏览器打开 Cloudflare 控制台，登录后可生成 Token。")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
-                            Image(systemName: "arrow.up.right")
+                            Image(systemName: "chevron.right")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -120,6 +120,9 @@ struct TokenEntryView: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .sheet(isPresented: $showBrowser) {
+            SafariView(url: Self.apiTokenURL)
+        }
     }
 
     @MainActor

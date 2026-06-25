@@ -204,6 +204,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var updateCheckRow: some View {
+        let hasUpdate = if case .updateAvailable = updateResult { true } else { false }
         Button {
             if case .updateAvailable(_, let url) = updateResult,
                let downloadURL = URL(string: url) {
@@ -217,25 +218,10 @@ struct SettingsView: View {
         } label: {
             HStack(spacing: 12) {
                 TintIcon(
-                    systemImage: {
-                        switch updateResult {
-                        case .updateAvailable: return "arrow.down.circle.fill"
-                        default:               return "arrow.down.circle"
-                        }
-                    }(),
-                    color: {
-                        switch updateResult {
-                        case .updateAvailable: return .orange
-                        default:               return .green
-                        }
-                    }()
+                    systemImage: hasUpdate ? "arrow.down.circle.fill" : "arrow.down.circle",
+                    color: hasUpdate ? .orange : .green
                 )
-                Text({
-                    switch updateResult {
-                    case .updateAvailable: return "下载新版本"
-                    default:               return "检查更新"
-                    }
-                }())
+                Text(hasUpdate ? "下载新版本" : "检查更新")
                     .foregroundStyle(.primary)
                 Spacer()
                 switch updateResult {

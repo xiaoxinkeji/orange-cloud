@@ -99,10 +99,20 @@ jobs:
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
+          python3 -c "
+          import zipfile, os
+          ipa = os.environ['IPA_PATH']
+          with zipfile.ZipFile(ipa, 'w', zipfile.ZIP_DEFLATED) as z:
+              for root, dirs, files in os.walk('Payload'):
+                  for fn in files:
+                      fp = os.path.join(root, fn)
+                      z.write(fp, fp)
+          print(f'IPA written: {os.path.getsize(ipa)} bytes')
+          "
 
           # Verify zip integrity
           unzip -t "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH"
           ls -lh "$IPA_PATH"
           echo "✅ IPA created and verified"
 

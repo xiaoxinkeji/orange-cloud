@@ -100,7 +100,10 @@ jobs:
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
+          # Strip resource forks and finder metadata
+          find Payload -name ".DS_Store" -delete || true
+          find Payload -name "._*" -delete || true
+          zip -r -9 -X "$IPA_PATH" Payload
 
           # Verify zip integrity
           unzip -t "$IPA_PATH"

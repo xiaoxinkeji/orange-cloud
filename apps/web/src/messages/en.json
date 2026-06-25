@@ -206,5 +206,11 @@
 				"p": "You can revoke Orange Cloud's access to your Cloudflare account at any time from the Cloudflare Dashboard, or by logging out in the app."
 			}
 		]
+	},
+	"error": {
+		"title": "Something went wrong",
+		"description": "We hit an unexpected error. Please try again.",
+		"tryAgain": "Try Again",
+		"backHome": "Back to Home"
 	}
 }

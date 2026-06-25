@@ -206,5 +206,11 @@
 				"p": "你可以随时在 Cloudflare Dashboard 撤销 Orange Cloud 的访问权限，或在 App 内退出登录。"
 			}
 		]
+	},
+	"error": {
+		"title": "出了点问题",
+		"description": "遇到了意外错误，请重试。",
+		"tryAgain": "重试",
+		"backHome": "返回首页"
 	}
 }

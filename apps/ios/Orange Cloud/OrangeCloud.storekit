@@ -1,0 +1,104 @@
+{
+  "identifier" : "A1B2C3D4-E5F6-7890-ABCD-EF1234567890",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "adHocOffers" : [
+
+      ],
+      "codeOffers" : [
+
+      ],
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "groupNumber" : 1,
+      "internalID" : "1",
+      "introductoryOffer" : null,
+      "localizedDescription" : "Unlock all Pro features forever with a one-time purchase.",
+      "localizedTitle" : "Orange Cloud Pro - Lifetime",
+      "productID" : "pro.lifetime",
+      "recurringSubscriptionPeriod" : null,
+      "referenceName" : "Orange Cloud Pro - Lifetime",
+      "subscriptionGroupID" : null,
+      "type" : "NonConsumable",
+      "winbackOffers" : [
+
+      ]
+    }
+  ],
+  "settings" : {
+    "_developerTeam" : "",
+    "failTransactionsEnabled" : false,
+    "locale" : "en_US",
+    "storefront" : "USA",
+    "storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "1",
+      "localizedName" : "Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "2",
+          "introductoryOffer" : null,
+          "localizedDescription" : "Monthly Pro subscription for Orange Cloud.",
+          "localizedTitle" : "Orange Cloud Pro - Monthly",
+          "productID" : "pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Orange Cloud Pro - Monthly",
+          "subscriptionGroupID" : "1",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "3",
+          "introductoryOffer" : {
+            "internalID" : "1",
+            "introductoryOfferID" : "pro.yearly.trial",
+            "paymentMode" : "Free",
+            "subscriptionPeriod" : "P7D",
+            "numberOfPeriods" : 1,
+            "localizedDescription" : "7-day free trial, then $9.99 per year.",
+            "referenceName" : "7-Day Free Trial",
+            "displayPrice" : "0"
+          },
+          "localizedDescription" : "Yearly Pro subscription for Orange Cloud with 7-day free trial.",
+          "localizedTitle" : "Orange Cloud Pro - Yearly",
+          "productID" : "pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Orange Cloud Pro - Yearly",
+          "subscriptionGroupID" : "1",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "type" : "Configuration"
+}

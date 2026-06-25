@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore, useState } from "react";
 import HorizonArc from "./HorizonArc";
+
+const emptySubscribe = () => () => {};
 
 export type PhoneStrings = {
 	greetMorning: string;
@@ -106,6 +108,7 @@ const TAB_ICONS = [
 export default function PhoneDemo({ locale, s }: { locale: string; s: PhoneStrings }) {
 	// SSR 固定为白昼 9:41，挂载后切到本地时间
 	const [now, setNow] = useState<Date | null>(null);
+	const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
 	useEffect(() => {
 		const update = () => setNow(new Date());
@@ -115,13 +118,15 @@ export default function PhoneDemo({ locale, s }: { locale: string; s: PhoneStrin
 	}, []);
 
 	const hour = now?.getHours() ?? 9;
-	const phase = phaseFor(hour);
+	const phase = isClient ? phaseFor(hour) : "day";
 	const isDark = phase === "ember" || phase === "night";
-	const greeting = hour < 12 ? s.greetMorning : hour < 18 ? s.greetAfternoon : s.greetEvening;
-	const clock = now
+	const greeting = isClient
+		? (hour < 12 ? s.greetMorning : hour < 18 ? s.greetAfternoon : s.greetEvening)
+		: s.greetMorning;
+	const clock = now && isClient
 		? new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(now)
 		: "9:41";
-	const dateLine = now
+	const dateLine = now && isClient
 		? new Intl.DateTimeFormat(locale, { month: "long", day: "numeric", weekday: "long" }).format(now)
 		: "";
 
@@ -135,7 +140,7 @@ export default function PhoneDemo({ locale, s }: { locale: string; s: PhoneStrin
 	return (
 		<div className="demo-device" aria-hidden="true">
 			<div className={`screen ${isDark ? "theme-dark" : "theme-light"}`}>
-				<div className={`demo-sky p-${phase}`} />
+				<div className={`demo-sky p-${phase}`} style={{ transition: "background 0.6s ease" }} />
 				<div className="dynamic-island" />
 
 				{/* 状态栏 */}

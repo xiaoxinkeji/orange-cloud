@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore, useState } from "react";
+
+const emptySubscribe = () => () => {};
 
 /**
  * 地平线弧（iOS 端 HorizonArc 的 web 复刻）：
@@ -20,6 +22,7 @@ function progressAndPhase(date: Date): { t: number; isDay: boolean } {
 export default function HorizonArc({ className = "" }: { className?: string }) {
 	// SSR 先画正午太阳，挂载后切到访客本地时间，每分钟自走
 	const [state, setState] = useState({ t: 0.5, isDay: true });
+	const isClient = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
 	useEffect(() => {
 		const update = () => setState(progressAndPhase(new Date()));
@@ -28,9 +31,12 @@ export default function HorizonArc({ className = "" }: { className?: string }) {
 		return () => clearInterval(timer);
 	}, []);
 
+	// When not yet mounted, keep the SSR-safe noon position so there is no flash
+	const effective = isClient ? state : { t: 0.5, isDay: true };
+
 	// 二次贝塞尔：start(0, H-2) → control(50%, -0.55H) → end(100%, H-2)，与 App 同形
 	const H = 44;
-	const t = state.t;
+	const t = effective.t;
 	const mt = 1 - t;
 	const xPct = (2 * mt * t * 0.5 + t * t) * 100;
 	const yPx = mt * mt * (H - 2) + 2 * mt * t * (-H * 0.55) + t * t * (H - 2);
@@ -48,18 +54,20 @@ export default function HorizonArc({ className = "" }: { className?: string }) {
 					vectorEffect="non-scaling-stroke"
 				/>
 			</svg>
-			<span
-				className="absolute h-[7px] w-[7px] rounded-full"
-				style={{
-					left: `${xPct}%`,
-					top: yPx,
-					transform: "translate(-50%, -50%)",
-					background: state.isDay ? "#F48120" : "#EDEDFA",
-					boxShadow: state.isDay
-						? "0 0 10px 2px rgba(244,129,32,0.6)"
-						: "0 0 10px 2px rgba(255,255,255,0.55)",
-				}}
-			/>
+			{isClient && (
+				<span
+					className="absolute h-[7px] w-[7px] rounded-full"
+					style={{
+						left: `${xPct}%`,
+						top: yPx,
+						transform: "translate(-50%, -50%)",
+						background: effective.isDay ? "#F48120" : "#EDEDFA",
+						boxShadow: effective.isDay
+							? "0 0 10px 2px rgba(244,129,32,0.6)"
+							: "0 0 10px 2px rgba(255,255,255,0.55)",
+					}}
+				/>
+			)}
 		</div>
 	);
 }

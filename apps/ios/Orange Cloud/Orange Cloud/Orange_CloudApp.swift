@@ -25,6 +25,7 @@ struct Orange_CloudApp: App {
         _authManager = State(initialValue: manager)
         BackgroundRefresh.register(authManager: manager)
         EntitlementStore.shared.start()
+        CrashReporter.shared.start()
         try? Tips.configure()
     }
 

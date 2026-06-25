@@ -206,5 +206,11 @@
 				"p": "你可以隨時在 Cloudflare Dashboard 撤銷 Orange Cloud 的存取權限，或在 App 內登出。"
 			}
 		]
+	},
+	"error": {
+		"title": "出了點問題",
+		"description": "遇到了意外錯誤，請重試。",
+		"tryAgain": "重試",
+		"backHome": "返回首頁"
 	}
 }

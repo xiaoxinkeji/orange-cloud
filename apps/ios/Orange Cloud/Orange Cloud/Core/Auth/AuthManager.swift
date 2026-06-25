@@ -20,6 +20,7 @@ nonisolated enum AuthError: LocalizedError {
     /// token 端点返回非 2xx。status 用于区分「刷新令牌确已失效」（400）与瞬时错误（5xx/429）。
     case tokenEndpointError(status: Int, body: String)
     case notLoggedIn
+    case cannotRefreshAPIToken
 
     var errorDescription: String? {
         switch self {
@@ -30,15 +31,22 @@ nonisolated enum AuthError: LocalizedError {
         case .tokenEndpointError(let status, let body):
             return String(localized: "换取 Token 失败：\(body.isEmpty ? "HTTP \(status)" : body)")
         case .notLoggedIn:                  return String(localized: "登录已过期，请重新登录")
+        case .cannotRefreshAPIToken:        return String(localized: "API Token 无法刷新，请重新添加")
         }
     }
 }
 
+nonisolated enum AuthType: String, Codable, Sendable {
+    case oauth
+    case apiToken
+}
+
 /// 登录身份的展示信息（token 本体在 Keychain）
 nonisolated struct AuthSessionMeta: Codable, Identifiable, Hashable, Sendable {
-    let id:     UUID
-    var label:  String       // 邮箱或占位名，展示用
-    var scopes: [String]
+    let id:       UUID
+    var label:    String       // 邮箱或占位名，展示用
+    var scopes:   [String]
+    var authType: AuthType = .oauth
 }
 
 @Observable
@@ -60,8 +68,11 @@ final class AuthManager {
     var grantedScopes: [String] { currentSession?.scopes ?? [] }
 
     func hasScope(_ scope: String) -> Bool {
-        grantedScopes.contains(scope)
+        if currentSession?.authType == .apiToken { return true }
+        return grantedScopes.contains(scope)
     }
+
+    var isAPIToken: Bool { currentSession?.authType == .apiToken }
 
     /// 当前身份的 token（CFAPIClient 取用）
     var currentToken: TokenStore.StoredToken? {
@@ -149,7 +160,7 @@ final class AuthManager {
         let scopes = UserDefaults.standard.stringArray(forKey: "grantedScopes")
             ?? legacy.scope.components(separatedBy: " ").filter { !$0.isEmpty }.sorted()
         UserDefaults.standard.removeObject(forKey: "grantedScopes")
-        sessions = [AuthSessionMeta(id: id, label: String(localized: "Cloudflare 账号"), scopes: scopes)]
+        sessions = [AuthSessionMeta(id: id, label: String(localized: "Cloudflare 账号"), scopes: scopes, authType: .oauth)]
         currentSessionId = id
         persist()
     }
@@ -232,7 +243,7 @@ final class AuthManager {
             let scopes = token.scope.components(separatedBy: " ").filter { !$0.isEmpty }.sorted()
             let label = await fetchIdentityLabel(accessToken: token.accessToken)
                 ?? String(localized: "Cloudflare 账号 \(sessions.count + 1)")
-            sessions.append(AuthSessionMeta(id: id, label: label, scopes: scopes))
+            sessions.append(AuthSessionMeta(id: id, label: label, scopes: scopes, authType: .oauth))
             currentSessionId = id
             persist()
         } catch let error as ASWebAuthenticationSessionError where error.code == .canceledLogin {
@@ -357,6 +368,9 @@ final class AuthManager {
             throw AuthError.notLoggedIn
         }
         guard let refreshToken = stored.refreshToken else {
+            if currentSession?.authType == .apiToken {
+                return stored.accessToken
+            }
             // 没有刷新令牌则无从续期，只能重新授权
             removeSession(sessionId)
             throw AuthError.notLoggedIn
@@ -404,10 +418,47 @@ final class AuthManager {
         }
     }
 
+    // MARK: - API Token 登录
+
+    /// 验证 API Token 并返回用户邮箱（用于标签）。调用 /user/tokens/verify
+    func verifyToken(_ token: String) async -> String? {
+        guard let url = URL(string: "https://api.cloudflare.com/client/v4/user/tokens/verify") else {
+            return nil
+        }
+        var request = URLRequest(url: url)
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        do {
+            let (data, response) = try await URLSession.shared.data(for: request)
+            guard (response as? HTTPURLResponse)?.statusCode == 200,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  (json["success"] as? Bool) == true,
+                  let result = json["result"] as? [String: Any],
+                  (result["status"] as? String) == "active" else {
+                return nil
+            }
+            return (result["email"] as? String) ?? (result["id"] as? String)
+        } catch {
+            return nil
+        }
+    }
+
+    /// 添加 API Token 身份
+    func addAPIToken(_ token: String, label: String) {
+        let id = UUID()
+        TokenStore.save(
+            .init(accessToken: token, refreshToken: nil, expiresAt: .distantFuture, scope: ""),
+            sessionId: id
+        )
+        sessions.append(AuthSessionMeta(id: id, label: label, scopes: [], authType: .apiToken))
+        currentSessionId = id
+        persist()
+    }
+
     // MARK: - 退出单个身份
 
     func logout(sessionId: UUID, revoke: Bool = true) async {
-        if revoke, let token = TokenStore.load(sessionId: sessionId) {
+        if revoke, sessions.first(where: { $0.id == sessionId })?.authType != .apiToken,
+           let token = TokenStore.load(sessionId: sessionId) {
             // 尽力撤销，失败不阻塞
             var request = URLRequest(url: OAuthConfig.revokeURL)
             request.httpMethod = "POST"

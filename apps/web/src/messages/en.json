@@ -10,10 +10,6 @@
 		"downloadComing": "Under Review"
 	},
 	"badge": {
-		"line1": "Download on the",
-		"line2": "App Store",
-		"comingLine1": "Under Review",
-		"comingLine2": "App Store",
 		"alt": "Download on the App Store",
 		"comingLabel": "Under App Store review"
 	},

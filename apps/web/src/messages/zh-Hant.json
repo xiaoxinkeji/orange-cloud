@@ -10,10 +10,6 @@
 		"downloadComing": "審核中"
 	},
 	"badge": {
-		"line1": "在 App Store",
-		"line2": "下載",
-		"comingLine1": "審核中",
-		"comingLine2": "App Store",
 		"alt": "在 App Store 下載",
 		"comingLabel": "App Store 審核中"
 	},

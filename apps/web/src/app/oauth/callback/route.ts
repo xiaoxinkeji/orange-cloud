@@ -15,12 +15,16 @@ export async function GET(request: NextRequest) {
 	// Cloudflare 返回错误（用户拒绝授权等）
 	if (error) {
 		const errorDesc = searchParams.get("error_description") ?? error;
-		return NextResponse.redirect(`${APP_CALLBACK}?error=${encodeURIComponent(errorDesc)}`, { status: 302 });
+		const errUrl = new URL(APP_CALLBACK);
+		errUrl.searchParams.set("error", errorDesc);
+		return NextResponse.redirect(errUrl.toString(), { status: 302 });
 	}
 
 	// 缺少必要参数
 	if (!code || !state) {
-		return NextResponse.redirect(`${APP_CALLBACK}?error=invalid_response`, { status: 302 });
+		const errUrl = new URL(APP_CALLBACK);
+		errUrl.searchParams.set("error", "invalid_response");
+		return NextResponse.redirect(errUrl.toString(), { status: 302 });
 	}
 
 	const appCallbackUrl = new URL(APP_CALLBACK);

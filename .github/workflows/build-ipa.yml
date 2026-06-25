@@ -118,7 +118,7 @@ jobs:
           echo "IPA created and verified | SHA256: $CKSUM"
 
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: OrangeCloud-unsigned-ipa
           path: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa

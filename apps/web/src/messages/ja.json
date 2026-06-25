@@ -10,10 +10,6 @@
 		"downloadComing": "審査中"
 	},
 	"badge": {
-		"line1": "App Storeで",
-		"line2": "ダウンロード",
-		"comingLine1": "審査中",
-		"comingLine2": "App Store",
 		"alt": "App Store でダウンロード",
 		"comingLabel": "App Store 審査中"
 	},

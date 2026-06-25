@@ -40,8 +40,8 @@ export default function AppStoreBadge({
 		<img
 			src={src}
 			alt={alt}
-			width={250}
-			height={83}
+			width={133}
+			height={44}
 			style={{ height: "44px", width: "auto", display: "block" }}
 		/>
 	);

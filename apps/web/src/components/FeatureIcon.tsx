@@ -56,7 +56,9 @@ const ICONS: Record<string, ReactElement> = {
 	),
 };
 
-export default function FeatureIcon({ name }: { name: string }) {
+type IconName = keyof typeof ICONS;
+
+export default function FeatureIcon({ name }: { name: IconName }) {
 	return (
 		<svg
 			width="24"

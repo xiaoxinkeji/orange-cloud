@@ -4,7 +4,6 @@ import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { routing } from "@/i18n/routing";
 import "../globals.css";
-import Head from "next/head";
 import { GoogleAnalytics } from '@next/third-parties/google'
 
 const SITE_URL = "https://orange-cloud.chatiro.app";
@@ -82,6 +81,9 @@ export async function generateMetadata({
 			appId: "6779323783",
 		},
 		keywords: t("keywords").split(",").map((keyword: string) => keyword.trim()),
+		verification: {
+			other: { "msvalidate.01": "D37E43E607B99CBD72EB0FAFBB58FF89" },
+		},
 	};
 }
 
@@ -120,10 +122,7 @@ export default async function LocaleLayout({
 	};
 
 	return (
-		<html lang={locale}>
-			<Head>
-				<meta name="msvalidate.01" content="D37E43E607B99CBD72EB0FAFBB58FF89" />
-			</Head>
+		<html lang={locale} suppressHydrationWarning>
 			<GoogleAnalytics gaId="G-JLDKXFVLR0" />
 			<body className="antialiased">
 				<script

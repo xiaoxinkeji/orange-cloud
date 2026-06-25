@@ -20,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Select Xcode
         run: |
@@ -31,7 +31,7 @@ jobs:
           xcodebuild -version
 
       - name: Cache SPM dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/Library/Developer/Xcode/DerivedData
           key: xcode-derived-${{ runner.os }}-${{ hashFiles('apps/ios/Orange Cloud/Orange Cloud.xcodeproj/project.pbxproj') }}
@@ -83,8 +83,9 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            | tee build.log | tail -20
+            | tee build.log
 
+          tail -20 build.log
           echo "✅ Archive completed"
 
       - name: Create unsigned IPA
@@ -117,13 +118,13 @@ jobs:
           echo "IPA created and verified | SHA256: $CKSUM"
 
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: OrangeCloud-unsigned-ipa
           path: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: Orange Cloud ${{ steps.version.outputs.tag }}

@@ -12,6 +12,7 @@ struct TokenEntryView: View {
 
     @Environment(AuthManager.self) private var auth
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     @State private var tokenText = ""
     @State private var label = ""
@@ -19,9 +20,36 @@ struct TokenEntryView: View {
     @State private var verifyError: String?
     @State private var verifiedEmail: String?
 
+    private static let apiTokenURL = URL(string: "https://dash.cloudflare.com/profile/api-tokens")!
+
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button {
+                        openURL(Self.apiTokenURL)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "safari")
+                                .font(.title3)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("在浏览器中创建 Token")
+                                Text("前往 Cloudflare 控制台生成 API Token，复制后返回此处粘贴。")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                } header: {
+                    Text("获取 Token")
+                } footer: {
+                    Text("非必须。已有 Token 可直接在下方的输入框中粘贴。")
+                }
+
                 Section {
                     SecureField("粘贴 API Token", text: $tokenText)
                         .textInputAutocapitalization(.never)

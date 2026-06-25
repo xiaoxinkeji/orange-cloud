@@ -67,12 +67,13 @@ struct MainTabView: View {
         case .dashboard: .dashboard
         case .zones:     .zones
         case .workers:   .workers
+        case .pages:     .pages
         case .storage:   .storage
         case .settings:  .settings
         }
     }
 
     enum AppTab: Hashable {
-        case dashboard, zones, workers, storage, settings
+        case dashboard, zones, workers, pages, storage, settings
     }
 }

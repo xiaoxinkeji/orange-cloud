@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@MainActor
 struct PagesListView: View {
 
     @Environment(SessionStore.self) private var session
@@ -174,6 +175,7 @@ struct PagesRowView: View {
     }
 }
 
+@MainActor
 struct PagesDetailView: View {
 
     let project: PagesProject

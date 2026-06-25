@@ -52,10 +52,12 @@ jobs:
 
       - name: Inject version into Info.plist
         working-directory: apps/ios/Orange Cloud/Orange Cloud
+        env:
+          APP_VERSION: ${{ steps.version.outputs.number }}
         run: |
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.number }}" Info.plist
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.number }}" Info.plist
-          echo "✅ Info.plist version set to ${{ steps.version.outputs.number }}"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${APP_VERSION}" Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${APP_VERSION}" Info.plist
+          echo "✅ Info.plist version set to ${APP_VERSION}"
 
       - name: Disable code signing
         working-directory: apps/ios/Orange Cloud

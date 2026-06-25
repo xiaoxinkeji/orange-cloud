@@ -79,8 +79,6 @@ jobs:
             -configuration Release \
             -archivePath "$RUNNER_TEMP/OrangeCloud.xcarchive" \
             -destination "generic/platform=iOS" \
-            MARKETING_VERSION=${{ steps.version.outputs.number }} \
-            CURRENT_PROJECT_VERSION=${{ steps.version.outputs.build }} \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
@@ -101,10 +99,7 @@ jobs:
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          # Strip resource forks and finder metadata
-          find Payload -name ".DS_Store" -delete || true
-          find Payload -name "._*" -delete || true
-          zip -r -9 -X "$IPA_PATH" Payload
+          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
 
           # Verify zip integrity
           unzip -t "$IPA_PATH"

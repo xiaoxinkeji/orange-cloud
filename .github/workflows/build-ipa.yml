@@ -50,22 +50,6 @@ jobs:
           V=$(echo "$RAW" | sed 's/^v//')
           echo "number=$V" >> $GITHUB_OUTPUT
 
-      - name: Inject version into Info.plist
-        working-directory: apps/ios/Orange Cloud/Orange Cloud
-        env:
-          APP_VERSION: ${{ steps.version.outputs.number }}
-        run: |
-          python3 << PYEOF
-          import plistlib
-          with open("Info.plist", "rb") as f:
-              pl = plistlib.load(f)
-          pl["CFBundleShortVersionString"] = "${APP_VERSION}"
-          pl["CFBundleVersion"] = "${APP_VERSION}"
-          with open("Info.plist", "wb") as f:
-              plistlib.dump(pl, f)
-          print(f"Info.plist version set to ${APP_VERSION}")
-          PYEOF
-
       - name: Disable code signing
         working-directory: apps/ios/Orange Cloud
         run: |
@@ -94,6 +78,8 @@ jobs:
             -configuration Release \
             -archivePath "$RUNNER_TEMP/OrangeCloud.xcarchive" \
             -destination "generic/platform=iOS" \
+            MARKETING_VERSION=${{ steps.version.outputs.number }} \
+            CURRENT_PROJECT_VERSION=${{ steps.version.outputs.number }} \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \

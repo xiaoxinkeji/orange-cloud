@@ -15,10 +15,6 @@ struct MainTabView: View {
     @State private var selectedTab: AppTab = .dashboard
     private let router = AppRouter.shared
 
-    private var hasAPITokenSession: Bool {
-        auth.sessions.contains { $0.authType == .apiToken }
-    }
-
     var body: some View {
         TabView(selection: $selectedTab) {
             // 各资源 Tab 用 .id(selectedAccount) 绑定当前账号：账号切换时整页重建，
@@ -46,11 +42,9 @@ struct MainTabView: View {
                     }
                 }
             }
-            if hasAPITokenSession {
-                Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                    PagesListView(session: session)
-                        .id(session.selectedAccount?.id)
-                }
+            Tab("Pages", systemImage: "doc.richtext", value: .pages) {
+                PagesListView(session: session)
+                    .id(session.selectedAccount?.id)
             }
             Tab("存储", systemImage: "externaldrive", value: .storage) {
                 StorageView(session: session)

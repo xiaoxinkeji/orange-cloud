@@ -106,10 +106,11 @@ jobs:
           cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
+          zip -r "$IPA_PATH" Payload
 
-          # Verify zip integrity
+          # Verify zip integrity + checksum
           unzip -t "$IPA_PATH"
+          shasum -a 256 "$IPA_PATH"
           ls -lh "$IPA_PATH"
           echo "✅ IPA created and verified"
 

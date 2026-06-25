@@ -68,11 +68,21 @@ final class AuthManager {
     var grantedScopes: [String] { currentSession?.scopes ?? [] }
 
     func hasScope(_ scope: String) -> Bool {
-        if currentSession?.authType == .apiToken { return true }
+        if sessions.contains(where: { $0.authType == .apiToken }) { return true }
         return grantedScopes.contains(scope)
     }
 
     var isAPIToken: Bool { currentSession?.authType == .apiToken }
+
+    /// 任意身份为 API Token 即视为全权限
+    var hasAPITokenAvailable: Bool {
+        sessions.contains { $0.authType == .apiToken }
+    }
+
+    /// 优先 API Token，其次任一 session
+    private var preferredSessionId: UUID? {
+        sessions.first { $0.authType == .apiToken }?.id ?? sessions.first?.id
+    }
 
     /// 当前身份的 token（CFAPIClient 取用）
     var currentToken: TokenStore.StoredToken? {
@@ -101,7 +111,7 @@ final class AuthManager {
            sessions.contains(where: { $0.id == id }) {
             currentSessionId = id
         } else {
-            currentSessionId = sessions.first?.id
+            currentSessionId = preferredSessionId
         }
         migrateLegacyTokenIfNeeded()
         migrateToSharedKeychainGroupIfNeeded()
@@ -132,7 +142,7 @@ final class AuthManager {
         }
         if changed {
             if currentSessionId == nil {
-                currentSessionId = sessions.first?.id
+                currentSessionId = preferredSessionId
             }
             persist()
         }
@@ -476,7 +486,7 @@ final class AuthManager {
         TokenStore.clear(sessionId: id)
         sessions.removeAll { $0.id == id }
         if currentSessionId == id {
-            currentSessionId = sessions.first?.id
+            currentSessionId = preferredSessionId
         }
         persist()
         if sessions.isEmpty {

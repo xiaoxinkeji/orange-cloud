@@ -12,6 +12,7 @@ struct SettingsView: View {
 
     @Environment(AuthManager.self) private var auth
     @Environment(SessionStore.self) private var session
+    @Environment(\.openURL) private var openURL
 
     @State private var showAddAccount = false
     @State private var showTokenEntry = false
@@ -204,14 +205,37 @@ struct SettingsView: View {
     @ViewBuilder
     private var updateCheckRow: some View {
         Button {
-            Task {
-                updateResult = .unknown
-                updateResult = await UpdateService.checkForUpdate()
+            if case .updateAvailable(_, let url) = updateResult,
+               let downloadURL = URL(string: url) {
+                openURL(downloadURL)
+            } else {
+                Task {
+                    updateResult = .unknown
+                    updateResult = await UpdateService.checkForUpdate()
+                }
             }
         } label: {
             HStack(spacing: 12) {
-                TintIcon(systemImage: "arrow.down.circle", color: .green)
-                Text("检查更新")
+                TintIcon(
+                    systemImage: {
+                        switch updateResult {
+                        case .updateAvailable: return "arrow.down.circle.fill"
+                        default:               return "arrow.down.circle"
+                        }
+                    }(),
+                    color: {
+                        switch updateResult {
+                        case .updateAvailable: return .orange
+                        default:               return .green
+                        }
+                    }()
+                )
+                Text({
+                    switch updateResult {
+                    case .updateAvailable: return "下载新版本"
+                    default:               return "检查更新"
+                    }
+                }())
                     .foregroundStyle(.primary)
                 Spacer()
                 switch updateResult {
@@ -227,7 +251,7 @@ struct SettingsView: View {
                     Text(version)
                         .font(.caption)
                         .foregroundStyle(.orange)
-                    Image(systemName: "arrow.down.to.line")
+                    Image(systemName: "arrow.up.right")
                         .font(.caption)
                         .foregroundStyle(.orange)
                 case .error(let msg):

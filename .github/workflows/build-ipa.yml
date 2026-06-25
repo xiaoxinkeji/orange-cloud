@@ -41,11 +41,21 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+            RAW="${{ github.event.inputs.version }}"
           else
-            echo "tag=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+            RAW="${{ github.ref_name }}"
           fi
+          echo "tag=$RAW" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          V=$(echo "$RAW" | sed 's/^v//')
+          echo "number=$V" >> $GITHUB_OUTPUT
+
+      - name: Inject version into Info.plist
+        working-directory: apps/ios/Orange Cloud/Orange Cloud
+        run: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.number }}" Info.plist
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.number }}" Info.plist
+          echo "✅ Info.plist version set to ${{ steps.version.outputs.number }}"
 
       - name: Disable code signing
         working-directory: apps/ios/Orange Cloud

@@ -18,7 +18,6 @@ struct TokenEntryView: View {
     @State private var isVerifying = false
     @State private var verifyError: String?
     @State private var verifiedEmail: String?
-    @State private var showBrowser = false
 
     private static let apiTokenURL = URL(string: "https://dash.cloudflare.com/profile/api-tokens")!
 
@@ -27,14 +26,15 @@ struct TokenEntryView: View {
             Form {
                 Section {
                     Button {
-                        showBrowser = true
+                        dismiss()
+                        UIApplication.shared.open(Self.apiTokenURL)
                     } label: {
                         HStack(spacing: 12) {
                             Image(systemName: "safari")
                                 .font(.title3)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("在 App 内创建 Token")
-                                Text("内嵌浏览器打开 Cloudflare 控制台，登录后可生成 Token。")
+                                Text("跳转 Safari 打开 Cloudflare 控制台，登录后可生成 Token。")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -120,9 +120,6 @@ struct TokenEntryView: View {
             }
         }
         .presentationDetents([.medium, .large])
-        .sheet(isPresented: $showBrowser) {
-            SafariView(url: Self.apiTokenURL)
-        }
     }
 
     @MainActor

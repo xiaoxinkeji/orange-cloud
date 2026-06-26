@@ -56,7 +56,7 @@ struct PermissionGatedNavigationLink<Destination: View>: View {
             .alert("权限不足", isPresented: $showDenied) {
                 Button("好", role: .cancel) {}
             } message: {
-                Text("当前授权未包含「\(label)」的访问权限（\(requiredScope)）。\n请在设置中退出登录后重新授权以启用此功能。")
+                Text("当前授权未包含「\(label)」的访问权限（\(requiredScope)）。\n请在设置中退出登录，重新授权时勾选「缓存与防护」或「WAF 防火墙」模块。")
             }
         }
     }

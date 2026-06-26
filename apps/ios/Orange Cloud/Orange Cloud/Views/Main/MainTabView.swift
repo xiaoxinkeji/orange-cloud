@@ -43,8 +43,19 @@ struct MainTabView: View {
                 }
             }
             Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                PagesListView()
-                    .id(session.selectedAccount?.id)
+                if auth.isAPIToken {
+                    PagesListView()
+                        .id(session.selectedAccount?.id)
+                } else {
+                    NavigationStack {
+                        PermissionDeniedView(
+                            featureName: String(localized: "Pages"),
+                            requiredScope: String(localized: "API Token"),
+                            message: String(localized: "Cloudflare Pages API 仅支持 API Token 认证，OAuth 授权不可用。请前往「设置 → 添加 API Token」后切换身份。")
+                        )
+                        .navigationTitle("Pages")
+                    }
+                }
             }
             Tab("存储", systemImage: "externaldrive", value: .storage) {
                 StorageView(session: session)

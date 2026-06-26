@@ -125,7 +125,7 @@ jobs:
           zip -r "$IPA_PATH" Payload
 
           # Verify IPA with comprehensive check (ZIP structure + Payload + Info.plist + contamination)
-          python3 scripts/verify-ipa.py --ci "$IPA_PATH"
+          python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"
           ls -lh "$IPA_PATH"
 
           # Generate SHA256 for user download verification
@@ -184,7 +184,7 @@ jobs:
             sleep 2
           done
           echo "Verifying..."
-          python3 scripts/verify-ipa.py --ci /tmp/verify.ipa
+          python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci /tmp/verify.ipa
           EXPECTED="${{ steps.ipa.outputs.checksum }}"
           ACTUAL=$(shasum -a 256 /tmp/verify.ipa | awk '{print $1}')
           if [ "$EXPECTED" != "$ACTUAL" ]; then

@@ -198,15 +198,15 @@ final class EntitlementStore: EntitlementProviding {
         Task.detached { [weak self] in
             for await result in Transaction.updates {
                 await MainActor.run {
-                    guard let self else { return }
+                    guard let store = self else { return }
                     do {
-                        let transaction = try self.checkVerified(result)
+                        let transaction = try store.checkVerified(result)
                         Task {
                             await transaction.finish()
-                            await self.checkCurrentEntitlements()
+                            await store.checkCurrentEntitlements()
                         }
                     } catch {
-                        self.errorMessage = "交易验证失败：\(error.localizedDescription)"
+                        store.errorMessage = "交易验证失败：\(error.localizedDescription)"
                     }
                 }
             }

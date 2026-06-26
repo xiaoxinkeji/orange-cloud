@@ -43,7 +43,7 @@ struct MainTabView: View {
                 }
             }
             Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                if auth.isAPIToken {
+                if auth.hasAPITokenAvailable {
                     PagesListView()
                         .id(session.selectedAccount?.id)
                 } else {

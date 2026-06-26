@@ -53,6 +53,20 @@ jobs:
           echo "number=$V" >> $GITHUB_OUTPUT
           echo "build=${{ github.run_number }}" >> $GITHUB_OUTPUT
 
+      - name: Set marketing version from tag
+        working-directory: apps/ios/Orange Cloud
+        run: |
+          python3 -c "
+          import re
+          v = '${{ steps.version.outputs.number }}'
+          with open('Orange Cloud.xcodeproj/project.pbxproj', 'r') as f:
+              content = f.read()
+          content = re.sub(r'MARKETING_VERSION = [0-9.]+;', f'MARKETING_VERSION = {v};', content)
+          with open('Orange Cloud.xcodeproj/project.pbxproj', 'w') as f:
+              f.write(content)
+          print(f'Set MARKETING_VERSION = {v}')
+          "
+
       - name: Disable code signing
         working-directory: apps/ios/Orange Cloud
         run: |

@@ -122,10 +122,11 @@ jobs:
           echo "✅ Stripped PlugIns and AppIntents metadata"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --sequesterRsrc --keepParent Payload "$IPA_PATH"
+          zip -r "$IPA_PATH" Payload
 
-          # Verify zip integrity
+          # Verify zip integrity (two layers: native unzip + Python zipfile)
           unzip -t "$IPA_PATH"
+          python3 -c "import zipfile; z = zipfile.ZipFile('$IPA_PATH'); print(f'Python zipfile OK: {len(z.namelist())} entries'); z.close()"
           ls -lh "$IPA_PATH"
 
           # Generate SHA256 for user download verification

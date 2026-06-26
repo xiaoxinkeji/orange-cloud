@@ -159,10 +159,16 @@ jobs:
 
       - name: Verify release asset download
         run: |
-          sleep 10
           DL_URL="https://github.com/xiaoxinkeji/orange-cloud/releases/download/${{ steps.version.outputs.tag }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
           echo "Downloading $DL_URL"
-          curl -sL -o /tmp/verify.ipa "$DL_URL"
+          # GitHub CDN 传播可能需要几秒，用重试代替硬编码 sleep
+          for i in $(seq 1 10); do
+            if curl -sfL -o /tmp/verify.ipa "$DL_URL"; then
+              break
+            fi
+            echo "Attempt $i/10: waiting for release asset to propagate..."
+            sleep 2
+          done
           echo "Verifying..."
           unzip -t /tmp/verify.ipa
           EXPECTED="${{ steps.ipa.outputs.checksum }}"

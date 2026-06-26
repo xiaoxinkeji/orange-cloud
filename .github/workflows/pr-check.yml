@@ -45,6 +45,15 @@ jobs:
           sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | head -1)/Contents/Developer"
           xcodebuild -version
 
+      - name: Cache SPM dependencies
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            ~/Library/Caches/org.swift.swiftpm
+          key: xcode-${{ runner.os }}-${{ hashFiles('apps/ios/Orange Cloud/Orange Cloud.xcodeproj/project.pbxproj') }}
+          restore-keys: xcode-${{ runner.os }}-
+
       - name: Build
         working-directory: apps/ios/Orange Cloud
         run: |
@@ -56,3 +65,26 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO \
             AD_HOC_CODE_SIGNING_ALLOWED=YES
+
+      - name: Run tests
+        working-directory: apps/ios/Orange Cloud
+        run: |
+          xcodebuild test \
+            -project "Orange Cloud.xcodeproj" \
+            -scheme "Orange Cloud" \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro,OS=26.5" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | xcbeautify --quiet || xcodebuild test \
+            -project "Orange Cloud.xcodeproj" \
+            -scheme "Orange Cloud" \
+            -destination "platform=iOS Simulator,name=iPhone 16 Pro,OS=26.5" \
+            -skipMacroValidation \
+            -skipPackagePluginValidation \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tail -80

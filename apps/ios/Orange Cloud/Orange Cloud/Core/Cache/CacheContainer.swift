@@ -27,7 +27,14 @@ nonisolated enum CacheContainer {
         do {
             return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // 持久化容器创建失败时回退到纯内存模式，避免 crash。
+            // 常见原因：磁盘空间不足、iCloud 容器权限被撤销。
+            let memory = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            guard let container = try? ModelContainer(for: schema, configurations: [memory])
+            else {
+                fatalError("Could not create ModelContainer (persistent or in-memory): \(error)")
+            }
+            return container
         }
     }()
 }

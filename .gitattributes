@@ -1,0 +1,29 @@
+# Auto-detect text files and normalize to LF
+* text=auto
+
+# Source code
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.css text eol=lf
+*.swift text eol=lf
+*.h text eol=lf
+*.m text eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.car binary
+*.ipa binary
+*.dylib binary
+*.xcarchive/** binary
+*.pbxproj text eol=lf
+*.xcscheme text eol=lf

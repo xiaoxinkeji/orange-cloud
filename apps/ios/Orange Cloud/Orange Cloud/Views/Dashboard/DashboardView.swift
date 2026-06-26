@@ -407,7 +407,7 @@ struct DashboardView: View {
                 )
                 .symbolEffect(.bounce, value: session.selectedAccount?.id)
         }
-        .popoverTip(accountSwitchTip)
+        .safePopoverTip(accountSwitchTip)
         .accessibilityLabel("切换账号")
         .accessibilityValue(session.selectedAccount?.name ?? "")
     }

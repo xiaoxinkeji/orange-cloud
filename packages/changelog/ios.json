@@ -1,5 +1,46 @@
 [
   {
+    "version": "1.5.1",
+    "date": "2026.06.26",
+    "channel": "App Store",
+    "inApp": false,
+    "items": [
+      {
+        "icon": "wrench.and.screwdriver",
+        "title": {
+          "zh-Hans": "稳定性修复",
+          "en": "Stability fixes",
+          "zh-Hant": "穩定性修復",
+          "zh-HK": "穩定性修復",
+          "ja": "安定性の改善",
+          "es-MX": "Correcciones de estabilidad",
+          "ko": "안정성 개선",
+          "pt-BR": "Correções de estabilidade",
+          "pt-PT": "Correções de estabilidade",
+          "de": "Stabilitätsverbesserungen",
+          "fr": "Corrections de stabilité",
+          "ar": "تحسينات الاستقرار",
+          "tr": "Kararlılık düzeltmeleri"
+        },
+        "detail": {
+          "zh-Hans": "修复了部分 iOS 17.0 设备上打开概览页可能崩溃的问题。",
+          "en": "Fixed a rare crash when opening the dashboard on some devices running iOS 17.0.",
+          "zh-Hant": "修復了部分 iOS 17.0 裝置上開啟概覽頁可能閃退的問題。",
+          "zh-HK": "修復了部分 iOS 17.0 裝置上開啟概覽頁可能閃退的問題。",
+          "ja": "一部の iOS 17.0 デバイスで概要画面を開くとまれにクラッシュする問題を修正しました。",
+          "es-MX": "Se corrigió un fallo poco frecuente al abrir el panel en algunos dispositivos con iOS 17.0.",
+          "ko": "일부 iOS 17.0 기기에서 대시보드를 열 때 드물게 발생하던 비정상 종료 문제를 수정했습니다.",
+          "pt-BR": "Corrigida uma falha rara ao abrir o painel em alguns dispositivos com iOS 17.0.",
+          "pt-PT": "Corrigida uma falha rara ao abrir o painel em alguns dispositivos com iOS 17.0.",
+          "de": "Ein seltener Absturz beim Öffnen der Übersicht auf einigen Geräten mit iOS 17.0 wurde behoben.",
+          "fr": "Correction d'un plantage rare à l'ouverture du tableau de bord sur certains appareils sous iOS 17.0.",
+          "ar": "تم إصلاح تعطل نادر عند فتح لوحة المعلومات على بعض الأجهزة التي تعمل بنظام iOS 17.0.",
+          "tr": "Bazı iOS 17.0 cihazlarda panoyu açarken nadiren oluşan çökme sorunu giderildi."
+        }
+      }
+    ]
+  },
+  {
     "version": "1.5.0",
     "date": "2026.06.26",
     "channel": "App Store",

@@ -119,7 +119,14 @@ jobs:
           rm -rf "$PAYLOAD/Orange Cloud.app/PlugIns" || true
           rm -rf "$PAYLOAD/Orange Cloud.app/Metadata.appintents" || true
           rm -rf "$PAYLOAD/Orange Cloud.app/"*.lproj/nlu.appintents || true
-          echo "✅ Stripped PlugIns and AppIntents metadata"
+          echo "Stripped PlugIns and AppIntents metadata"
+
+          # Strip ad-hoc code signature for import tool compatibility
+          rm -rf "$PAYLOAD/Orange Cloud.app/_CodeSignature" || true
+          rm -rf "$PAYLOAD/Orange Cloud.app/CodeResources" || true
+          rm -f "$PAYLOAD/Orange Cloud.app/embedded.mobileprovision" || true
+          rm -rf "$PAYLOAD/Orange Cloud.app/SC_Info" || true
+          echo "Stripped ad-hoc code signature and provisioning data"
 
           cd "$RUNNER_TEMP"
           zip -r "$IPA_PATH" Payload

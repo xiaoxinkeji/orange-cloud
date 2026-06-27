@@ -97,6 +97,14 @@ nonisolated struct CacheEdgeTTL: Codable, Sendable {
     }
 
     var modeLabel: String { CacheTTLMode(rawValue: mode)?.label ?? mode }
+
+    var defaultLabel: String? {
+        guard let ttl = defaultTtl else { return nil }
+        if ttl >= 86_400 { return "\(ttl / 86_400)d" }
+        if ttl >= 3_600  { return "\(ttl / 3_600)h" }
+        if ttl >= 60     { return "\(ttl / 60)m" }
+        return "\(ttl)s"
+    }
 }
 
 nonisolated struct CacheBrowserTTL: Codable, Sendable {
@@ -109,6 +117,14 @@ nonisolated struct CacheBrowserTTL: Codable, Sendable {
     }
 
     var modeLabel: String { CacheTTLMode(rawValue: mode)?.label ?? mode }
+
+    var defaultLabel: String? {
+        guard let ttl = defaultTtl else { return nil }
+        if ttl >= 86_400 { return "\(ttl / 86_400)d" }
+        if ttl >= 3_600  { return "\(ttl / 3_600)h" }
+        if ttl >= 60     { return "\(ttl / 60)m" }
+        return "\(ttl)s"
+    }
 }
 
 nonisolated struct CacheStatusCodeTTL: Codable, Sendable {
@@ -120,6 +136,23 @@ nonisolated struct CacheStatusCodeTTL: Codable, Sendable {
         case statusCodeRange = "status_code_range"
         case statusCode = "status_code"
         case value
+    }
+
+    var label: String {
+        let code: String
+        if let sc = statusCode {
+            code = "\(sc)"
+        } else if let r = statusCodeRange, let from = r.from, let to = r.to {
+            code = "\(from)-\(to)"
+        } else {
+            code = "*"
+        }
+        let ttl: String
+        if value >= 86_400 { ttl = "\(value / 86_400)d" }
+        else if value >= 3_600 { ttl = "\(value / 3_600)h" }
+        else if value >= 60 { ttl = "\(value / 60)m" }
+        else { ttl = "\(value)s" }
+        return "\(code):\(ttl)"
     }
 }
 

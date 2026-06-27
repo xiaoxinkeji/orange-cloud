@@ -18,6 +18,7 @@ import Foundation
 nonisolated struct LoadBalancer: Codable, Identifiable, Sendable {
     let id:              String
     var name:            String?
+    var description:     String?
     var enabled:         Bool?
     var ttl:             Int?
     var proxied:         Bool?
@@ -25,16 +26,19 @@ nonisolated struct LoadBalancer: Codable, Identifiable, Sendable {
     var fallbackPool:    String?
     var steeringPolicy:  String?
     var sessionAffinity: String?
+    var sessionAffinityTTL: Int?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, enabled, ttl, proxied
-        case defaultPools    = "default_pools"
-        case fallbackPool    = "fallback_pool"
-        case steeringPolicy  = "steering_policy"
-        case sessionAffinity = "session_affinity"
+        case id, name, description, enabled, ttl, proxied
+        case defaultPools      = "default_pools"
+        case fallbackPool      = "fallback_pool"
+        case steeringPolicy    = "steering_policy"
+        case sessionAffinity   = "session_affinity"
+        case sessionAffinityTTL = "session_affinity_ttl"
     }
 
     var steeringLabel: String { LBSteeringPolicy(rawValue: steeringPolicy ?? "")?.label ?? (steeringPolicy ?? "—") }
+    var affinityLabel: String { LBSessionAffinity(rawValue: sessionAffinity ?? "")?.label ?? (sessionAffinity ?? "—") }
 }
 
 /// 创建 / 编辑负载均衡器的载荷
@@ -68,11 +72,13 @@ nonisolated struct Pool: Codable, Identifiable, Sendable {
     var notificationEmail: String?
     var minimumOrigins:    Int?
     var origins:           [Origin]?
+    var checkRegions:      [String]?
 
     enum CodingKeys: String, CodingKey {
         case id, name, enabled, description, monitor, origins
         case notificationEmail = "notification_email"
         case minimumOrigins    = "minimum_origins"
+        case checkRegions      = "check_regions"
     }
 
     var enabledOriginsCount: Int { (origins ?? []).filter { $0.enabled ?? true }.count }
@@ -90,6 +96,7 @@ nonisolated struct Origin: Codable, Identifiable, Sendable {
     var disabledAt:       String? = nil      // 只读
 
     var id: String { name ?? address ?? UUID().uuidString }
+    var weightLabel: String { weight.map { "w=\($0)" } ?? "—" }
 
     enum CodingKeys: String, CodingKey {
         case name, address, enabled, weight, port, header
@@ -189,6 +196,13 @@ nonisolated struct Monitor: Codable, Identifiable, Sendable {
             return "\(method ?? "GET") \(path ?? "/")"
         }
         return port.map { String(localized: "端口 \($0)") } ?? (type ?? "")
+    }
+    /// URL 预览：HTTP 类显示 scheme+path，其它显示类型
+    var urlPreview: String {
+        if type == "http" || type == "https" {
+            return "\(type ?? "http")://\(path ?? "/")"
+        }
+        return typeLabel
     }
 }
 

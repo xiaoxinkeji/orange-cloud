@@ -211,7 +211,13 @@ struct WorkerService {
 
     /// 创建新脚本（上传 boilerplate 代码），返回创建的脚本信息
     func createScript(accountId: String, scriptName: String, content: String) async throws -> WorkerScript {
-        let metadata = WorkerUploadMetadata(mainModule: "worker.js")
+        let metadata = WorkerUploadMetadata(
+            mainModule:         "worker.js",
+            bodyPart:           nil,
+            compatibilityDate:  nil,
+            compatibilityFlags: nil,
+            bindings:           []
+        )
         let response: CFAPIResponse<WorkerScript> = try await client.multipartRequest(
             method: "PUT",
             "accounts/\(accountId)/workers/scripts/\(scriptName)",

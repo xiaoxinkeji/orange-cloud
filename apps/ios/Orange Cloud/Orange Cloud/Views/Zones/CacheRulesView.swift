@@ -48,7 +48,6 @@ struct CacheRulesView: View {
                 Button("刷新", systemImage: "arrow.clockwise") {
                     Task { await load() }
                 }
-                .symbolEffect(.rotate, isActive: isLoading)
             }
         }
         .task { await load() }
@@ -108,14 +107,14 @@ struct CacheRulesView: View {
     }
 
     @ViewBuilder
-    private func ttlSection(_ params: CacheRuleParams?) -> some View {
-        if let edge = params?.edgeTTL {
+    private func ttlSection(_ params: CacheActionParameters?) -> some View {
+        if let edge = params?.edgeTtl {
             HStack(spacing: 6) {
                 ttlPill(String(localized: "Edge"), value: edge.defaultLabel, color: .blue)
                 Text(edge.modeLabel)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                if let statusTTLs = edge.statusCodeTTL, !statusTTLs.isEmpty {
+                if let statusTTLs = edge.statusCodeTtl, !statusTTLs.isEmpty {
                     ForEach(statusTTLs, id: \.statusCode) { sttl in
                         Text(sttl.label)
                             .font(.system(size: 9, design: .monospaced))
@@ -127,7 +126,7 @@ struct CacheRulesView: View {
                 }
             }
         }
-        if let browser = params?.browserTTL {
+        if let browser = params?.browserTtl {
             HStack(spacing: 6) {
                 ttlPill(String(localized: "Browser"), value: browser.defaultLabel, color: .purple)
                 Text(browser.modeLabel)
@@ -188,7 +187,7 @@ struct CacheRulesView: View {
         isLoading = true
         error = nil
         do {
-            rules = try await session.cacheRuleService.listRules(zoneId: zoneId)
+            rules = try await session.cacheRuleService.ruleset(zoneId: zoneId)?.rules ?? []
         } catch {
             self.error = error.localizedDescription
             rules = []

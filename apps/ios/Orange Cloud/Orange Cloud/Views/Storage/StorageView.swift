@@ -35,6 +35,7 @@ struct StorageView: View {
 
     @Environment(SessionStore.self) private var session
     @Environment(AuthManager.self) private var auth
+    @Environment(EntitlementStore.self) private var entitlements
 
     @State private var kind: StorageKind = .r2
     @State private var r2ViewModel: R2BucketListViewModel

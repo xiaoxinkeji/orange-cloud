@@ -299,6 +299,7 @@ struct WorkerEditorView: View {
 
     @Environment(\.dismiss) private var dismiss
 
+    @State private var workerContent: WorkerContent?
     @State private var content = ""
     @State private var originalContent = ""
     @State private var isLoading = true
@@ -385,27 +386,34 @@ struct WorkerEditorView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            let script = try await session.workerService.getScriptContent(
+            let wc = try await session.workerService.content(
                 accountId: accountId,
                 scriptName: scriptName
             )
-            content = script
-            originalContent = script
+            workerContent = wc
+            let code = wc.mainModule?.body ?? ""
+            content = code
+            originalContent = code
         } catch {
             self.error = error.localizedDescription
         }
     }
 
     private func deploy() async {
-        guard content != originalContent else { return }
+        guard content != originalContent, let wc = workerContent else { return }
         isDeploying = true
         defer { isDeploying = false }
         do {
-            _ = try await session.workerService.updateScript(
+            let settings = try await session.workerService.settings(
+                accountId: accountId,
+                scriptName: scriptName
+            )
+            try await session.workerService.uploadScript(
                 accountId: accountId,
                 scriptName: scriptName,
-                content: content,
-                metadata: WorkerScriptMetadata()
+                content: wc,
+                newCode: content,
+                settings: settings
             )
             originalContent = content
             successMessage = String(localized: "已部署到 Cloudflare 全球网络")

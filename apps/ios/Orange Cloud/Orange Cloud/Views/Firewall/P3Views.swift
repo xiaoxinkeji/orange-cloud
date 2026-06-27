@@ -192,7 +192,6 @@ struct BulkRedirectsView: View {
                 Button("刷新", systemImage: "arrow.clockwise") {
                     Task { await load() }
                 }
-                .symbolEffect(.rotate, isActive: isLoading)
             }
         }
         .task { await load() }

@@ -38,6 +38,7 @@ private struct SessionRootView: View {
     var body: some View {
         MainTabView()
             .environment(session)
+            .whatsNewSheet()
     }
 }
 

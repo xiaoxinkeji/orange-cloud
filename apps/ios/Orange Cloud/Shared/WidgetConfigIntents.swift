@@ -149,6 +149,16 @@ nonisolated enum ZoneWidgetMetric: String {
         }
     }
 
+    /// SF Symbol（锁屏 inline / Watch complication 用）
+    var symbol: String {
+        switch self {
+        case .requests:  "chart.bar.fill"
+        case .bandwidth: "arrow.down.circle.fill"
+        case .threats:   "shield.lefthalf.filled"
+        case .visitors:  "person.2.fill"
+        }
+    }
+
     func valueText(_ zone: WidgetZoneMetrics) -> String {
         switch self {
         case .requests:  zone.requests.formatted(.number.notation(.compactName))

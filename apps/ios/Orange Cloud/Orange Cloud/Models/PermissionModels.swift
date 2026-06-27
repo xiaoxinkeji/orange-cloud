@@ -64,8 +64,10 @@ extension FeaturePermission {
             title: String(localized: "Workers 脚本"),
             description: String(localized: "查看和管理 Workers 无服务器函数"),
             icon: "bolt.circle",
-            readScopes: ["workers-scripts.read"],
-            editScopes: ["workers-scripts.write"],
+            // workers-scripts.* 是 account 级（脚本/子域/自定义域）；workers-routes.* 是 zone 级
+            // （/zones/{id}/workers/routes 单独的权限组），缺它会让路由查询 403 cf=10000。
+            readScopes: ["workers-scripts.read", "workers-routes.read"],
+            editScopes: ["workers-scripts.write", "workers-routes.write"],
             isRequired: false
         ),
         .init(
@@ -75,6 +77,15 @@ extension FeaturePermission {
             icon: "text.alignleft",
             readScopes: ["workers-tail.read"],
             editScopes: [],
+            isRequired: false
+        ),
+        .init(
+            id: "snippets",
+            title: String(localized: "Snippets"),
+            description: String(localized: "查看和编辑域名的边缘代码片段"),
+            icon: "curlybraces",
+            readScopes: ["snippets.read"],
+            editScopes: ["snippets.write"],
             isRequired: false
         ),
         .init(
@@ -107,10 +118,10 @@ extension FeaturePermission {
         .init(
             id: "tunnels",
             title: String(localized: "Cloudflare Tunnel"),
-            description: String(localized: "查看内网穿透隧道与连接状态"),
+            description: String(localized: "查看隧道与连接状态；读写可新建隧道、配置公共主机名路由"),
             icon: "arrow.triangle.2.circlepath",
             readScopes: ["argotunnel.read"],
-            editScopes: [],
+            editScopes: ["argotunnel.write"],
             isRequired: false
         ),
         .init(
@@ -123,33 +134,118 @@ extension FeaturePermission {
             isRequired: false
         ),
         .init(
+            id: "email_routing",
+            title: "Email Routing",
+            description: String(localized: "查看与管理邮件路由规则与目的地址"),
+            icon: "envelope",
+            // rules 是域名级，addresses 是账号级——两组 scope 都要才能完整使用
+            readScopes: ["email-routing-rule.read", "email-routing-address.read"],
+            editScopes: ["email-routing-rule.write", "email-routing-address.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "zt_access",
+            title: "Zero Trust Access",
+            description: String(localized: "查看受 Access 保护的应用"),
+            icon: "lock.shield",
+            readScopes: ["access.read"],
+            editScopes: ["access.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "zt_gateway",
+            title: "Zero Trust Gateway",
+            description: String(localized: "查看 Gateway 过滤策略"),
+            icon: "shield.lefthalf.filled",
+            readScopes: ["teams.read"],
+            editScopes: ["teams.write"],
+            isRequired: false
+        ),
+        .init(
             id: "zone_settings",
             title: String(localized: "缓存与防护"),
-            description: String(localized: "清理缓存、Under Attack / 开发模式开关"),
+            description: String(localized: "缓存清理、SSL/TLS、Under Attack / 开发模式"),
             icon: "speedometer",
             readScopes: ["zone-settings.read"],
             editScopes: ["zone-settings.write", "cache.purge"],
             isRequired: false
+        ),
+.init(
+            id: "cache_rules",
+            title: String(localized: "缓存规则"),
+            description: String(localized: "按 URL 覆盖边缘/浏览器缓存时长或绕过缓存"),
+            icon: "bolt.horizontal",
+            readScopes: ["cache-settings.read"],
+            editScopes: ["cache-settings.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "ssl_certs",
+            title: String(localized: "SSL 证书"),
+            description: String(localized: "查看证书、开关 Universal SSL、删除高级证书"),
+            icon: "checkmark.seal",
+            readScopes: ["ssl-and-certificates.read"],
+            editScopes: ["ssl-and-certificates.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "transform_rules",
+            title: "Transform Rules",
+            description: String(localized: "查看与编辑 URL 重写、请求/响应头规则"),
+            icon: "arrow.triangle.branch",
+            readScopes: ["zone-transform-rules.read"],
+            editScopes: ["zone-transform-rules.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "ip_access_rules",
+            title: String(localized: "IP 访问规则"),
+            description: String(localized: "查看与管理 IP / ASN / 国家或地区访问规则"),
+            icon: "hand.raised",
+            readScopes: ["firewall-services.read"],
+            editScopes: ["firewall-services.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "load_balancing",
+            title: String(localized: "负载均衡"),
+            description: String(localized: "负载均衡器、源站池与健康监测"),
+            icon: "arrow.left.arrow.right",
+            readScopes: ["load-balancers.read", "load-balancing-monitors-and-pools.read"],
+            editScopes: ["load-balancers.write", "load-balancing-monitors-and-pools.write"],
+            isRequired: false
+        ),
+        .init(
+            id: "bulk_redirects",
+            title: "Bulk Redirects",
+            description: String(localized: "批量 URL 重定向列表与条目"),
+            icon: "arrowshape.turn.up.right",
+            readScopes: ["account-rule-lists.read", "mass-url-redirects.read"],
+            editScopes: ["account-rule-lists.write", "mass-url-redirects.write"],
+            isRequired: false
+        ),
+        // Pages（M3）：page.read / page.write 已在 OAuth client 注册并点亮（2026-06-26）。
+        .init(
+            id: "pages",
+            title: String(localized: "Cloudflare Pages"),
+            description: String(localized: "查看与管理 Pages 项目与部署"),
+            icon: "doc.richtext",
+            readScopes: ["page.read"],
+            editScopes: ["page.write"],
+            isRequired: false,
+            tokenOnly: true
         ),
         .init(
             id: "analytics",
             title: String(localized: "流量分析"),
             description: String(localized: "查看账号与域名的流量和安全分析"),
             icon: "chart.bar",
-            // 账号级 + Zone 级（GraphQL Analytics API 查 Zone 流量需要 analytics.read）
-            readScopes: ["account-analytics.read", "analytics.read"],
+            // Zone 流量走 analytics.read；账号级用量（workersInvocationsAdaptive 等 adaptive 数据集）
+            // 现需 workers-observability.read——只有 account-analytics.read 会被 GraphQL 拒
+            // 「not authorized for that account」（Cloudflare 把账号级 Workers 分析挪到了 Observability 权限下）。
+            readScopes: ["account-analytics.read", "analytics.read", "workers-observability.read"],
             editScopes: [],
             isRequired: false
-        ),
-        .init(
-            id: "pages",
-            title: String(localized: "Pages 站点"),
-            description: String(localized: "查看和部署 Cloudflare Pages 项目"),
-            icon: "doc.richtext",
-            readScopes: [],
-            editScopes: [],
-            isRequired: false,
-            tokenOnly: true
         ),
     ]
 

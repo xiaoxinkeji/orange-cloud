@@ -28,7 +28,7 @@ struct ZoneAvatar: View {
             .frame(width: size, height: size)
             .background(
                 LinearGradient(
-                    colors: [base, base.mix(with: .black, by: 0.28)],
+                    colors: [base, base.mixed(with: .black, by: 0.28)],
                     startPoint: .topLeading, endPoint: .bottomTrailing
                 ),
                 in: Circle()
@@ -39,6 +39,8 @@ struct ZoneAvatar: View {
                     .blendMode(.plusLighter)
             )
             .shadow(color: .black.opacity(0.18), radius: 1.5, y: 1)
+            // 首字母头像是装饰，域名文字总在旁边，对读屏隐藏
+            .accessibilityHidden(true)
     }
 }
 

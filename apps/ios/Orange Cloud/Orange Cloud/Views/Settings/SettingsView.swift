@@ -7,15 +7,22 @@
 //
 
 import SwiftUI
+import StoreKit
 
 struct SettingsView: View {
 
     @Environment(AuthManager.self) private var auth
     @Environment(SessionStore.self) private var session
+    @Environment(EntitlementStore.self) private var entitlements
     @Environment(\.openURL) private var openURL
 
     @State private var showAddAccount = false
     @State private var showTokenEntry = false
+    @State private var showProPaywall = false
+    @State private var showAddAccountPaywall = false
+    @State private var showAuditPaywall = false
+    @State private var showFeedback = false
+    @State private var logShareItems: [Any]?
     @State private var iCloudSync = UserDefaults.standard.bool(forKey: AuthManager.iCloudSyncKey)
 
     /// 「今日」用量的日界口径（App Group，与 Widget 共享），默认 UTC
@@ -25,7 +32,7 @@ struct SettingsView: View {
     @AppStorage(AppAppearance.storageKey) private var appearanceRaw = AppAppearance.system.rawValue
     @AppStorage(AppLanguage.storageKey)   private var languageRaw   = AppLanguage.system.rawValue
 
-    private var appVersion: String {
+private var appVersion: String {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
         return "\(version) (\(build))"
@@ -45,12 +52,21 @@ struct SettingsView: View {
                     }
 
                     Button {
-                        showAddAccount = true
+                        // 多账号是 Pro 功能：已有身份且未解锁时走付费墙
+                        if !entitlements.isPro && !auth.sessions.isEmpty {
+                            showAddAccountPaywall = true
+                        } else {
+                            showAddAccount = true
+                        }
                     } label: {
                         HStack(spacing: 12) {
                             TintIcon(systemImage: "plus", color: .ocOrange, size: 38)
                             Text("添加账号")
-                                .foregroundStyle(Color.ocOrange)
+                                .foregroundStyle(Color.ocOrangeText)
+                            if !entitlements.isPro && !auth.sessions.isEmpty {
+                                Spacer()
+                                ProBadge()
+                            }
                         }
                         .padding(.vertical, 2)
                     }
@@ -71,7 +87,7 @@ struct SettingsView: View {
                 }
                 .glassRow()
 
-                // ── 同步 ──
+// ── 同步 ──
                 Section {
                     Toggle(isOn: $iCloudSync) {
                         HStack(spacing: 12) {
@@ -89,6 +105,39 @@ struct SettingsView: View {
                     AccountPrefsStore.shared.applySyncChange(iCloudSync)
                 }
                 .glassRow()
+
+                
+
+                // ── Orange Cloud Pro（开源自编译构建无此入口）──
+                #if !OPENSOURCE_UNLOCKED
+                Section {
+                    Button {
+                        showProPaywall = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "sparkles", color: .ocOrange)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Orange Cloud Pro")
+                                    .foregroundStyle(.primary)
+                                Text(entitlements.isPro ? "已解锁，感谢支持" : "多账号与专业功能")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            if entitlements.isPro {
+                                Image(systemName: "checkmark.seal.fill")
+                                    .foregroundStyle(Color.ocOrangeText)
+                            } else {
+                                Image(systemName: "chevron.right")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.tertiary)
+                            }
+                        }
+                        .padding(.vertical, 2)
+                    }
+                }
+                .glassRow()
+                #endif
 
                 // ── 用量口径 ──
                 Section {
@@ -162,7 +211,73 @@ struct SettingsView: View {
                 }
                 .glassRow()
 
-                // ── 关于 ──
+                // ── 审计日志（账号级，Pro）──
+                Section {
+                    if entitlements.isPro {
+                        NavigationLink {
+                            AuditLogListView(session: session)
+                        } label: {
+                            HStack(spacing: 12) {
+                                TintIcon(systemImage: "clock.arrow.circlepath", color: .indigo)
+                                Text("审计日志")
+                            }
+                        }
+                    } else {
+                        Button {
+                            showAuditPaywall = true
+                        } label: {
+                            HStack(spacing: 12) {
+                                TintIcon(systemImage: "clock.arrow.circlepath", color: .indigo)
+                                Text("审计日志")
+                                    .foregroundStyle(.primary)
+                                Spacer()
+                                ProBadge()
+                            }
+                        }
+                    }
+                } header: {
+                    Text("审计日志")
+                } footer: {
+                    Text("查看当前账号最近 30 天「谁在何时改了什么」。")
+                }
+                .glassRow()
+
+                // ── 帮助与反馈 ──
+                Section {
+                    Button {
+                        showFeedback = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "envelope", color: .ocOrange)
+                            Text("发送反馈")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    Button {
+                        exportLogs()
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "doc.text.magnifyingglass", color: .gray)
+                            Text("导出诊断日志")
+                                .foregroundStyle(.primary)
+                            Spacer()
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.caption)
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                } header: {
+                    Text("帮助与反馈")
+                } footer: {
+                    Text("反馈通过邮件发送给我们，可附带本地诊断日志（不含你的令牌或密钥）便于排查问题。")
+                }
+                .glassRow()
+
+                // ── 关于（详情收进二级页，给根页减负）──
                 Section {
                     HStack(spacing: 12) {
                         TintIcon(systemImage: "info", color: .blue)
@@ -174,12 +289,16 @@ struct SettingsView: View {
                     updateCheckRow
                     aboutLink("隐私政策", icon: "doc.text", url: OAuthConfig.privacyPolicyURL)
                     aboutLink("使用条款", icon: "doc.plaintext", url: OAuthConfig.termsOfUseURL)
-                } header: {
-                    Text("关于")
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            TintIcon(systemImage: "info", color: .blue)
+                            Text("关于")
+                        }
+                    }
                 } footer: {
-                    Text("Orange Cloud · 第三方 Cloudflare 客户端")
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.top, 8)
+                    Text("版本、评分、社区与法律信息。")
                 }
                 .glassRow()
             }
@@ -195,10 +314,40 @@ struct SettingsView: View {
             .sheet(isPresented: $showTokenEntry) {
                 TokenEntryView()
             }
+            .sheet(isPresented: $showProPaywall) {
+                PaywallView()
+            }
+            .sheet(isPresented: $showAddAccountPaywall) {
+                PaywallView(feature: .multiAccount)
+            }
+            .sheet(isPresented: $showAuditPaywall) {
+                PaywallView(feature: .auditLog)
+            }
+            .sheet(isPresented: $showFeedback) {
+                FeedbackView()
+            }
+            .sheet(isPresented: logShareBinding) {
+                if let logShareItems {
+                    ActivityView(items: logShareItems)
+                }
+            }
         }
     }
 
-    // MARK: - 更新检测
+    /// 导出诊断日志：写到临时文件并拉起系统分享
+    private func exportLogs() {
+        if let url = LogFileStore.shared.exportedFileURL() {
+            logShareItems = [url]
+        } else {
+            logShareItems = [String(localized: "（暂无诊断日志）")]
+        }
+    }
+
+    private var logShareBinding: Binding<Bool> {
+        Binding(get: { logShareItems != nil }, set: { if !$0 { logShareItems = nil } })
+    }
+
+// MARK: - 更新检测
 
     @State private var updateResult: UpdateService.UpdateResult = .unknown
 
@@ -250,6 +399,8 @@ struct SettingsView: View {
         }
         .buttonStyle(.plain)
     }
+
+    
 
     // MARK: - 身份行
 
@@ -325,6 +476,12 @@ private struct AddAccountSheet: View {
     @Environment(AuthManager.self) private var auth
     @Environment(\.dismiss) private var dismiss
 
+private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
+    }
+
     var body: some View {
         NavigationStack {
             PermissionSelectionView(freshLogin: true)
@@ -352,6 +509,12 @@ private struct NotificationSettingsSection: View {
 
     @State private var systemDenied = false
     @State private var isRequesting = false
+
+private var appVersion: String {
+        let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
+    }
 
     var body: some View {
         Section {

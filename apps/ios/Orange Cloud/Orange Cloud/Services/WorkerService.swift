@@ -13,6 +13,7 @@ struct WorkerService {
         self.client = client
     }
 
+    /// 账号下全部 Workers 脚本（该端点不分页）
     func listScripts(accountId: String) async throws -> [WorkerScript] {
         let response: CFAPIResponseArray<WorkerScript> = try await client.get(
             "accounts/\(accountId)/workers/scripts"
@@ -23,188 +24,186 @@ struct WorkerService {
         return response.result ?? []
     }
 
-    // MARK: - 脚本内容
+    // MARK: - 脚本源码与设置
 
-    func getScriptContent(accountId: String, scriptName: String) async throws -> String {
-        let data = try await client.getRaw(
-            "accounts/\(accountId)/workers/scripts/\(scriptName)",
-            accept: "application/javascript"
+    /// 脚本源码（模块→multipart 解析为各模块；service worker→raw JS）
+    func content(accountId: String, scriptName: String) async throws -> WorkerContent {
+        let (data, response) = try await client.getRawResponse(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/content"
         )
-        guard let content = String(data: data, encoding: .utf8) else {
-            throw APIError.decodingError(URLError(.cannotDecodeContentData))
-        }
-        return content
+        let contentType = response.value(forHTTPHeaderField: "Content-Type")
+        return WorkerContent.parse(data: data, contentType: contentType)
     }
 
-    func updateScript(accountId: String, scriptName: String, content: String, metadata: WorkerScriptMetadata) async throws -> WorkerScript {
-        var fields: [String: String] = [
-            "metadata": metadata.jsonString,
-        ]
-        fields[metadata.bodyPart] = content
-        let response: CFAPIResponse<WorkerScript> = try await client.putMultipart(
-            "accounts/\(accountId)/workers/scripts/\(scriptName)",
-            fields: fields
+    /// 脚本设置（绑定 + 兼容性日期/标志）
+    func settings(accountId: String, scriptName: String) async throws -> WorkerSettings {
+        let response: CFAPIResponse<WorkerSettings> = try await client.get(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/settings"
         )
-        guard response.success, let result = response.result else {
-            throw response.toAPIError()
-        }
-        return result
+        guard response.success, let settings = response.result else { throw response.toAPIError() }
+        return settings
     }
 
-    // MARK: - 路由
-
-    func listRoutes(accountId: String) async throws -> [WorkerRoute] {
-        let response: CFAPIResponseArray<WorkerRoute> = try await client.get(
-            "accounts/\(accountId)/workers/routes"
-        )
-        guard response.success else {
-            throw response.toAPIError()
+    /// 安全保存脚本代码：仅替换正文，全部绑定以 inherit 按名保留（密钥值读不到也能保住），
+    /// 兼容性日期/标志沿用旧值；带 ?bindings_inherit=strict，缺绑定时直接报错而非静默丢弃。
+    func uploadScript(
+        accountId: String,
+        scriptName: String,
+        content: WorkerContent,
+        newCode: String,
+        settings: WorkerSettings
+    ) async throws {
+        guard let module = content.mainModule else {
+            throw APIError.cloudflareError(code: 0, message: String(localized: "无法定位脚本主模块"))
         }
+        let metadata = WorkerUploadMetadata(
+            mainModule:         content.isModule ? module.name : nil,
+            bodyPart:           content.isModule ? nil : module.name,
+            compatibilityDate:  settings.compatibilityDate,
+            compatibilityFlags: settings.compatibilityFlags,
+            bindings:           settings.bindings.map { $0.asInherit() }
+        )
+        let response: CFAPIResponse<EmptyResponse> = try await client.multipartRequest(
+            method: "PUT",
+            "accounts/\(accountId)/workers/scripts/\(scriptName)",
+            queryItems: [URLQueryItem(name: "bindings_inherit", value: "strict")],
+            jsonPartName: "metadata",
+            jsonPart: metadata,
+            file: (name: module.name, contentType: module.contentType, content: Data(newCode.utf8))
+        )
+        guard response.success else { throw response.toAPIError() }
+    }
+
+    /// 改绑定（变量）：传入完整新 bindings（变更项为实体，其余 inherit），PATCH settings 不动代码。
+    func patchSettings(
+        accountId: String,
+        scriptName: String,
+        bindings: [WorkerBindingInput],
+        settings: WorkerSettings
+    ) async throws {
+        let patch = WorkerSettingsPatch(
+            bindings:           bindings,
+            compatibilityDate:  settings.compatibilityDate,
+            compatibilityFlags: settings.compatibilityFlags
+        )
+        let response: CFAPIResponse<EmptyResponse> = try await client.multipartRequest(
+            method: "PATCH",
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/settings",
+            jsonPartName: "settings",
+            jsonPart: patch
+        )
+        guard response.success else { throw response.toAPIError() }
+    }
+
+    // MARK: - 密钥
+
+    /// 密钥列表（仅名 + 类型，永不含值）
+    func listSecrets(accountId: String, scriptName: String) async throws -> [WorkerSecret] {
+        let response: CFAPIResponseArray<WorkerSecret> = try await client.get(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/secrets"
+        )
+        guard response.success else { throw response.toAPIError() }
         return response.result ?? []
     }
 
-    func updateRoutes(accountId: String, scriptName: String, routes: [WorkerRouteInput]) async throws {
-        let body = WorkerRoutesUpdateRequest(routes: routes)
+    /// 新建 / 更新密钥
+    func putSecret(accountId: String, scriptName: String, name: String, text: String) async throws {
         let response: CFAPIResponse<EmptyResponse> = try await client.put(
-            "accounts/\(accountId)/workers/scripts/\(scriptName)/routes",
-            body: body
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/secrets",
+            body: WorkerSecretInput(name: name, text: text)
         )
-        guard response.success else {
-            throw response.toAPIError()
-        }
+        guard response.success else { throw response.toAPIError() }
     }
 
-    // MARK: - 定时触发器
+    /// 删除密钥
+    func deleteSecret(accountId: String, scriptName: String, name: String) async throws {
+        try await client.delete("accounts/\(accountId)/workers/scripts/\(scriptName)/secrets/\(name)")
+    }
 
-    func getSchedules(accountId: String, scriptName: String) async throws -> [WorkerSchedule] {
-        let response: CFAPIResponse<WorkerScheduleList> = try await client.get(
+    // MARK: - Cron 触发器
+
+    func schedules(accountId: String, scriptName: String) async throws -> [WorkerSchedule] {
+        let response: CFAPIResponse<WorkerSchedulesResult> = try await client.get(
             "accounts/\(accountId)/workers/scripts/\(scriptName)/schedules"
         )
-        guard response.success, let result = response.result else {
-            throw response.toAPIError()
-        }
-        return result.schedules ?? []
+        guard response.success else { throw response.toAPIError() }
+        return response.result?.schedules ?? []
     }
 
-    func updateSchedules(accountId: String, scriptName: String, schedules: [WorkerScheduleInput]) async throws {
-        let body = WorkerSchedulesUpdateRequest(schedules: schedules)
-        let response: CFAPIResponse<EmptyResponse> = try await client.put(
+    /// 整组替换 Cron（请求体是裸数组 [{cron}]；漏传即删）
+    func putSchedules(accountId: String, scriptName: String, crons: [String]) async throws {
+        let body = crons.map { WorkerScheduleInput(cron: $0) }
+        let response: CFAPIResponse<WorkerSchedulesResult> = try await client.put(
             "accounts/\(accountId)/workers/scripts/\(scriptName)/schedules",
             body: body
         )
-        guard response.success else {
-            throw response.toAPIError()
-        }
+        guard response.success else { throw response.toAPIError() }
     }
 
-    // MARK: - 创建 / 删除
+    // MARK: - 域名 / 路由
 
-    func createScript(accountId: String, scriptName: String, content: String) async throws -> WorkerScript {
-        let meta = WorkerScriptMetadata()
-        var fields: [String: String] = [
-            "metadata": meta.jsonString,
-        ]
-        fields[meta.bodyPart] = content
-        let response: CFAPIResponse<WorkerScript> = try await client.putMultipart(
-            "accounts/\(accountId)/workers/scripts/\(scriptName)",
-            fields: fields
+    /// workers.dev 子域状态
+    func subdomain(accountId: String, scriptName: String) async throws -> WorkerSubdomain {
+        let response: CFAPIResponse<WorkerSubdomain> = try await client.get(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/subdomain"
         )
-        guard response.success, let result = response.result else {
-            throw response.toAPIError()
-        }
-        return result
+        guard response.success, let sub = response.result else { throw response.toAPIError() }
+        return sub
     }
 
-    func deleteScript(accountId: String, scriptName: String) async throws {
-        try await client.delete("accounts/\(accountId)/workers/scripts/\(scriptName)")
-    }
-}
-
-// MARK: - 路由模型
-
-nonisolated struct WorkerRoute: Codable, Identifiable, Sendable {
-    let id: String?
-    let pattern: String
-    let script: String?
-    let requestLimitFailOpen: Bool?
-
-    enum CodingKeys: String, CodingKey {
-        case id, pattern, script
-        case requestLimitFailOpen = "request_limit_fail_open"
-    }
-}
-
-nonisolated struct WorkerRouteInput: Codable, Sendable {
-    let pattern: String
-    let script: String?
-
-    enum CodingKeys: String, CodingKey {
-        case pattern, script
-    }
-}
-
-private nonisolated struct WorkerRoutesUpdateRequest: Codable, Sendable {
-    let routes: [WorkerRouteInput]
-}
-
-nonisolated struct WorkerScriptMetadata: Codable, Sendable {
-    var bodyPart: String = "script"
-    var bindings: [WorkerBinding]? = nil
-
-    enum CodingKeys: String, CodingKey {
-        case bodyPart = "body_part"
-        case bindings
+    /// 切换 workers.dev 子域
+    func setSubdomain(accountId: String, scriptName: String, enabled: Bool) async throws {
+        let response: CFAPIResponse<EmptyResponse> = try await client.post(
+            "accounts/\(accountId)/workers/scripts/\(scriptName)/subdomain",
+            body: WorkerSubdomainInput(enabled: enabled)
+        )
+        guard response.success else { throw response.toAPIError() }
     }
 
-    var jsonString: String {
-        let encoder = JSONEncoder()
-        guard let data = try? encoder.encode(self),
-              let json = String(data: data, encoding: .utf8) else {
-            return "{}"
-        }
-        return json
+    /// 该脚本的自定义域（按 service 过滤）
+    func customDomains(accountId: String, scriptName: String) async throws -> [WorkerCustomDomain] {
+        let response: CFAPIResponseArray<WorkerCustomDomain> = try await client.get(
+            "accounts/\(accountId)/workers/domains",
+            queryItems: [URLQueryItem(name: "service", value: scriptName)]
+        )
+        guard response.success else { throw response.toAPIError() }
+        return response.result ?? []
     }
-}
 
-// MARK: - 定时触发器模型
-
-nonisolated struct WorkerSchedule: Codable, Identifiable, Sendable {
-    let cron: String
-    let createdOn: String?
-    let modifiedOn: String?
-
-    var id: String { cron }
-
-    enum CodingKeys: String, CodingKey {
-        case cron
-        case createdOn  = "created_on"
-        case modifiedOn = "modified_on"
+    /// 挂载自定义域到该脚本
+    func attachDomain(accountId: String, scriptName: String, hostname: String, zoneId: String) async throws {
+        let response: CFAPIResponse<WorkerCustomDomain> = try await client.put(
+            "accounts/\(accountId)/workers/domains",
+            body: WorkerCustomDomainInput(hostname: hostname, service: scriptName, zoneId: zoneId)
+        )
+        guard response.success else { throw response.toAPIError() }
     }
-}
 
-nonisolated struct WorkerScheduleInput: Codable, Sendable {
-    let cron: String
-}
+    /// 卸载自定义域
+    func deleteDomain(accountId: String, domainId: String) async throws {
+        try await client.delete("accounts/\(accountId)/workers/domains/\(domainId)")
+    }
 
-private nonisolated struct WorkerSchedulesUpdateRequest: Codable, Sendable {
-    let schedules: [WorkerScheduleInput]
-}
+    /// zone 下全部 Worker 路由（调用方按 script 过滤到本脚本）
+    func routes(zoneId: String) async throws -> [WorkerRoute] {
+        let response: CFAPIResponseArray<WorkerRoute> = try await client.get(
+            "zones/\(zoneId)/workers/routes"
+        )
+        guard response.success else { throw response.toAPIError() }
+        return response.result ?? []
+    }
 
-private nonisolated struct WorkerScheduleList: Codable, Sendable {
-    let schedules: [WorkerSchedule]?
-}
+    /// 新建路由（pattern → script）
+    func createRoute(zoneId: String, pattern: String, scriptName: String) async throws {
+        let response: CFAPIResponse<WorkerRoute> = try await client.post(
+            "zones/\(zoneId)/workers/routes",
+            body: WorkerRouteInput(pattern: pattern, script: scriptName)
+        )
+        guard response.success else { throw response.toAPIError() }
+    }
 
-// MARK: - 绑定模型
-
-nonisolated struct WorkerBinding: Codable, Identifiable, Sendable {
-    let type: String
-    let name: String
-    let namespaceId: String?
-
-    var id: String { "\(type)-\(name)" }
-
-    enum CodingKeys: String, CodingKey {
-        case type, name
-        case namespaceId = "namespace_id"
+    /// 删除路由
+    func deleteRoute(zoneId: String, routeId: String) async throws {
+        try await client.delete("zones/\(zoneId)/workers/routes/\(routeId)")
     }
 }

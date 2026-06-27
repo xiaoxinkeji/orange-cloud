@@ -50,10 +50,17 @@ struct PermissionGatedNavigationLink<Destination: View>: View {
                     Image(systemName: "lock.fill")
                         .foregroundStyle(.tertiary)
                         .font(.caption)
+                        .accessibilityHidden(true)
                 }
             }
             .foregroundStyle(.primary)
+            .accessibilityHint("已锁定，需要额外授权")
             .alert("权限不足", isPresented: $showDenied) {
+                if let sessionId = auth.currentSessionId {
+                    Button("一键重授权") {
+                        Task { await auth.reauthorize(sessionId: sessionId, additionalScopes: [requiredScope]) }
+                    }
+                }
                 Button("好", role: .cancel) {}
             } message: {
                 Text("当前授权未包含「\(label)」的访问权限（\(requiredScope)）。\n请在设置中退出登录，重新授权时勾选「缓存与防护」或「WAF 防火墙」模块。")

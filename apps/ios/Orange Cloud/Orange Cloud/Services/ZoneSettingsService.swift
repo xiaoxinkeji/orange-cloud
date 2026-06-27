@@ -49,27 +49,47 @@ struct ZoneSettingsService {
         }
     }
 
-    /// 按 URL 清除缓存
-    func purgeByURL(zoneId: String, urls: [String]) async throws -> PurgeResult {
+    /// 按 URL 清理缓存（单文件 purge，单次最多 30 个 URL；2025-04 起所有套餐可用）
+    func purgeFiles(zoneId: String, urls: [String]) async throws {
         let response: CFAPIResponse<PurgeResult> = try await client.post(
             "zones/\(zoneId)/purge_cache",
-            body: PurgeRequest(files: urls)
+            body: PurgeFilesRequest(files: urls)
         )
-        guard response.success, let result = response.result else {
+        guard response.success else {
             throw response.toAPIError()
         }
-        return result
     }
 
-    /// 按 Tag 清除缓存
-    func purgeByTag(zoneId: String, tags: [String]) async throws -> PurgeResult {
+    /// 按 URL 前缀清理缓存（单次最多 30 个；2025-04 起所有套餐可用）
+    func purgePrefixes(zoneId: String, prefixes: [String]) async throws {
         let response: CFAPIResponse<PurgeResult> = try await client.post(
             "zones/\(zoneId)/purge_cache",
-            body: PurgeRequest(tags: tags)
+            body: PurgePrefixesRequest(prefixes: prefixes)
         )
-        guard response.success, let result = response.result else {
+        guard response.success else {
             throw response.toAPIError()
         }
-        return result
+    }
+
+    /// 按主机名清理缓存（单次最多 30 个；2025-04 起所有套餐可用）
+    func purgeHosts(zoneId: String, hosts: [String]) async throws {
+        let response: CFAPIResponse<PurgeResult> = try await client.post(
+            "zones/\(zoneId)/purge_cache",
+            body: PurgeHostsRequest(hosts: hosts)
+        )
+        guard response.success else {
+            throw response.toAPIError()
+        }
+    }
+
+    /// 按 Cache-Tag 清理缓存（单次最多 30 个；2025-04 起所有套餐可用）
+    func purgeTags(zoneId: String, tags: [String]) async throws {
+        let response: CFAPIResponse<PurgeResult> = try await client.post(
+            "zones/\(zoneId)/purge_cache",
+            body: PurgeTagsRequest(tags: tags)
+        )
+        guard response.success else {
+            throw response.toAPIError()
+        }
     }
 }

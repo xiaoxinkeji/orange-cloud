@@ -112,11 +112,11 @@ struct ZoneStatWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "ZoneStatWidget", intent: ZoneStatConfigIntent.self, provider: ZoneStatProvider()) { entry in
             ZoneStatWidgetView(entry: entry)
-                .containerBackground(for: .widget) { WidgetSky(date: entry.date) }
+                .daybreakContainer(date: entry.date)
         }
         .configurationDisplayName("域名指标")
         .description("单个域名的 24h 指标，可选请求/带宽/威胁/访客")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryInline, .accessoryCircular, .accessoryRectangular])
         .contentMarginsDisabled()
     }
 }
@@ -125,11 +125,11 @@ struct ZoneChartWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "ZoneChartWidget", intent: ZoneChartConfigIntent.self, provider: ZoneChartProvider()) { entry in
             ZoneChartWidgetView(entry: entry)
-                .containerBackground(for: .widget) { WidgetSky(date: entry.date) }
+                .daybreakContainer(date: entry.date)
         }
         .configurationDisplayName("请求地形")
         .description("域名 24h 请求地形；大尺寸含命中率与多指标总览")
-        .supportedFamilies([.systemMedium, .systemLarge])
+        .supportedFamilies([.systemMedium, .systemLarge, .accessoryRectangular])
         .contentMarginsDisabled()
     }
 }
@@ -175,7 +175,18 @@ struct ZoneStatWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: ZoneWidgetEntry
 
+    @ViewBuilder
     var body: some View {
+        switch family {
+        case .accessoryInline:      inlineView
+        case .accessoryCircular:    circularView
+        case .accessoryRectangular: rectangularView
+        default:                    systemBody
+        }
+    }
+
+    @ViewBuilder
+    private var systemBody: some View {
         if let zone = entry.zone {
             switch family {
             case .systemMedium: mediumView(zone)
@@ -183,6 +194,73 @@ struct ZoneStatWidgetView: View {
             }
         } else {
             WidgetEmptyHint(text: entry.configuredName.map { String(localized: "暂无 \($0) 数据\n打开 App 刷新") } ?? String(localized: "打开 App 同步数据"))
+        }
+    }
+
+    // MARK: - 锁屏 accessory
+
+    @ViewBuilder
+    private var inlineView: some View {
+        if let zone = entry.zone {
+            Label {
+                Text("\(zone.name) \(entry.metric.valueText(zone))")
+            } icon: {
+                Image(systemName: entry.metric.symbol)
+            }
+        } else {
+            Label("Orange Cloud", systemImage: "cloud")
+        }
+    }
+
+    @ViewBuilder
+    private var circularView: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            if let zone = entry.zone {
+                VStack(spacing: -1) {
+                    Image(systemName: entry.metric.symbol)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                    Text(entry.metric.valueText(zone))
+                        .font(.system(.callout, design: .rounded).weight(.semibold))
+                        .minimumScaleFactor(0.4)
+                        .lineLimit(1)
+                }
+                .padding(3)
+            } else {
+                Text("—").font(.title3)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var rectangularView: some View {
+        if let zone = entry.zone {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(zone.name)
+                    .font(.headline)
+                    .widgetAccentable()
+                    .lineLimit(1)
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(entry.metric.valueText(zone))
+                        .font(.system(.title3, design: .rounded).weight(.bold))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    if entry.metric == .requests {
+                        TrendText(trend: zone.requestsTrend)
+                    }
+                }
+                Text(entry.metric.label)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        } else {
+            Text(entry.configuredName.map { String(localized: "暂无 \($0) 数据") } ?? String(localized: "打开 App 同步数据"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -268,7 +346,16 @@ struct ZoneChartWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: ZoneWidgetEntry
 
+    @ViewBuilder
     var body: some View {
+        switch family {
+        case .accessoryRectangular: rectangularView
+        default:                    systemBody
+        }
+    }
+
+    @ViewBuilder
+    private var systemBody: some View {
         if let zone = entry.zone {
             switch family {
             case .systemLarge: overviewView(zone)
@@ -276,6 +363,33 @@ struct ZoneChartWidgetView: View {
             }
         } else {
             WidgetEmptyHint(text: entry.configuredName.map { String(localized: "暂无 \($0) 数据\n打开 App 刷新") } ?? String(localized: "打开 App 同步数据"))
+        }
+    }
+
+    // MARK: - 锁屏 accessory（矩形迷你折线）
+
+    @ViewBuilder
+    private var rectangularView: some View {
+        if let zone = entry.zone {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text(zone.name)
+                        .font(.caption.weight(.semibold))
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    Text(zone.requests.formatted(.number.notation(.compactName)))
+                        .font(.caption.weight(.bold))
+                        .monospacedDigit()
+                }
+                AccessorySparkline(series: zone.requestsSeries)
+                    .widgetAccentable()
+                    .frame(maxHeight: .infinity)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            Text(entry.configuredName.map { String(localized: "暂无 \($0) 数据") } ?? String(localized: "打开 App 同步数据"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
 

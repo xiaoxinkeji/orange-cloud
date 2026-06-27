@@ -2,7 +2,8 @@
 //  MainTabView.swift
 //  Orange Cloud
 //
-//  iPhone 底部 Tab，iPad 自动侧边栏（sidebarAdaptable）；iOS 26 自动 Liquid Glass TabBar。
+//  iPhone 底部 Tab，iPad 自动侧边栏（sidebarAdaptable，iOS 18+）；iOS 17 回退经典 TabView。
+//  iOS 26 自动 Liquid Glass TabBar。
 //
 
 import SwiftUI
@@ -16,63 +17,132 @@ struct MainTabView: View {
     private let router = AppRouter.shared
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // 各资源 Tab 用 .id(selectedAccount) 绑定当前账号：账号切换时整页重建，
-            // 让按账号过滤的 @Query 谓词刷新、列表数据重新拉取（资源跟着选中账号走）。
-            Tab("概览", systemImage: "square.grid.2x2", value: .dashboard) {
-                DashboardView(session: session)
-                    .id(session.selectedAccount?.id)
+        tabContainer
+            .task {
+                consumePendingRoute()
+                await session.ensureAccounts()
             }
-            Tab("域名", systemImage: "globe", value: .zones) {
-                ZoneListView(session: session)
-                    .id(session.selectedAccount?.id)
+            .onChange(of: router.pendingModule) {
+                consumePendingRoute()
             }
-            Tab("Workers", systemImage: "bolt.fill", value: .workers) {
-                // Tab 恒显示（可发现性），无权限时整页锁定态
-                if auth.hasScope("workers-scripts.read") {
-                    WorkerListView(session: session)
-                        .id(session.selectedAccount?.id)
-                } else {
-                    NavigationStack {
-                        PermissionDeniedView(
-                            featureName: "Workers",
-                            requiredScope: "workers-scripts.read"
-                        )
-                        .navigationTitle("Workers")
+    }
+
+    @ViewBuilder
+    private var tabContainer: some View {
+        if #available(iOS 18.0, *) {
+            // iOS 18+：值式 Tab + 侧边栏自适应（iPad 自动侧边栏）
+            TabView(selection: $selectedTab) {
+                Tab("概览", systemImage: "square.grid.2x2", value: AppTab.dashboard) {
+                    dashboardTab
+                }
+                Tab("域名", systemImage: "globe", value: AppTab.zones) {
+                    zonesTab
+                }
+                Tab("Workers", systemImage: "bolt.fill", value: AppTab.workers) {
+                    workersTab
+                }
+                Tab("Pages", systemImage: "doc.richtext", value: AppTab.pages) {
+                    if auth.hasAPITokenAvailable {
+                        PagesListView()
+                            .id(session.selectedAccount?.id)
+                    } else {
+                        NavigationStack {
+                            PermissionDeniedView(
+                                featureName: String(localized: "Pages"),
+                                requiredScope: String(localized: "API Token"),
+                                message: String(localized: "Cloudflare Pages API 仅支持 API Token 认证，OAuth 授权不可用。请前往「设置 → 添加 API Token」后切换身份。")
+                            )
+                            .navigationTitle("Pages")
+                        }
                     }
                 }
-            }
-            Tab("Pages", systemImage: "doc.richtext", value: .pages) {
-                if auth.hasAPITokenAvailable {
-                    PagesListView()
-                        .id(session.selectedAccount?.id)
-                } else {
-                    NavigationStack {
-                        PermissionDeniedView(
-                            featureName: String(localized: "Pages"),
-                            requiredScope: String(localized: "API Token"),
-                            message: String(localized: "Cloudflare Pages API 仅支持 API Token 认证，OAuth 授权不可用。请前往「设置 → 添加 API Token」后切换身份。")
-                        )
-                        .navigationTitle("Pages")
-                    }
+                Tab("存储", systemImage: "externaldrive", value: AppTab.storage) {
+                    storageTab
+                }
+                Tab("设置", systemImage: "gear", value: AppTab.settings) {
+                    settingsTab
                 }
             }
-            Tab("存储", systemImage: "externaldrive", value: .storage) {
-                StorageView(session: session)
-                    .id(session.selectedAccount?.id)
+            .tabViewStyle(.sidebarAdaptable)
+        } else {
+            // iOS 17：经典 TabView（底部 Tab；iPad 不走侧边栏自适应）
+            TabView(selection: $selectedTab) {
+                dashboardTab
+                    .tabItem { Label("概览", systemImage: "square.grid.2x2") }
+                    .tag(AppTab.dashboard)
+                zonesTab
+                    .tabItem { Label("域名", systemImage: "globe") }
+                    .tag(AppTab.zones)
+                workersTab
+                    .tabItem { Label("Workers", systemImage: "bolt.fill") }
+                    .tag(AppTab.workers)
+                pagesTab
+                    .tabItem { Label("Pages", systemImage: "doc.richtext") }
+                    .tag(AppTab.pages)
+                storageTab
+                    .tabItem { Label("存储", systemImage: "externaldrive") }
+                    .tag(AppTab.storage)
+                settingsTab
+                    .tabItem { Label("设置", systemImage: "gear") }
+                    .tag(AppTab.settings)
             }
-            Tab("设置", systemImage: "gear", value: .settings) {
-                SettingsView()
+        }
+    }
+
+    // MARK: - Tab 内容（两套 TabView 写法共用）
+
+    // 各资源 Tab 用 .id(selectedAccount) 绑定当前账号：账号切换时整页重建，
+    // 让按账号过滤的 @Query 谓词刷新、列表数据重新拉取（资源跟着选中账号走）。
+
+    @ViewBuilder private var dashboardTab: some View {
+        DashboardView(session: session)
+            .id(session.selectedAccount?.id)
+    }
+
+    @ViewBuilder private var zonesTab: some View {
+        ZoneListView(session: session)
+            .id(session.selectedAccount?.id)
+    }
+
+    @ViewBuilder private var workersTab: some View {
+        // Tab 恒显示（可发现性），无权限时整页锁定态
+        if auth.hasScope("workers-scripts.read") {
+            WorkerListView(session: session)
+                .id(session.selectedAccount?.id)
+        } else {
+            NavigationStack {
+                PermissionDeniedView(
+                    featureName: "Workers",
+                    requiredScope: "workers-scripts.read"
+                )
+                .navigationTitle("Workers")
             }
         }
-        .tabViewStyle(.sidebarAdaptable)
-        .task {
-            consumePendingRoute()
-            await session.ensureAccounts()
+    }
+
+    @ViewBuilder private var pagesTab: some View {
+        if auth.hasAPITokenAvailable {
+            PagesListView()
+                .id(session.selectedAccount?.id)
+        } else {
+            NavigationStack {
+                PermissionDeniedView(
+                    featureName: String(localized: "Pages"),
+                    requiredScope: String(localized: "API Token"),
+                    message: String(localized: "Cloudflare Pages API 仅支持 API Token 认证，OAuth 授权不可用。请前往「设置 → 添加 API Token」后切换身份。")
+                )
+                .navigationTitle("Pages")
+            }
         }
-        .onChange(of: router.pendingModule) {
-            consumePendingRoute()
-        }
+    }
+
+    @ViewBuilder private var storageTab: some View {
+        StorageView(session: session)
+            .id(session.selectedAccount?.id)
+    }
+
+    @ViewBuilder private var settingsTab: some View {
+        SettingsView()
     }
 
     /// App Intent（Siri/快捷指令/Spotlight）发起的跳转

@@ -1,4 +1,8 @@
 {
+	"rank": {
+		"badge": "開發者工具榜第 {rank} 名",
+		"ariaLabel": "App Store 排名"
+	},
 	"meta": {
 		"title": "Orange Cloud — 一眼看清你的 Cloudflare",
 		"description": "iOS 原生 Cloudflare 管理用戶端：官方 OAuth 安全登入，網域、DNS、流量分析、Workers 即時日誌與 R2 · D1 · KV 儲存，盡在 iPhone 與 iPad。",
@@ -13,12 +17,15 @@
 		"alt": "在 App Store 下載",
 		"comingLabel": "App Store 審核中"
 	},
+	"productHunt": {
+		"alt": "Orange Cloud — 為進階使用者打造的開源 Cloudflare 助手 | Product Hunt"
+	},
 	"hero": {
-		"kicker": "為 iPhone 與 iPad 原生打造",
+		"kicker": "為 iPhone、iPad 與 Android 原生打造",
 		"title1": "一眼看清你的",
 		"title2": "Cloudflare",
 		"sub": "網域、DNS、流量分析、Workers 日誌與儲存，裝進一片隨晨昏變化的天。官方 OAuth 登入，無需貼上 API Token。",
-		"note": "iOS 18.0+ · 免費下載，Pro 進階可選"
+		"note": "iOS 17.0+ / Android 9+ · 免費下載，Pro 進階可選"
 	},
 	"phone": {
 		"greetMorning": "早安，Jiamin",
@@ -109,45 +116,15 @@
 	"cta": {
 		"title": "把 Cloudflare 裝進口袋",
 		"sub": "今晚的天，已經在 App 裡等你。",
-		"requirement": "需要 iOS 18.0 或以上版本 · 支援 iPhone 與 iPad"
+		"requirement": "需要 iOS 17.0+ 或 Android 9+ · 支援 iPhone、iPad 與 Android"
 	},
 	"changelog": {
-		"title": "測試版歷史",
-		"sub": "App Store 正式版正在審核中，現可加入 TestFlight 搶先體驗。",
+		"title": "更新歷史",
+		"sub": "Orange Cloud 已在 App Store 上架。以下是歷次更新——也可加入 TestFlight 搶先體驗後續版本。",
 		"tfButton": "加入 TestFlight",
-		"tfNote": "需要 iOS 18.0 或以上版本 · 僅限 Apple 裝置",
-		"entries": [
-			{
-				"version": "1.0 (5)",
-				"date": "2026.06.15",
-				"notes": [
-					"切換帳號後，Workers、儲存、統計等資源現在只會顯示目前所選帳號的內容",
-					"登入保活更穩：修復授權過早失效、網路短暫波動後被反覆要求重新登入的問題"
-				]
-			},
-			{
-				"version": "1.0 (4)",
-				"date": "2026.06.15",
-				"notes": [
-					"最低系統要求降至 iOS 18.0，更多 iPhone 與 iPad 現可使用"
-				]
-			},
-			{
-				"version": "1.0 (3)",
-				"date": "2026.06.12",
-				"notes": [
-					"首個公開測試版",
-					"OAuth 官方登入 · 無需 API Token",
-					"網域清單 · DNS 增刪改查",
-					"流量分析（請求 / 頻寬 / 快取命中 / 攔截威脅）",
-					"Workers 清單 · 即時日誌 tail",
-					"R2 物件瀏覽 · D1 SQL 主控台 · KV 鍵值管理",
-					"WAF 自訂規則 · Cloudflare Tunnel 狀態",
-					"主畫面小工具 · Siri 捷徑 · 多帳號切換",
-					"Pro 訂閱 · 一次性買斷"
-				]
-			}
-		]
+		"tfNote": "需要 iOS 17.0 或以上版本 · 僅限 Apple 裝置",
+		"androidSoon": "Android 版即將登陸 Google Play",
+		"statusInReview": "審核中"
 	},
 	"footer": {
 		"privacy": "隱私政策",

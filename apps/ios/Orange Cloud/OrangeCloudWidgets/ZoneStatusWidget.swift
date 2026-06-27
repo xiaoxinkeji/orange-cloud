@@ -73,11 +73,11 @@ struct ZoneStatusWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "ZoneStatusWidget", provider: ZoneStatusProvider()) { entry in
             AccountOverviewWidgetView(entry: entry)
-                .containerBackground(for: .widget) { WidgetSky(date: entry.date) }
+                .daybreakContainer(date: entry.date)
         }
         .configurationDisplayName("账号总览")
         .description("全账号 24 小时请求与域名运行状态")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryInline, .accessoryCircular, .accessoryRectangular])
         .contentMarginsDisabled()
     }
 }
@@ -87,7 +87,18 @@ struct AccountOverviewWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: AccountOverviewEntry
 
+    @ViewBuilder
     var body: some View {
+        switch family {
+        case .accessoryInline:      inlineView
+        case .accessoryCircular:    circularView
+        case .accessoryRectangular: rectangularView
+        default:                    systemBody
+        }
+    }
+
+    @ViewBuilder
+    private var systemBody: some View {
         if let snapshot = entry.snapshot {
             switch family {
             case .systemMedium: mediumView(snapshot)
@@ -96,6 +107,61 @@ struct AccountOverviewWidgetView: View {
         } else {
             WidgetEmptyHint(text: String(localized: "打开 App 同步数据"))
         }
+    }
+
+    // MARK: - 锁屏 accessory
+
+    private var compactRequests: String {
+        entry.totalRequests > 0
+            ? entry.totalRequests.formatted(.number.notation(.compactName))
+            : "—"
+    }
+
+    private var inlineView: some View {
+        Label {
+            Text("\(compactRequests) 请求")
+        } icon: {
+            Image(systemName: "chart.bar.fill")
+        }
+    }
+
+    private var circularView: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: -1) {
+                Text(compactRequests)
+                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                Text("请求")
+                    .font(.system(size: 9))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(3)
+        }
+    }
+
+    private var rectangularView: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(entry.snapshot?.accountName ?? "Orange Cloud")
+                .font(.headline)
+                .widgetAccentable()
+                .lineLimit(1)
+            Text(compactRequests)
+                .font(.system(.title2, design: .rounded).weight(.bold))
+                .monospacedDigit()
+            if let snapshot = entry.snapshot {
+                Text("\(snapshot.activeZones)/\(snapshot.totalZones) 活跃 · 24h")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+            } else {
+                Text("请求 · 全部域名 · 24h")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
 
     /// 小（天窗）：合计请求大字 + 地平线弧

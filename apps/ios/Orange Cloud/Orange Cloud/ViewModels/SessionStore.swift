@@ -24,14 +24,19 @@ final class SessionStore {
     let kvService:         KVService
     let tunnelService:     TunnelService
     let wafService:        WAFService
+    let snippetService:    SnippetService
     let zoneSettingsService: ZoneSettingsService
-    let sslCertService:    SSLCertificateService
-    let pagesService:      PagesService
-    let firewallRuleService: FirewallRuleService
-    let bulkRedirectService: BulkRedirectService
-    let transformRuleService: TransformRuleService
-    let loadBalancerService: LoadBalancerService
-    let cacheRuleService:    CacheRuleService
+    let sslCertificateService:     SSLCertificateService
+    let transformRuleService:      TransformRuleService
+    let firewallAccessRuleService: FirewallAccessRuleService
+    let cacheRuleService:          CacheRuleService
+    let pagesService:              PagesService
+    let loadBalancerService:       LoadBalancerService
+    let bulkRedirectService:       BulkRedirectService
+    let auditLogService:           AuditLogService
+    let emailRoutingService:       EmailRoutingService
+    let rateLimitService:          RateLimitService
+    let zeroTrustService:          ZeroTrustService
 
     var accounts: [Account] = []
     var selectedAccount: Account? {
@@ -64,14 +69,19 @@ final class SessionStore {
         self.kvService         = KVService(client: client)
         self.tunnelService     = TunnelService(client: client)
         self.wafService        = WAFService(client: client)
+        self.snippetService    = SnippetService(client: client)
         self.zoneSettingsService = ZoneSettingsService(client: client)
-        self.sslCertService    = SSLCertificateService(client: client)
-        self.pagesService      = PagesService(client: client)
-        self.firewallRuleService = FirewallRuleService(client: client)
-        self.bulkRedirectService = BulkRedirectService(client: client)
-        self.transformRuleService = TransformRuleService(client: client)
-        self.loadBalancerService = LoadBalancerService(client: client)
-        self.cacheRuleService    = CacheRuleService(client: client)
+        self.sslCertificateService     = SSLCertificateService(client: client)
+        self.transformRuleService      = TransformRuleService(client: client)
+        self.firewallAccessRuleService = FirewallAccessRuleService(client: client)
+        self.cacheRuleService          = CacheRuleService(client: client)
+        self.pagesService              = PagesService(client: client)
+        self.loadBalancerService       = LoadBalancerService(client: client)
+        self.bulkRedirectService       = BulkRedirectService(client: client)
+        self.auditLogService           = AuditLogService(client: client)
+        self.emailRoutingService       = EmailRoutingService(client: client)
+        self.rateLimitService          = RateLimitService(client: client)
+        self.zeroTrustService          = ZeroTrustService(client: client)
     }
 
     /// 幂等加载账号列表，首个账号设为当前账号

@@ -28,13 +28,12 @@ final class EntitlementStore: EntitlementProviding {
 
     static let shared = EntitlementStore()
 
-    // MARK: - Product IDs
-
-    enum ProductID {
-        static let lifetime = "pro.lifetime"
-        static let monthly  = "pro.monthly"
-        static let yearly   = "pro.yearly"
-        static let all: Set<String> = [lifetime, monthly, yearly]
+    nonisolated enum ProductID {
+        static let monthly  = "jiamin.chen.orange_cloud.pro.monthly"
+        static let yearly   = "jiamin.chen.orange_cloud.pro.yearly"
+        static let lifetime = "jiamin.chen.orange_cloud.pro.lifetime"
+        /// 付费墙展示顺序：年度（主推）→ 月度 → 买断
+        static let all = [yearly, monthly, lifetime]
     }
 
     // MARK: - Observable State
@@ -68,6 +67,9 @@ final class EntitlementStore: EntitlementProviding {
     /// 已验证的活跃权益（productID 集合）
     private var activeEntitlements: Set<String> = []
 
+    /// 是否拥有买断权益
+    private var hasLifetime: Bool = false
+
     /// Transaction.updates 监听任务
     nonisolated(unsafe) private var transactionListenerTask: Task<Void, Never>? = nil
     #endif
@@ -97,6 +99,28 @@ final class EntitlementStore: EntitlementProviding {
         #endif
     }
 
+    func loadProducts() async {
+        #if !OPENSOURCE_UNLOCKED
+        guard products.isEmpty, !isLoadingProducts else { return }
+        isLoadingProducts = true
+        defer { isLoadingProducts = false }
+        do {
+            let loaded = try await Product.products(for: ProductID.all)
+            products = ProductID.all.compactMap { id in loaded.first { $0.id == id } }
+            if products.isEmpty {
+                // 不抛错但结果为空：StoreKit 配置文件解析失败或商品 ID 不匹配
+                AppLog.purchase.error("Product.products(for:) 返回空结果，请求的 ID：\(ProductID.all.joined(separator: ", "))")
+                errorMessage = String(localized: "无法加载商品信息，请稍后再试。")
+            } else {
+                AppLog.purchase.info("已加载 \(self.products.count) 个商品")
+            }
+        } catch {
+            AppLog.purchase.error("Product.products(for:) 失败：\(String(describing: error))")
+            errorMessage = String(localized: "无法加载商品信息，请稍后再试。")
+        }
+        #endif
+    }
+
     /// 购买：弹出系统购买面板并验证交易（取首个可用商品）
     func purchase() async throws {
         #if OPENSOURCE_UNLOCKED
@@ -122,11 +146,16 @@ final class EntitlementStore: EntitlementProviding {
 
         switch result {
         case .success(let verification):
-            let transaction = try checkVerified(verification)
-            await transaction.finish()
-            await checkCurrentEntitlements()
-
-        case .userCancelled:
+            if case .verified(let transaction) = verification {
+                await transaction.finish()
+                await refreshEntitlements()
+                AppLog.purchase.notice("purchase verified: \(transaction.productID)")
+            } else {
+                AppLog.purchase.error("purchase result unverified")
+                errorMessage = String(localized: "购买凭证校验失败，请尝试恢复购买。")
+            }
+        case .userCancelled, .pending:
+            AppLog.purchase.info("purchase userCancelled/pending")
             break
 
         case .pending:
@@ -139,15 +168,22 @@ final class EntitlementStore: EntitlementProviding {
     }
     #endif
 
-    /// 恢复购买
-    func restore() async throws {
-        #if OPENSOURCE_UNLOCKED
-        // 自签构建：无需恢复
-        #else
-        errorMessage = nil
-        try await AppStore.sync()
-        await checkCurrentEntitlements()
+    func restorePurchases() async {
+        #if !OPENSOURCE_UNLOCKED
+        do {
+            try await AppStore.sync()
+            await refreshEntitlements()
+            AppLog.purchase.notice("restorePurchases synced, pro=\(isPro)")
+        } catch {
+            AppLog.purchase.error("restorePurchases failed: \(error.localizedDescription)")
+            errorMessage = error.localizedDescription
+        }
         #endif
+    }
+
+    /// 恢复购买（协议兼容方法）
+    func restore() async throws {
+        await restorePurchases()
     }
 
     #if !OPENSOURCE_UNLOCKED
@@ -159,38 +195,33 @@ final class EntitlementStore: EntitlementProviding {
 
     /// Pro 商品 ID 列表（供 PaywallView 遍历）
     var productIDs: [String] {
-        [ProductID.lifetime, ProductID.yearly, ProductID.monthly]
+        ProductID.all
     }
 
     // MARK: - Private
 
     #if !OPENSOURCE_UNLOCKED
 
-    /// 从 App Store 加载商品
-    private func loadProducts() async {
-        isLoadingProducts = true
-        defer { isLoadingProducts = false }
-        do {
-            products = try await Product.products(for: ProductID.all)
-            // 按固定顺序排序：lifetime > yearly > monthly
-            let order = [ProductID.lifetime, ProductID.yearly, ProductID.monthly]
-            products.sort { a, b in
-                (order.firstIndex(of: a.id) ?? Int.max) < (order.firstIndex(of: b.id) ?? Int.max)
-            }
-        } catch {
-            errorMessage = "无法加载商品：\(error.localizedDescription)"
-        }
-    }
-
     /// 检查当前已有的活跃权益
     private func checkCurrentEntitlements() async {
         var entitlements: Set<String> = []
+        var lifetime = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result {
                 entitlements.insert(transaction.productID)
+                if transaction.productID == ProductID.lifetime {
+                    lifetime = true
+                }
             }
         }
         activeEntitlements = entitlements
+        hasLifetime = lifetime
+    }
+
+    /// 刷新权益并记录日志（供 purchase/restore 调用）
+    private func refreshEntitlements() async {
+        await checkCurrentEntitlements()
+        AppLog.purchase.info("entitlements refreshed: pro=\(isPro) lifetime=\(hasLifetime)")
     }
 
     /// 持续监听 StoreKit 交易更新（退款、退款争议、跨设备同步等）

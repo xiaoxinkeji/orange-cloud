@@ -14,21 +14,32 @@ struct ZoneAnalyticsSection: View {
 
     /// 宿主页持有（@State）并传入，宿主的下拉刷新与本区共用同一实例
     let viewModel: ZoneAnalyticsViewModel
+    @Environment(EntitlementStore.self) private var entitlements
     @State private var selectedDate: Date?
+    @State private var rangePaywallPresented = false
+    // 总请求大数字：保留 40pt 视觉基线，同时随动态字体缩放
+    @ScaledMetric(relativeTo: .largeTitle) private var heroNumberSize: CGFloat = 40
 
     var body: some View {
         VStack(spacing: 14) {
             rangePicker
 
+            if viewModel.error != nil && !viewModel.isLoading {
+                RefreshFailedBanner { Task { await viewModel.load() } }
+            }
+
             if viewModel.isLoading && viewModel.points.isEmpty {
                 analyticsSkeleton
             } else if viewModel.points.isEmpty {
-                ContentUnavailableView {
-                    Label("暂无数据", systemImage: "chart.xyaxis.line")
-                } description: {
-                    Text("所选时间范围内没有流量数据")
+                // 失败时不再误报「暂无数据」，由上方红色提示说明
+                if viewModel.error == nil {
+                    ContentUnavailableView {
+                        Label("暂无数据", systemImage: "chart.xyaxis.line")
+                    } description: {
+                        Text("所选时间范围内没有流量数据")
+                    }
+                    .frame(minHeight: 200)
                 }
-                .frame(minHeight: 200)
             } else {
                 requestsHeroCard
                 cacheHitCard
@@ -36,19 +47,18 @@ struct ZoneAnalyticsSection: View {
             }
         }
         .task {
+            // 订阅回落后把残留的 7d/30d 选择拉回免费档
+            if !entitlements.isPro && viewModel.selectedRange != .last24h {
+                viewModel.selectedRange = .last24h
+            }
             await viewModel.load()
+        }
+        .sheet(isPresented: $rangePaywallPresented) {
+            PaywallView(feature: .analyticsRange)
         }
         .onChange(of: viewModel.selectedRange) {
             selectedDate = nil
             Task { await viewModel.load() }
-        }
-        .alert("加载失败", isPresented: .init(
-            get: { viewModel.error != nil },
-            set: { if !$0 { viewModel.error = nil } }
-        )) {
-            Button("好", role: .cancel) {}
-        } message: {
-            Text(viewModel.error ?? "")
         }
     }
 
@@ -106,7 +116,12 @@ struct ZoneAnalyticsSection: View {
         Picker("时间范围", selection: Binding(
             get: { viewModel.selectedRange },
             set: { newRange in
-                viewModel.selectedRange = newRange
+                // 7d/30d 是 Pro 功能：未解锁时弹付费墙并停留在 24h
+                if newRange != .last24h && !entitlements.isPro {
+                    rangePaywallPresented = true
+                } else {
+                    viewModel.selectedRange = newRange
+                }
             }
         )) {
             ForEach(AnalyticsTimeRange.allCases) { range in
@@ -129,7 +144,7 @@ struct ZoneAnalyticsSection: View {
             }
 
             Text(viewModel.totalRequests.formatted())
-                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .font(.system(size: heroNumberSize, weight: .bold, design: .rounded))
                 .contentTransition(.numericText())
 
             requestsChart
@@ -162,6 +177,7 @@ struct ZoneAnalyticsSection: View {
                         startPoint: .top, endPoint: .bottom
                     )
                 )
+                .accessibilityHidden(true)
 
                 LineMark(
                     x: .value("时间", point.date),
@@ -170,6 +186,9 @@ struct ZoneAnalyticsSection: View {
                 .interpolationMethod(.monotone)
                 .foregroundStyle(Color.ocOrange)
                 .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                // 让读屏可逐点浏览：标签报时刻，值报请求数（也驱动 Audio Graph）
+                .accessibilityLabel(axisLabel(for: point.date))
+                .accessibilityValue(Text("\(point.requests) 次请求"))
             }
 
             // 末点高亮（"现在"）
@@ -180,12 +199,14 @@ struct ZoneAnalyticsSection: View {
                 )
                 .symbolSize(60)
                 .foregroundStyle(Color.ocOrange)
+                .accessibilityHidden(true)
             }
 
             // 扫览
             if let selected = selectedPoint {
                 RuleMark(x: .value("选中", selected.date))
                     .foregroundStyle(.secondary.opacity(0.4))
+                    .accessibilityHidden(true)
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart))) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(axisLabel(for: selected.date))
@@ -272,6 +293,7 @@ struct ZoneAnalyticsSection: View {
     private var cacheHitCard: some View {
         HStack(spacing: 18) {
             RingGauge(percent: viewModel.cacheHitRate ?? 0)
+                .accessibilityHidden(true)   // 命中率数字已在右侧文字呈现
 
             VStack(alignment: .leading, spacing: 3) {
                 Text("缓存命中率")
@@ -348,6 +370,10 @@ struct TrendBadge: View {
                     .font(.footnote.weight(.semibold))
             }
             .foregroundStyle((delta >= 0) == positiveIsGood ? Color.green : Color.red)
+            // 方向不只靠颜色：读屏报「上升/下降 + 数值」，箭头形状本身也已区分
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(delta >= 0 ? "上升" : "下降")
+            .accessibilityValue(Text(verbatim: "\(abs(delta).formatted(.number.precision(.fractionLength(1))))\(unit)"))
         }
     }
 }
@@ -401,6 +427,7 @@ struct SmallStatCard: View {
                 Spacer()
                 Sparkline(values: sparkValues, color: sparkColor)
                     .frame(width: 64, height: 26)
+                    .accessibilityHidden(true)   // 装饰性迷你走势，数值已在上方文字
             }
         }
         .padding()

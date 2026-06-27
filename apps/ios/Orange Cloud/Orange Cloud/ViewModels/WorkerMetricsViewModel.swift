@@ -17,6 +17,8 @@ final class WorkerMetricsViewModel {
     private(set) var series: [WorkerSeriesPoint] = []
     var isLoading = false
     var error: String?
+    /// 账户级数据集未授权（免费账号）：视图显示「无账户级数据权限」而非报错
+    private(set) var accountAnalyticsUnavailable = false
 
     private var cache: [AnalyticsTimeRange: (metrics: WorkerMetrics, series: [WorkerSeriesPoint])] = [:]
     private let analyticsService: AnalyticsService
@@ -37,6 +39,7 @@ final class WorkerMetricsViewModel {
         }
         isLoading = true
         error = nil
+        accountAnalyticsUnavailable = false
         do {
             // 序列查询失败不阻塞摘要（datetimeHour/date 分组属较新 schema）
             async let metricsTask = analyticsService.workerMetrics(
@@ -51,6 +54,9 @@ final class WorkerMetricsViewModel {
             cache[range] = (metrics, series)
             self.metrics = metrics
             self.series = series
+        } catch let error as APIError where error.isAccountNotAuthorized {
+            accountAnalyticsUnavailable = true
+            self.error = nil
         } catch {
             self.error = error.localizedDescription
         }

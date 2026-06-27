@@ -43,21 +43,118 @@ actor CFAPIClient {
         let _: EmptyResponse = try await request(method: "DELETE", path: path, queryItems: [], body: nil)
     }
 
+    /// 带 JSON 体的 DELETE（如 Rules List 批量删条目：{items:[{id}]}），返回解码结果
+    func delete<T: Codable & Sendable, B: Codable & Sendable>(_ path: String, body: B) async throws -> T {
+        let data = try JSONEncoder().encode(body)
+        return try await request(method: "DELETE", path: path, queryItems: [], body: data)
+    }
+
     /// 返回原始响应体（KV value 等非 JSON 信封端点）
     func getRaw(_ path: String, queryItems: [URLQueryItem] = [], accept: String? = nil) async throws -> Data {
-        try await performRequest(method: "GET", path: path, queryItems: queryItems, body: nil, contentType: nil, accept: accept)
+        try await performRequest(method: "GET", path: path, queryItems: queryItems, body: nil, contentType: nil, accept: accept).0
+    }
+
+    /// 原始响应体 + HTTP 响应（需读 Content-Type 的 boundary，如 Worker 源码 multipart）
+    func getRawResponse(_ path: String, queryItems: [URLQueryItem] = []) async throws -> (Data, HTTPURLResponse) {
+        try await performRequest(method: "GET", path: path, queryItems: queryItems, body: nil, contentType: nil)
     }
 
     /// 原始字节 PUT（R2 对象上传等），自带 Content-Type
     func putRaw<T: Codable & Sendable>(_ path: String, body: Data, contentType: String) async throws -> T {
-        let data = try await performRequest(
+        let (data, _) = try await performRequest(
             method: "PUT", path: path, queryItems: [], body: body, contentType: contentType
         )
+        return try Self.decode(data, path: path)
+    }
+
+    // MARK: - 流式文件传输（R2 大对象 copy/move：过临时文件，不把整个对象灌进内存）
+
+    /// 流式下载到临时文件（不进内存）。返回我们自管的临时文件 URL，调用方负责删除。
+    func downloadToFile(_ path: String, queryItems: [URLQueryItem] = []) async throws -> URL {
+        try await streamingDownload(path: path, queryItems: queryItems, isRetry: false)
+    }
+
+    private func streamingDownload(path: String, queryItems: [URLQueryItem], isRetry: Bool) async throws -> URL {
+        let request = try await buildRequest(method: "GET", path: path, queryItems: queryItems, contentType: nil)
+        let (tempURL, response): (URL, URLResponse)
         do {
-            return try JSONDecoder().decode(T.self, from: data)
+            (tempURL, response) = try await session.download(for: request)
         } catch {
-            throw APIError.decodingError(error)
+            AppLog.network.error("GET /\(Self.logPath(path)) download error: \(error.localizedDescription)")
+            throw APIError.networkError(error)
         }
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.networkError(URLError(.badServerResponse))
+        }
+        if http.statusCode == 401 && !isRetry {
+            _ = try await authManager.refreshAccessToken()
+            return try await streamingDownload(path: path, queryItems: queryItems, isRetry: true)
+        }
+        guard (200...299).contains(http.statusCode) else {
+            let data = (try? Data(contentsOf: tempURL)) ?? Data()
+            try? FileManager.default.removeItem(at: tempURL)
+            AppLog.network.error("GET /\(Self.logPath(path)) -> \(http.statusCode)\(Self.cfErrorSummary(data))")
+            throw Self.mapHTTPError(status: http.statusCode, data: data)
+        }
+        // download 返回的系统临时文件在本调用返回后会被清理，须立刻搬到自管位置
+        let dest = FileManager.default.temporaryDirectory
+            .appendingPathComponent("oc-transfer-\(UUID().uuidString)")
+        try? FileManager.default.removeItem(at: dest)
+        try FileManager.default.moveItem(at: tempURL, to: dest)
+        return dest
+    }
+
+    /// 流式上传文件（不进内存），自带 Content-Type；onProgress 回报 0...1（上传腿）。
+    func putFile<T: Codable & Sendable>(
+        _ path: String,
+        fileURL: URL,
+        contentType: String,
+        onProgress: (@Sendable (Double) -> Void)? = nil
+    ) async throws -> T {
+        try await streamingUpload(path: path, fileURL: fileURL, contentType: contentType, onProgress: onProgress, isRetry: false)
+    }
+
+    private func streamingUpload<T: Codable & Sendable>(
+        path: String,
+        fileURL: URL,
+        contentType: String,
+        onProgress: (@Sendable (Double) -> Void)?,
+        isRetry: Bool
+    ) async throws -> T {
+        let request = try await buildRequest(method: "PUT", path: path, queryItems: [], contentType: contentType)
+        let delegate = onProgress.map { UploadProgressDelegate(onProgress: $0) }
+        let (data, response): (Data, URLResponse)
+        do {
+            (data, response) = try await session.upload(for: request, fromFile: fileURL, delegate: delegate)
+        } catch {
+            AppLog.network.error("PUT /\(Self.logPath(path)) upload error: \(error.localizedDescription)")
+            throw APIError.networkError(error)
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw APIError.networkError(URLError(.badServerResponse))
+        }
+        if http.statusCode == 401 && !isRetry {
+            _ = try await authManager.refreshAccessToken()
+            return try await streamingUpload(path: path, fileURL: fileURL, contentType: contentType, onProgress: onProgress, isRetry: true)
+        }
+        guard (200...299).contains(http.statusCode) else {
+            AppLog.network.error("PUT /\(Self.logPath(path)) -> \(http.statusCode)\(Self.cfErrorSummary(data))")
+            throw Self.mapHTTPError(status: http.statusCode, data: data)
+        }
+        return try Self.decode(data, path: path)
+    }
+
+    /// 构造带 Bearer 的 URLRequest（流式传输用，复用 path 已编码约定 + 临期刷新）
+    private func buildRequest(method: String, path: String, queryItems: [URLQueryItem], contentType: String?) async throws -> URLRequest {
+        let token = try await validAccessToken()
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: false)!
+        components.percentEncodedPath += "/" + path
+        if !queryItems.isEmpty { components.queryItems = queryItems }
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let contentType { request.setValue(contentType, forHTTPHeaderField: "Content-Type") }
+        return request
     }
 
     /// multipart/form-data 写入（KV 写值要求 value + metadata 两个 part）
@@ -71,15 +168,87 @@ actor CFAPIClient {
         }
         body.append(Data("--\(boundary)--\r\n".utf8))
 
-        let data = try await performRequest(
+        let (data, _) = try await performRequest(
             method: "PUT", path: path, queryItems: [], body: body,
             contentType: "multipart/form-data; boundary=\(boundary)"
         )
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw APIError.decodingError(error)
+        return try Self.decode(data, path: path)
+    }
+
+    /// multipart/form-data 写入带文件 part（Snippets 上传 JS 模块）。
+    /// metadata part 为 JSON（如 {"main_module":"snippet.js"}）；文件 part 的字段名即文件名，
+    /// 与 main_module 引用一致，Content-Type 由调用方给（JS 模块用 application/javascript+module）。
+    func putMultipartFile<T: Codable & Sendable>(
+        _ path: String,
+        metadata: [String: String],
+        fileName: String,
+        fileContent: Data,
+        fileContentType: String
+    ) async throws -> T {
+        let boundary = "OrangeCloud-\(UUID().uuidString)"
+        var body = Data()
+
+        // metadata part
+        let metadataJSON = try JSONEncoder().encode(metadata)
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"metadata\"\r\n".utf8))
+        body.append(Data("Content-Type: application/json\r\n\r\n".utf8))
+        body.append(metadataJSON)
+        body.append(Data("\r\n".utf8))
+
+        // 文件 part（字段名 = filename = fileName，main_module 引用它）
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"\(fileName)\"; filename=\"\(fileName)\"\r\n".utf8))
+        body.append(Data("Content-Type: \(fileContentType)\r\n\r\n".utf8))
+        body.append(fileContent)
+        body.append(Data("\r\n".utf8))
+
+        body.append(Data("--\(boundary)--\r\n".utf8))
+
+        let (data, _) = try await performRequest(
+            method: "PUT", path: path, queryItems: [], body: body,
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
+        return try Self.decode(data, path: path)
+    }
+
+    /// 通用 multipart 请求：一个 JSON part（metadata / settings）+ 可选单个文件 part，支持 method 与 query。
+    /// Worker 上传（PUT，metadata + 模块文件，带 ?bindings_inherit=strict）与改设置（PATCH，settings）共用。
+    func multipartRequest<T: Codable & Sendable, M: Encodable & Sendable>(
+        method: String,
+        _ path: String,
+        queryItems: [URLQueryItem] = [],
+        jsonPartName: String,
+        jsonPart: M,
+        file: (name: String, contentType: String, content: Data)? = nil
+    ) async throws -> T {
+        let boundary = "OrangeCloud-\(UUID().uuidString)"
+        var body = Data()
+
+        // JSON part（metadata / settings）
+        let json = try JSONEncoder().encode(jsonPart)
+        body.append(Data("--\(boundary)\r\n".utf8))
+        body.append(Data("Content-Disposition: form-data; name=\"\(jsonPartName)\"\r\n".utf8))
+        body.append(Data("Content-Type: application/json\r\n\r\n".utf8))
+        body.append(json)
+        body.append(Data("\r\n".utf8))
+
+        // 可选文件 part（脚本模块；字段名 = filename，main_module/body_part 引用它）
+        if let file {
+            body.append(Data("--\(boundary)\r\n".utf8))
+            body.append(Data("Content-Disposition: form-data; name=\"\(file.name)\"; filename=\"\(file.name)\"\r\n".utf8))
+            body.append(Data("Content-Type: \(file.contentType)\r\n\r\n".utf8))
+            body.append(file.content)
+            body.append(Data("\r\n".utf8))
         }
+
+        body.append(Data("--\(boundary)--\r\n".utf8))
+
+        let (data, _) = try await performRequest(
+            method: method, path: path, queryItems: queryItems, body: body,
+            contentType: "multipart/form-data; boundary=\(boundary)"
+        )
+        return try Self.decode(data, path: path, method: method)
     }
 
     /// GraphQL Analytics API。信封是 {data, errors}（GraphQL 错误时 HTTP 仍为 200），
@@ -93,6 +262,14 @@ actor CFAPIClient {
             method: "POST", path: "graphql", queryItems: [], body: body
         )
         if let first = envelope.errors?.first {
+            // GraphQL 错误时 HTTP 仍为 200——网络层只看状态码看不到这层，这里单独记，
+            // 便于排查「请求 200 但数据没出来」（如数据集权限/字段不可用）。
+            AppLog.network.error("graphQL error (\(envelope.errors?.count ?? 1)): \(first.message)")
+            // authz（账户级数据集未授权）单独抛——调用方据此降级到「免费账号无账户级数据」态，
+            // 并停发同账号其余注定失败的账户级查询。
+            if envelope.errors?.contains(where: \.isAuthz) == true {
+                throw APIError.accountNotAuthorized
+            }
             throw APIError.cloudflareError(code: 0, message: first.message)
         }
         guard let data = envelope.data else {
@@ -109,17 +286,13 @@ actor CFAPIClient {
         queryItems: [URLQueryItem],
         body: Data?
     ) async throws -> T {
-        let data = try await performRequest(
+        let (data, _) = try await performRequest(
             method: method, path: path, queryItems: queryItems, body: body, contentType: "application/json"
         )
-        do {
-            return try JSONDecoder().decode(T.self, from: data)
-        } catch {
-            throw APIError.decodingError(error)
-        }
+        return try Self.decode(data, path: path, method: method)
     }
 
-    /// 统一的 HTTP 执行：Token 注入与刷新、401 重试一次、HTTP 错误映射，返回原始 Data
+    /// 统一的 HTTP 执行：Token 注入与刷新、401 重试一次、HTTP 错误映射，返回原始 Data + 响应
     private func performRequest(
         method: String,
         path: String,
@@ -128,7 +301,7 @@ actor CFAPIClient {
         contentType: String?,
         accept: String? = nil,
         isRetry: Bool = false
-    ) async throws -> Data {
+    ) async throws -> (Data, HTTPURLResponse) {
 
         // 1. 检查 Token 是否临期，如需则先刷新
         let token = try await validAccessToken()
@@ -153,19 +326,25 @@ actor CFAPIClient {
         urlRequest.httpBody = body
 
         // 3. 执行请求
+        let start = Date()
         let (data, response): (Data, URLResponse)
         do {
             (data, response) = try await session.data(for: urlRequest)
         } catch {
+            AppLog.network.error("\(method) /\(Self.logPath(path)) network error: \(error.localizedDescription)")
             throw APIError.networkError(error)
         }
 
         guard let http = response as? HTTPURLResponse else {
+            AppLog.network.error("\(method) /\(Self.logPath(path)) bad response (not HTTP)")
             throw APIError.networkError(URLError(.badServerResponse))
         }
 
+        let elapsedMs = Int(Date().timeIntervalSince(start) * 1000)
+
         // 4. 401：Token 过期，刷新后重试一次
         if http.statusCode == 401 && !isRetry {
+            AppLog.network.notice("\(method) /\(Self.logPath(path)) -> 401, refresh & retry")
             _ = try await authManager.refreshAccessToken()
             return try await performRequest(
                 method: method, path: path, queryItems: queryItems,
@@ -173,10 +352,17 @@ actor CFAPIClient {
             )
         }
 
+        // 结果各记一行（2xx → info 带响应体大小；其余 → error 带 CF 业务错误码/消息），便于排查
+        if (200...299).contains(http.statusCode) {
+            AppLog.network.info("\(method) /\(Self.logPath(path)) -> \(http.statusCode) (\(elapsedMs)ms, \(Self.sizeLabel(data.count)))")
+        } else {
+            AppLog.network.error("\(method) /\(Self.logPath(path)) -> \(http.statusCode) (\(elapsedMs)ms)\(Self.cfErrorSummary(data))")
+        }
+
         // 5. HTTP 错误处理（优先透出 CF 返回的业务错误信息）
         switch http.statusCode {
         case 200...299:
-            return data
+            return (data, http)
         case 401:
             throw APIError.unauthorized
         case 429:
@@ -200,22 +386,109 @@ actor CFAPIClient {
         guard let token = await authManager.currentToken else {
             throw APIError.unauthorized
         }
-        if token.refreshToken == nil {
+if token.refreshToken == nil {
             return token.accessToken        // API Token：无过期 / 无刷新
         }
+        let valid: String
         if token.expiresAt.timeIntervalSinceNow < 60 {  // 提前 60 秒刷新
             do {
-                return try await authManager.refreshAccessToken()
+                valid = try await authManager.refreshAccessToken()
             } catch AuthError.notLoggedIn {
                 throw APIError.unauthorized          // 刷新令牌确已失效：不再使用旧 token
             } catch {
                 // 刷新瞬时失败但旧 token 仍在有效期内：先用旧 token，真过期了由 401 重试兜底
                 if token.expiresAt.timeIntervalSinceNow > 0 {
-                    return token.accessToken
+                    valid = token.accessToken
+                } else {
+                    throw error
                 }
-                throw error
             }
+        } else {
+            valid = token.accessToken
         }
-        return token.accessToken
+        return valid
+    }
+
+    /// 日志用路径：截断，避免把超长 KV key 等用户数据完整写进日志
+    private static func logPath(_ path: String) -> String {
+        path.count > 80 ? String(path.prefix(80)) + "…" : path
+    }
+
+    // MARK: - 解码与诊断（统一记日志，绝不写入数据值，仅字段路径/错误码）
+
+    /// 统一 JSON 解码：失败时记一行（含失败字段路径与类型，不含数据值）再抛 decodingError。
+    /// 「请求 200 但数据没出来」多半在这里现形。
+    private static func decode<T: Decodable>(_ data: Data, path: String, method: String = "PUT") throws -> T {
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            AppLog.network.error("\(method) /\(logPath(path)) decode \(T.self) failed: \(decodeErrorSummary(error))")
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// 把 DecodingError 浓缩成一句（字段名是 API schema，非用户隐私，可记）
+    private static func decodeErrorSummary(_ error: Error) -> String {
+        guard let de = error as? DecodingError else { return error.localizedDescription }
+        switch de {
+        case .keyNotFound(let key, let ctx):    return "missing '\(key.stringValue)' at [\(codingPath(ctx))]"
+        case .typeMismatch(let type, let ctx):  return "type mismatch \(type) at [\(codingPath(ctx))]"
+        case .valueNotFound(let type, let ctx): return "null \(type) at [\(codingPath(ctx))]"
+        case .dataCorrupted(let ctx):           return "corrupted at [\(codingPath(ctx))]"
+        @unknown default:                       return "decoding error"
+        }
+    }
+
+    private static func codingPath(_ ctx: DecodingError.Context) -> String {
+        ctx.codingPath.map(\.stringValue).joined(separator: ".")
+    }
+
+    /// 非 2xx 时尽力解出 CF 业务错误码/消息（消息是接口级文案，非用户隐私）；解不出返回空串。
+    private static func cfErrorSummary(_ data: Data) -> String {
+        guard let env = try? JSONDecoder().decode(CFAPIResponse<EmptyResponse>.self, from: data),
+              let first = env.errors.first else { return "" }
+        return " cf=\(first.code) \(first.message)"
+    }
+
+    /// 响应体大小（便于发现「200 但空结果」）
+    private static func sizeLabel(_ bytes: Int) -> String {
+        bytes < 1024 ? "\(bytes)B" : String(format: "%.1fKB", Double(bytes) / 1024)
+    }
+
+    /// 非 2xx → APIError（流式传输复用，优先透出 CF 业务错误）。与 performRequest 内联映射对齐。
+    private static func mapHTTPError(status: Int, data: Data) -> APIError {
+        if let envelope = try? JSONDecoder().decode(CFAPIResponse<EmptyResponse>.self, from: data),
+           let first = envelope.errors.first {
+            return .cloudflareError(code: first.code, message: first.message)
+        }
+        switch status {
+        case 401:       return .unauthorized
+        case 403:       return .forbidden
+        case 404:       return .notFound
+        case 429:       return .rateLimited
+        case 500...599: return .serverError(statusCode: status)
+        default:        return .serverError(statusCode: status)
+        }
+    }
+}
+
+/// 上传进度转发：URLSession 流式上传的 didSendBodyData → 回调（0...1）。
+/// 独立 NSObject，回调在 URLSession 代理队列，不触 actor 隔离。
+private final class UploadProgressDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    private let onProgress: @Sendable (Double) -> Void
+
+    init(onProgress: @escaping @Sendable (Double) -> Void) {
+        self.onProgress = onProgress
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didSendBodyData bytesSent: Int64,
+        totalBytesSent: Int64,
+        totalBytesExpectedToSend: Int64
+    ) {
+        guard totalBytesExpectedToSend > 0 else { return }
+        onProgress(Double(totalBytesSent) / Double(totalBytesExpectedToSend))
     }
 }

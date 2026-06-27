@@ -307,6 +307,19 @@ nonisolated enum UsageFetcher {
         struct Viewer: Decodable { let accounts: [Node] }
     }
 
+    /// 只探 GraphQL 错误层的 authz 码（账户级无权限）；与数据解码分开，HTTP 200 也要看 body
+    private struct GraphQLErrorPeek: Decodable {
+        let errors: [Item]?
+        struct Item: Decodable {
+            let message: String?
+            let extensions: Ext?
+            struct Ext: Decodable { let code: String? }
+        }
+        var isAuthz: Bool {
+            errors?.contains { $0.extensions?.code == "authz" || $0.message == "not authorized for that account" } ?? false
+        }
+    }
+
     /// 通用 GraphQL：取第一个 account 节点解码为 N
     private static func graphQLFirstAccount<N: Decodable>(
         token: String, query: String, variables: [String: String]
@@ -322,8 +335,17 @@ nonisolated enum UsageFetcher {
         request.httpBody = encoded
 
         guard let (data, response) = try? await URLSession.shared.data(for: request),
-              (response as? HTTPURLResponse)?.statusCode == 200,
-              let decoded = try? JSONDecoder().decode(GraphQLEnvelope<N>.self, from: data) else { return nil }
+              (response as? HTTPURLResponse)?.statusCode == 200 else { return nil }
+        // GraphQL authz（账户级无权限）：HTTP 仍 200、错误在 body。落标志到 App Group，
+        // 让用量 Widget 即便 App 未打开也能显示「账户级用量不可用」。
+        if let peek = try? JSONDecoder().decode(GraphQLErrorPeek.self, from: data), peek.isAuthz {
+            WidgetDataStore.saveAccountAnalyticsAvailable(false)
+            return nil
+        }
+        guard let decoded = try? JSONDecoder().decode(GraphQLEnvelope<N>.self, from: data) else { return nil }
+        if decoded.data?.viewer.accounts.first != nil {
+            WidgetDataStore.saveAccountAnalyticsAvailable(true)
+        }
         return decoded.data?.viewer.accounts.first
     }
 

@@ -116,6 +116,9 @@ struct DashboardView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     daybreakHeader
                         .islandReveal(0)
+                    if session.error != nil || viewModel.loadFailed {
+                        RefreshFailedBanner { Task { await refreshAll() } }
+                    }
                     Group {
                         if cachedZones.isEmpty && viewModel.isLoadingAssets {
                             statSkeleton
@@ -130,18 +133,12 @@ struct DashboardView: View {
                         .islandReveal(3)
                     networkSection
                         .islandReveal(4)
-
-                    if let error = session.error {
-                        ContentUnavailableView {
-                            Label("加载失败", systemImage: "wifi.exclamationmark")
-                        } description: {
-                            Text(error)
-                        } actions: {
-                            Button("重试") {
-                                Task { await session.ensureAccounts() }
-                            }
-                            .buttonStyle(.borderedProminent)
-                        }
+                    bulkRedirectsSection
+                        .islandReveal(5)
+                    // Pages：仅在已授予 page.read 时显示（点亮 PermissionModels 的 pages 条目后生效）
+                    if auth.hasScope("page.read") {
+                        pagesSection
+                            .islandReveal(6)
                     }
                 }
                 .padding(OCLayout.pagePadding)
@@ -157,7 +154,7 @@ struct DashboardView: View {
                 }
             }
             .task(id: session.accounts.count) {
-                AccountSwitchTip.hasMultipleAccounts = session.accounts.count > 1
+                AccountSwitchTip.hasMultipleAccounts = session.accounts.count > 1 || auth.sessions.count > 1
             }
             .task(id: displayZones.map(\.id)) {
                 await loadTraffic()
@@ -175,15 +172,20 @@ struct DashboardView: View {
                 Task { await loadUsage(force: true) }
             }
             .refreshable {
-                await session.ensureAccounts()
-                await loadAssets(force: true)
-                await loadTraffic(force: true)
-                await loadUsage(force: true)
+                await refreshAll()
             }
             .sheet(item: $usageDetail) { service in
                 usageDetailSheet(service)
             }
         }
+    }
+
+    /// 下拉刷新 / 顶部失败提示重试：强制重拉账号、资产、流量、用量
+    private func refreshAll() async {
+        await session.ensureAccounts()
+        await loadAssets(force: true)
+        await loadTraffic(force: true)
+        await loadUsage(force: true)
     }
 
     /// 首屏资产统计：域名 / Workers / DNS 数量不等用户进入对应页面，进 Dashboard 就拉
@@ -359,14 +361,35 @@ struct DashboardView: View {
 
     private var accountMenu: some View {
         Menu {
-            ForEach(session.accounts) { account in
-                Button {
-                    session.selectedAccount = account
-                } label: {
-                    if account.id == session.selectedAccount?.id {
-                        Label(account.name, systemImage: "checkmark")
-                    } else {
-                        Text(account.name)
+            // 登录身份（在设置里「添加账号」加的，多个时点这里直接切换）
+            Section {
+                ForEach(auth.sessions) { identity in
+                    Button {
+                        if identity.id != auth.currentSessionId {
+                            auth.switchSession(identity.id)
+                        }
+                    } label: {
+                        if identity.id == auth.currentSessionId {
+                            Label(identity.label, systemImage: "checkmark")
+                        } else {
+                            Text(identity.label)
+                        }
+                    }
+                }
+            }
+            // 当前身份下的多个 Cloudflare 账号
+            if session.accounts.count > 1 {
+                Section("Cloudflare 账号") {
+                    ForEach(session.accounts) { account in
+                        Button {
+                            session.selectedAccount = account
+                        } label: {
+                            if account.id == session.selectedAccount?.id {
+                                Label(account.name, systemImage: "checkmark")
+                            } else {
+                                Text(account.name)
+                            }
+                        }
                     }
                 }
             }
@@ -384,7 +407,9 @@ struct DashboardView: View {
                 )
                 .symbolEffect(.bounce, value: session.selectedAccount?.id)
         }
-        .popoverTip(accountSwitchTip)
+        .safePopoverTip(accountSwitchTip)
+        .accessibilityLabel("切换账号")
+        .accessibilityValue(session.selectedAccount?.name ?? "")
     }
 
     // MARK: - 资产指标格（2×2）
@@ -487,7 +512,7 @@ struct DashboardView: View {
                     } label: {
                         Label(planSummary, systemImage: "slider.horizontal.3")
                             .font(.subheadline)
-                            .foregroundStyle(Color.ocOrange)
+                            .foregroundStyle(Color.ocOrangeText)
                     }
                 }
             }
@@ -501,10 +526,39 @@ struct DashboardView: View {
                     .glassIsland(cornerRadius: OCLayout.chipRadius)
             } else if let usage = viewModel.usage {
                 usageGrid(usage)
+            } else if viewModel.accountAnalyticsUnavailable {
+                accountAnalyticsUnavailableCard
+            } else if viewModel.usageLoadFailed {
+                Label("用量加载失败，下拉刷新重试", systemImage: "exclamationmark.triangle")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 16)
+                    .glassIsland(cornerRadius: OCLayout.chipRadius)
             } else {
                 usageSkeleton
             }
         }
+    }
+
+    /// 账户级数据无权限（免费账号常态）——中性提示 + 付费说明，区别于「加载失败可重试」
+    private var accountAnalyticsUnavailableCard: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "chart.bar.xaxis")
+                .font(.title3)
+                .foregroundStyle(.secondary)
+            Text("此账号暂无账户级数据查询权限")
+                .font(.subheadline.weight(.medium))
+                .multilineTextAlignment(.center)
+            Text("Workers / R2 / D1 / KV 用量通常需要付费版 Cloudflare 账号；域名流量分析不受影响。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 12)
+        .glassIsland(cornerRadius: OCLayout.chipRadius)
     }
 
     /// 用量宫格骨架：与真实瓦片同形状的 2×2 占位
@@ -904,7 +958,7 @@ struct DashboardView: View {
                     AppRouter.shared.pendingModule = .zones
                 }
                 .font(.subheadline)
-                .foregroundStyle(Color.ocOrange)
+                .foregroundStyle(Color.ocOrangeText)
             }
 
             if cachedZones.isEmpty && viewModel.isLoadingAssets {
@@ -948,13 +1002,70 @@ struct DashboardView: View {
     // MARK: - 网络（单行服务，胶囊形态，不配段落标题）
 
     private var networkSection: some View {
+        VStack(spacing: 10) {
+            ProGatedNavigationLink(
+                label: "Cloudflare Tunnel",
+                systemImage: "arrow.triangle.2.circlepath",
+                requiredScope: "argotunnel.read",
+                feature: .tunnel,
+                showsChevron: true
+            ) {
+                TunnelListView(session: session)
+            }
+            Divider().padding(.leading, 44)
+            ProGatedNavigationLink(
+                label: "Access 应用",
+                systemImage: "lock.shield",
+                requiredScope: "access.read",
+                feature: .zeroTrust,
+                showsChevron: true
+            ) {
+                AccessAppsView(session: session)
+            }
+            Divider().padding(.leading, 44)
+            ProGatedNavigationLink(
+                label: "Gateway 策略",
+                systemImage: "shield.lefthalf.filled",
+                requiredScope: "teams.read",
+                feature: .zeroTrust,
+                showsChevron: true
+            ) {
+                GatewayRulesView(session: session)
+            }
+        }
+        .padding(.horizontal, OCLayout.islandPadding + 2)
+        .padding(.vertical, 12)
+        .glassIsland(cornerRadius: 24)
+    }
+
+    // MARK: - Bulk Redirects（account 级）
+
+    private var bulkRedirectsSection: some View {
         ProGatedNavigationLink(
-            label: "Cloudflare Tunnel",
-            systemImage: "arrow.triangle.2.circlepath",
-            requiredScope: "argotunnel.read",
+            label: "Bulk Redirects",
+            systemImage: "arrowshape.turn.up.right",
+            requiredScope: "account-rule-lists.read",
+            feature: .bulkRedirects,
             showsChevron: true
         ) {
-            TunnelListView(session: session)
+            BulkRedirectListsView(session: session)
+        }
+        .padding(.horizontal, OCLayout.islandPadding + 2)
+        .padding(.vertical, 12)
+        .glassIsland(cornerRadius: 24)
+    }
+
+    // MARK: - Pages（account 级，page.read 授予后显示）
+
+    private var pagesSection: some View {
+        ProGatedNavigationLink(
+            label: "Cloudflare Pages",
+            systemImage: "doc.richtext",
+            requiredScope: "page.read",
+            feature: .pages,
+            showsChevron: true
+        ) {
+            PagesProjectListView(session: session)
         }
         .padding(.horizontal, OCLayout.islandPadding + 2)
         .padding(.vertical, 12)
@@ -1157,14 +1268,17 @@ private struct DashboardZoneCard: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Sparkline(values: points.map { Double($0.requests) }, color: .ocOrange)
                         .frame(width: 56, height: 16)
+                        .accessibilityHidden(true)
                     Text(total.formatted(.number.notation(.compactName)))
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()
                         .contentTransition(.numericText())
+                        .accessibilityLabel("24 小时请求")
                 }
             }
             StatusDot(status: zone.status, size: 7)
+                .accessibilityHidden(true)   // 状态已在副标题文字中
         }
         .padding(.horizontal, OCLayout.islandPadding)
         .padding(.vertical, 10)

@@ -47,6 +47,14 @@ nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case zhHant = "zh-Hant"
     case zhHK   = "zh-HK"
     case ja     = "ja"
+    case ko     = "ko"
+    case de     = "de"
+    case fr     = "fr"
+    case esMX   = "es-MX"
+    case ptBR   = "pt-BR"
+    case ptPT   = "pt-PT"
+    case ar     = "ar"
+    case tr     = "tr"
 
     var id: String { rawValue }
 
@@ -61,6 +69,14 @@ nonisolated enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
         case .zhHant: "繁體中文（台灣）"
         case .zhHK:   "繁體中文（香港）"
         case .ja:     "日本語"
+        case .ko:     "한국어"
+        case .de:     "Deutsch"
+        case .fr:     "Français"
+        case .esMX:   "Español (México)"
+        case .ptBR:   "Português (Brasil)"
+        case .ptPT:   "Português (Portugal)"
+        case .ar:     "العربية"
+        case .tr:     "Türkçe"
         }
     }
 

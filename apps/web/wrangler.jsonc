@@ -5,7 +5,9 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "orange-cloud-web",
-	"main": ".open-next/worker.js",
+	// 入口指向 custom-worker.ts（包一层 .open-next/worker.js + 补 scheduled），
+	// 让每日榜单抓取的 cron 有处理器可调。见 custom-worker.ts 顶部说明。
+	"main": "custom-worker.ts",
 	"compatibility_date": "2026-06-01",
 	"compatibility_flags": [
 		"nodejs_compat",
@@ -20,6 +22,22 @@
 		// see https://opennext.js.org/cloudflare/howtos/image
 		"binding": "IMAGES"
 	},
+	// App Store Server Notifications V2 的后台账本（订阅 / 财务）。
+	// 部署前先在「目标账号」执行 `wrangler d1 create orange-cloud-iap`，
+	// 把返回的 database_id 填到下面，再 `wrangler d1 migrations apply orange-cloud-iap --remote`。
+	// 本地开发 / 测试用 `--local`，placeholder id 即可，不联网。
+	"d1_databases": [
+		{
+			"binding": "IAP_DB",
+			"database_name": "orange-cloud-iap",
+			"database_id": "01f4f8e8-ed4d-456a-91d4-9c4507c96d3a",
+			"migrations_dir": "migrations",
+			"remote": true
+		}
+	],
+	// Cloudflare Email Service（Email Sending）—— 发激活码邮件，绑定式、无需 API key。
+	// 发件域名须先 onboard：`wrangler email sending enable hz.do`。
+	"send_email": [{ "name": "EMAIL" }],
 	"services": [
 		{
 			// Self-reference service binding, the service name must match the worker name
@@ -30,6 +48,10 @@
 	],
 	"observability": {
 		"enabled": true
+	},
+	// 每天 UTC 08:00 触发 custom-worker.ts 的 scheduled()，抓 App Store 各地区榜单名次。
+	"triggers": {
+		"crons": ["0 8 * * *"]
 	},
 	"routes": [
 		{

@@ -24,6 +24,7 @@ struct ZoneDetailView: View {
     // 操作区
     @State private var actionsViewModel: ZoneActionsViewModel
     @State private var showPurgeConfirm = false
+    @State private var showPurgeSheet = false
     @State private var showPurgeDone = false
     @State private var showPurgeURLSheet = false
     @State private var showActionDenied = false
@@ -153,6 +154,69 @@ struct ZoneDetailView: View {
                         showsChevron: true
                     ) {
                         CacheRulesView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
+
+                    ProGatedNavigationLink(
+                        label: "Rate Limiting",
+                        systemImage: "gauge.with.dots.needle.bottom.50percent",
+                        requiredScope: "zone-waf.read",
+                        feature: .rateLimit,
+                        tint: .pink,
+                        showsChevron: true
+                    ) {
+                        RateLimitRulesView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
+
+                    ProGatedNavigationLink(
+                        label: String(localized: "Snippets"),
+                        systemImage: "curlybraces",
+                        requiredScope: "snippets.read",
+                        feature: .snippets,
+                        tint: .indigo,
+                        showsChevron: true
+                    ) {
+                        SnippetsListView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
+
+                    ProGatedNavigationLink(
+                        label: "Email Routing",
+                        systemImage: "envelope",
+                        requiredScope: "email-routing-rule.read",
+                        feature: .emailRouting,
+                        tint: .pink,
+                        showsChevron: true
+                    ) {
+                        EmailRoutingView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
+
+                    PermissionGatedNavigationLink(
+                        label: "SSL/TLS",
+                        systemImage: "lock.shield",
+                        requiredScope: "zone-settings.read",
+                        tint: .green,
+                        showsChevron: true
+                    ) {
+                        ZoneSSLSettingsView(zoneId: zone.id, zoneName: zone.name, session: session)
+                    }
+
+                    PermissionGatedNavigationLink(
+                        label: String(localized: "性能与缓存"),
+                        systemImage: "speedometer",
+                        requiredScope: "zone-settings.read",
+                        tint: .teal,
+                        showsChevron: true
+                    ) {
+                        ZonePerformanceView(zoneId: zone.id, session: session)
+                    }
+
+                    PermissionGatedNavigationLink(
+                        label: String(localized: "SSL 证书"),
+                        systemImage: "checkmark.seal",
+                        requiredScope: "ssl-and-certificates.read",
+                        tint: .green,
+                        showsChevron: true
+                    ) {
+                        ZoneSSLCertsView(zoneId: zone.id, session: session)
                     }
                 }
 
@@ -348,13 +412,29 @@ struct ZoneDetailView: View {
         } message: {
             Text("边缘节点将在数秒内完成清理。")
         }
+        .sheet(isPresented: $showPurgeSheet) {
+            PurgeCacheSheet(zoneName: zone.name) { mode, items in
+                switch mode {
+                case .url:    await actionsViewModel.purgeURLs(items)
+                case .prefix: await actionsViewModel.purgePrefixes(items)
+                case .host:   await actionsViewModel.purgeHosts(items)
+                case .tag:    await actionsViewModel.purgeTags(items)
+                }
+            }
+        }
         .onChange(of: actionsViewModel.didPurge) {
             showPurgeDone = true
         }
         .alert("权限不足", isPresented: $showActionDenied) {
+            if let sessionId = auth.currentSessionId, !deniedScopeHint.isEmpty {
+                Button("一键重授权") {
+                    let scope = deniedScopeHint
+                    Task { await auth.reauthorize(sessionId: sessionId, additionalScopes: [scope]) }
+                }
+            }
             Button("好", role: .cancel) {}
         } message: {
-            Text("当前授权未包含此操作所需权限（\(deniedScopeHint)）。\n请在设置中退出登录后重新授权「缓存与防护」。")
+            Text("当前授权未包含此操作所需权限（\(deniedScopeHint)）。点「一键重授权」补齐，无需退出登录。")
         }
         .alert("操作失败", isPresented: .init(
             get: { actionsViewModel.error != nil },
@@ -397,6 +477,7 @@ struct ZoneDetailView: View {
                     set: { on in requestToggle(on) }
                 ))
                 .labelsHidden()
+                .accessibilityLabel(title)
             } else {
                 Button {
                     deniedScopeHint = canReadSettings ? "zone-settings.write" : "zone-settings.read"
@@ -411,9 +492,13 @@ struct ZoneDetailView: View {
                         Image(systemName: "lock.fill")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(title)
+                .accessibilityValue(actionsViewModel.settingsLoaded ? (isOn ? String(localized: "开") : String(localized: "关")) : "")
+                .accessibilityHint("需要额外授权才能修改")
             }
         }
     }
@@ -430,10 +515,12 @@ struct ZoneDetailView: View {
             HStack(spacing: 8) {
                 HStack(spacing: 5) {
                     StatusDot(status: zone.status, size: 7)
+                        .accessibilityHidden(true)
                     Text(statusText)
                         .font(.footnote.weight(.medium))
                         .foregroundStyle(zone.status == "active" ? Color.green : Color.secondary)
                 }
+                .accessibilityElement(children: .combine)
                 PlanBadge(planName: zone.planName)
             }
         }

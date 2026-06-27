@@ -9,6 +9,7 @@ import WidgetKit
 import SwiftUI
 import AppIntents
 
+@available(iOS 18.0, *)
 struct OrangeCloudControlWidget: ControlWidget {
 
     var body: some ControlWidgetConfiguration {

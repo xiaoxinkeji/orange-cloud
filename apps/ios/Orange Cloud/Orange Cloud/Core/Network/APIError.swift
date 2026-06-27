@@ -14,6 +14,7 @@ nonisolated enum APIError: LocalizedError {
     case cloudflareError(code: Int, message: String)  // CF 业务错误
     case decodingError(Error)            // 解析失败
     case networkError(Error)             // 网络错误
+    case accountNotAuthorized            // 账户级数据集未授权（GraphQL authz；免费账号常态，无法区分无权限/计划未开通）
 
     var errorDescription: String? {
         switch self {
@@ -25,6 +26,13 @@ nonisolated enum APIError: LocalizedError {
         case .cloudflareError(_, let msg): return msg
         case .decodingError:               return String(localized: "数据解析失败")
         case .networkError(let e):         return String(localized: "网络错误：\(e.localizedDescription)")
+        case .accountNotAuthorized:        return String(localized: "此账号暂无账户级数据查询权限")
         }
+    }
+
+    /// 是否为账户级数据集未授权（用于 UI 降级到「免费账号无账户级数据」态）
+    var isAccountNotAuthorized: Bool {
+        if case .accountNotAuthorized = self { return true }
+        return false
     }
 }

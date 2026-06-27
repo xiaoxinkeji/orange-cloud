@@ -1,4 +1,8 @@
 {
+	"rank": {
+		"badge": "デベロッパツール {rank} 位",
+		"ariaLabel": "App Store ランキング"
+	},
 	"meta": {
 		"title": "Orange Cloud — Cloudflare を、ひと目で",
 		"description": "Cloudflare のための iOS ネイティブクライアント。公式 OAuth ログイン、ドメイン・DNS・トラフィック分析・Workers ライブログ・R2 / D1 / KV ストレージを iPhone と iPad で。",
@@ -13,12 +17,15 @@
 		"alt": "App Store でダウンロード",
 		"comingLabel": "App Store 審査中"
 	},
+	"productHunt": {
+		"alt": "Orange Cloud — パワーユーザーのためのオープンソース Cloudflare コンパニオン | Product Hunt"
+	},
 	"hero": {
-		"kicker": "iPhone と iPad のためのネイティブアプリ",
+		"kicker": "iPhone・iPad・Android のためのネイティブアプリ",
 		"title1": "Cloudflare を、",
 		"title2": "ひと目で",
 		"sub": "ドメイン、DNS、分析、Workers ログ、ストレージ。空の色とともに移ろう UI に、すべてが収まる。公式 OAuth ログインで API トークンの貼り付けは不要。",
-		"note": "iOS 18.0+ · 無料ダウンロード、Pro はお好みで"
+		"note": "iOS 17.0+ / Android 9+ · 無料ダウンロード、Pro はお好みで"
 	},
 	"phone": {
 		"greetMorning": "おはようございます",
@@ -109,45 +116,15 @@
 	"cta": {
 		"title": "Cloudflare をポケットに",
 		"sub": "今夜の空は、もうアプリの中で待っています。",
-		"requirement": "iOS 18.0 以降が必要 · iPhone / iPad 対応"
+		"requirement": "iOS 17.0+ または Android 9+ が必要 · iPhone / iPad / Android 対応"
 	},
 	"changelog": {
-		"title": "ベータリリース",
-		"sub": "App Store 版は審査中です。TestFlight で最新ビルドをいち早く試せます。",
+		"title": "リリース履歴",
+		"sub": "Orange Cloud は App Store で公開中です。これまでのリリース履歴をどうぞ。今後のビルドを試すには TestFlight にもご参加いただけます。",
 		"tfButton": "TestFlight に参加",
-		"tfNote": "iOS 18.0 以降が必要 · Apple デバイス限定",
-		"entries": [
-			{
-				"version": "1.0 (5)",
-				"date": "2026.06.15",
-				"notes": [
-					"アカウント切替後、Workers・ストレージ・統計などのリソースが選択中のアカウントのみを正しく表示するように",
-					"ログイン維持を安定化：認証が早期に失効し、通信の一時的な不調で再認証を求められる問題を修正"
-				]
-			},
-			{
-				"version": "1.0 (4)",
-				"date": "2026.06.15",
-				"notes": [
-					"最低要件を iOS 18.0 に引き下げ。より多くの iPhone / iPad で利用可能に"
-				]
-			},
-			{
-				"version": "1.0 (3)",
-				"date": "2026.06.12",
-				"notes": [
-					"初の公開ベータ",
-					"公式 OAuth ログイン · API トークン不要",
-					"ドメイン一覧 · DNS 管理（作成 / 編集 / 削除）",
-					"トラフィック分析（リクエスト / 帯域 / キャッシュ / 脅威）",
-					"Workers 一覧 · ライブログ tail",
-					"R2 オブジェクト閲覧 · D1 SQL · KV 管理",
-					"WAF カスタムルール · Cloudflare Tunnel 状態",
-					"ウィジェット · Siri ショートカット · 複数アカウント",
-					"Pro サブスク · 買い切り購入"
-				]
-			}
-		]
+		"tfNote": "iOS 17.0 以降が必要 · Apple デバイス限定",
+		"androidSoon": "Android 版は近日 Google Play に登場します",
+		"statusInReview": "審査中"
 	},
 	"footer": {
 		"privacy": "プライバシーポリシー",

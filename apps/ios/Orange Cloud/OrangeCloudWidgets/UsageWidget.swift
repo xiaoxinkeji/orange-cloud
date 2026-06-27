@@ -22,6 +22,7 @@ nonisolated struct UsageWidgetEntry: TimelineEntry {
     let date: Date
     let service: WidgetUsageService?
     let missingName: String?     // 所选服务无数据时的名称（用于提示文案）
+    var unavailable: Bool = false   // 账户级数据无权限（免费账号）→ 显示专用提示而非「打开 App 同步」
 }
 
 /// 画廊/占位用的示例数据——跟随所选服务，避免看起来像"参数没生效"
@@ -75,11 +76,13 @@ nonisolated struct UsageWidgetProvider: AppIntentTimelineProvider {
         // 自取数优先（共享钥匙串 token 直查所选服务），失败回退 App 写入的快照
         let fresh = await UsageFetcher.freshService(configuration.serviceId)
         let service = fresh ?? resolveService(configuration.serviceId)
-        usageLog.info("timeline: fresh=\(fresh?.id ?? "nil", privacy: .public) resolved=\(service?.id ?? "nil", privacy: .public)")
+        let unavailable = service == nil && !WidgetDataStore.loadAccountAnalyticsAvailable()
+        usageLog.info("timeline: fresh=\(fresh?.id ?? "nil", privacy: .public) resolved=\(service?.id ?? "nil", privacy: .public) unavailable=\(unavailable, privacy: .public)")
         let entry = UsageWidgetEntry(
             date: .now,
             service: service,
-            missingName: service == nil ? (configuration.service?.name ?? "Workers") : nil
+            missingName: service == nil ? (configuration.service?.name ?? "Workers") : nil,
+            unavailable: unavailable
         )
         let next = Calendar.current.date(byAdding: .minute, value: 30, to: .now) ?? .now
         return Timeline(entries: [entry], policy: .after(next))
@@ -93,11 +96,11 @@ struct UsageWidget: Widget {
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "UsageWidget", intent: UsageConfigIntent.self, provider: UsageWidgetProvider()) { entry in
             UsageWidgetView(entry: entry)
-                .containerBackground(for: .widget) { WidgetSky(date: entry.date) }
+                .daybreakContainer(date: entry.date)
         }
         .configurationDisplayName("账号用量")
         .description("Workers / R2 / D1 / KV 的额度使用情况，可按服务选择")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryInline, .accessoryCircular, .accessoryRectangular])
         .contentMarginsDisabled()
     }
 }
@@ -107,15 +110,121 @@ struct UsageWidgetView: View {
     @Environment(\.widgetFamily) private var family
     let entry: UsageWidgetEntry
 
+    @ViewBuilder
     var body: some View {
+        switch family {
+        case .accessoryInline:      inlineView
+        case .accessoryCircular:    circularView
+        case .accessoryRectangular: rectangularView
+        default:                    systemBody
+        }
+    }
+
+    @ViewBuilder
+    private var systemBody: some View {
         if let service = entry.service, !service.rows.isEmpty {
             switch family {
             case .systemMedium: mediumView(service)
             default:            smallView(service)
             }
+        } else if entry.unavailable {
+            WidgetEmptyHint(text: String(localized: "账户级用量不可用"))
         } else {
             WidgetEmptyHint(text: entry.missingName.map { String(localized: "暂无 \($0) 用量数据\n打开 App 刷新") }
                 ?? String(localized: "打开 App 同步用量"))
+        }
+    }
+
+    // MARK: - 锁屏 accessory
+
+    /// 首要指标的额度占比（无额度返回 nil）
+    private func ratio(_ row: WidgetUsageRow) -> Double? {
+        row.quota.map { min(Double(row.used) / Double(max($0, 1)), 1) }
+    }
+
+    @ViewBuilder
+    private var inlineView: some View {
+        if let service = entry.service, let row = service.rows.first {
+            Label {
+                if let percent = ratio(row).map({ Int($0 * 100) }) {
+                    Text("\(service.name) \(percent)% · \(row.title)")
+                } else {
+                    Text("\(service.name) \(row.valueText) · \(row.title)")
+                }
+            } icon: {
+                Image(systemName: "gauge.medium")
+            }
+        } else if entry.unavailable {
+            Label(String(localized: "账户级用量不可用"), systemImage: "lock")
+        } else {
+            Label("Orange Cloud", systemImage: "gauge.medium")
+        }
+    }
+
+    @ViewBuilder
+    private var circularView: some View {
+        if let service = entry.service, let row = service.rows.first, let value = ratio(row) {
+            Gauge(value: value) {
+                Text(service.name)
+            } currentValueLabel: {
+                Text("\(Int(value * 100))")
+                    .minimumScaleFactor(0.5)
+            }
+            .gaugeStyle(.accessoryCircularCapacity)
+            .tint(barColor(value))
+        } else {
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: -1) {
+                    Text(entry.service?.rows.first?.valueText ?? "—")
+                        .font(.system(.callout, design: .rounded).weight(.semibold))
+                        .minimumScaleFactor(0.4)
+                        .lineLimit(1)
+                    Text(entry.service?.name ?? "")
+                        .font(.system(size: 9))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(3)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var rectangularView: some View {
+        if let service = entry.service, let row = service.rows.first {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    Text("\(service.name) 用量")
+                        .font(.headline)
+                        .widgetAccentable()
+                        .lineLimit(1)
+                    Spacer(minLength: 4)
+                    if let percent = ratio(row).map({ Int($0 * 100) }) {
+                        Text("\(percent)%")
+                            .font(.caption)
+                            .monospacedDigit()
+                    }
+                }
+                if let value = ratio(row) {
+                    Gauge(value: value) { EmptyView() }
+                        .gaugeStyle(.accessoryLinearCapacity)
+                        .tint(barColor(value))
+                }
+                Text(row.quota.map { "\(row.valueText) / \($0.formatted(.number.notation(.compactName)))" } ?? row.valueText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        } else if entry.unavailable {
+            Text("账户级用量不可用")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        } else {
+            Text(entry.missingName.map { String(localized: "暂无 \($0) 用量数据") } ?? String(localized: "打开 App 同步用量"))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
         }
     }
 

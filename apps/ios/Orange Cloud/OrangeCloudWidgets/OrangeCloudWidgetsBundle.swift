@@ -13,7 +13,10 @@ struct OrangeCloudWidgetsBundle: WidgetBundle {
         ZoneChartWidget()
         UsageWidget()
         ZoneStatusWidget()
-        OrangeCloudControlWidget()
+        if #available(iOS 18.0, *) {
+            // 控制中心 ControlWidget 仅 iOS 18+ 可用
+            OrangeCloudControlWidget()
+        }
         TailLiveActivityWidget()
     }
 }

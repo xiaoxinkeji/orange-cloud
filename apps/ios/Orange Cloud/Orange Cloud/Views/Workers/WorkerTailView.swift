@@ -11,6 +11,7 @@ import TipKit
 struct WorkerTailView: View {
 
     @State private var viewModel: WorkerTailViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     init(accountId: String, scriptName: String, session: SessionStore) {
         _viewModel = State(initialValue: WorkerTailViewModel(
@@ -36,7 +37,7 @@ struct WorkerTailView: View {
                 ) {
                     viewModel.isPaused.toggle()
                 }
-                .popoverTip(TailPauseTip())
+                .safePopoverTip(TailPauseTip())
                 Button("清屏", systemImage: "xmark.bin") {
                     viewModel.clear()
                 }
@@ -48,6 +49,14 @@ struct WorkerTailView: View {
         }
         .onDisappear {
             Task { await viewModel.stop() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // tail 连接进后台必断：置灰 Live Activity，回前台再复活重连
+            switch phase {
+            case .background: viewModel.enterBackground()
+            case .active:     viewModel.enterForeground()
+            default:          break
+            }
         }
     }
 
@@ -74,7 +83,7 @@ struct WorkerTailView: View {
             if viewModel.isPaused {
                 Label("已暂停", systemImage: "pause.fill")
                     .font(.caption)
-                    .foregroundStyle(Color.ocOrange)
+                    .foregroundStyle(Color.ocOrangeText)
             }
         }
         .padding(.horizontal)
@@ -115,6 +124,8 @@ struct WorkerTailView: View {
                         }
                     }
                     .padding(12)
+                    // 日志正文（时间戳 + 请求路径/JSON）始终 LTR，避免在阿拉伯语等 RTL 下被镜像
+                    .environment(\.layoutDirection, .leftToRight)
                 }
             }
             .background { SkyBackground() }

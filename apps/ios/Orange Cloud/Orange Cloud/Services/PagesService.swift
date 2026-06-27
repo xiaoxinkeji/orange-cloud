@@ -2,7 +2,8 @@
 //  PagesService.swift
 //  Orange Cloud
 //
-//  Cloudflare Pages API：项目列表、部署、域名、重新部署。
+//  Cloudflare Pages（account 级）：项目与部署 CRUD。读 page.read，写 page.write。
+//  端点核对自 Cloudflare 官方 SDK（cloudflare-python resources/pages）。
 //
 
 import Foundation
@@ -15,14 +16,16 @@ struct PagesService {
         self.client = client
     }
 
+    // MARK: - 项目
+
     func listProjects(accountId: String) async throws -> [PagesProject] {
-        let response: CFAPIResponseArray<PagesProject> = try await client.get(
+        let response: CFAPIResponse<[PagesProject]> = try await client.get(
             "accounts/\(accountId)/pages/projects"
         )
-        guard response.success else {
+        guard response.success, let projects = response.result else {
             throw response.toAPIError()
         }
-        return response.result ?? []
+        return projects
     }
 
     func getProject(accountId: String, projectName: String) async throws -> PagesProject {
@@ -35,15 +38,32 @@ struct PagesService {
         return project
     }
 
-    func listDeployments(accountId: String, projectName: String) async throws -> [PagesDeployment] {
-        let response: CFAPIResponseArray<PagesDeployment> = try await client.get(
-            "accounts/\(accountId)/pages/projects/\(projectName)/deployments",
-            queryItems: [URLQueryItem(name: "per_page", value: "25")]
+    /// PATCH 项目（构建配置 / 生产分支）。仅传要改的字段，顶层合并。
+    func updateProject(accountId: String, projectName: String, update: PagesProjectUpdate) async throws -> PagesProject {
+        let response: CFAPIResponse<PagesProject> = try await client.patch(
+            "accounts/\(accountId)/pages/projects/\(projectName)",
+            body: update
         )
-        guard response.success else {
+        guard response.success, let project = response.result else {
             throw response.toAPIError()
         }
-        return response.result ?? []
+        return project
+    }
+
+    func deleteProject(accountId: String, projectName: String) async throws {
+        try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)")
+    }
+
+    // MARK: - 部署
+
+    func listDeployments(accountId: String, projectName: String) async throws -> [PagesDeployment] {
+        let response: CFAPIResponse<[PagesDeployment]> = try await client.get(
+            "accounts/\(accountId)/pages/projects/\(projectName)/deployments"
+        )
+        guard response.success, let deployments = response.result else {
+            throw response.toAPIError()
+        }
+        return deployments
     }
 
     func getDeployment(accountId: String, projectName: String, deploymentId: String) async throws -> PagesDeployment {
@@ -56,20 +76,11 @@ struct PagesService {
         return deployment
     }
 
-    func listDomains(accountId: String, projectName: String) async throws -> [PagesDomain] {
-        let response: CFAPIResponseArray<PagesDomain> = try await client.get(
-            "accounts/\(accountId)/pages/projects/\(projectName)/domains"
-        )
-        guard response.success else {
-            throw response.toAPIError()
-        }
-        return response.result ?? []
-    }
-
+    /// 重试部署（重新构建并部署）
     func retryDeployment(accountId: String, projectName: String, deploymentId: String) async throws -> PagesDeployment {
         let response: CFAPIResponse<PagesDeployment> = try await client.post(
             "accounts/\(accountId)/pages/projects/\(projectName)/deployments/\(deploymentId)/retry",
-            body: EmptyBody()
+            body: PagesEmptyBody()
         )
         guard response.success, let deployment = response.result else {
             throw response.toAPIError()
@@ -77,20 +88,19 @@ struct PagesService {
         return deployment
     }
 
-    func triggerDeploy(accountId: String, projectName: String, branch: String) async throws -> PagesDeployment {
+    /// 回滚到某次部署（使其重新生效）
+    func rollbackDeployment(accountId: String, projectName: String, deploymentId: String) async throws -> PagesDeployment {
         let response: CFAPIResponse<PagesDeployment> = try await client.post(
-            "accounts/\(accountId)/pages/projects/\(projectName)/deployments",
-            body: PagesTriggerDeploy(branch: branch)
+            "accounts/\(accountId)/pages/projects/\(projectName)/deployments/\(deploymentId)/rollback",
+            body: PagesEmptyBody()
         )
         guard response.success, let deployment = response.result else {
             throw response.toAPIError()
         }
         return deployment
     }
-}
 
-private nonisolated struct EmptyBody: Codable, Sendable {}
-
-private nonisolated struct PagesTriggerDeploy: Codable, Sendable {
-    let branch: String
+    func deleteDeployment(accountId: String, projectName: String, deploymentId: String) async throws {
+        try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)/deployments/\(deploymentId)")
+    }
 }

@@ -27,7 +27,7 @@ nonisolated enum CacheContainer {
         do {
             return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
-            // 持久化容器创建失败时回退到纯内存模式，避免 crash。
+// 持久化容器创建失败时回退到纯内存模式，避免 crash。
             // 常见原因：磁盘空间不足、iCloud 容器权限被撤销。
             let memory = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
             guard let container = try? ModelContainer(for: schema, configurations: [memory])
@@ -37,4 +37,14 @@ nonisolated enum CacheContainer {
             return container
         }
     }()
+
+    /// 删除磁盘上的 SwiftData 存储文件（含 -wal / -shm 旁文件），供损坏后清库重建。
+    private static func destroyStoreFiles(at storeURL: URL) {
+        let fm = FileManager.default
+        let dir = storeURL.deletingLastPathComponent()
+        let name = storeURL.lastPathComponent          // 默认为 "default.store"
+        for suffix in ["", "-wal", "-shm"] {
+            try? fm.removeItem(at: dir.appendingPathComponent(name + suffix))
+        }
+    }
 }

@@ -72,6 +72,7 @@ nonisolated enum WidgetDataStore {
 
     private static let zonesKey = "widgetZoneMetrics"
     private static let usageKey = "widgetUsageData"
+    private static let analyticsAvailableKey = "accountAnalyticsAvailable"
 
     static func saveZones(_ zones: [WidgetZoneMetrics]) {
         guard let defaults = UserDefaults(suiteName: WidgetSnapshot.appGroupID),
@@ -96,5 +97,16 @@ nonisolated enum WidgetDataStore {
         guard let defaults = UserDefaults(suiteName: WidgetSnapshot.appGroupID),
               let data = defaults.data(forKey: usageKey) else { return nil }
         return try? JSONDecoder().decode(WidgetUsageData.self, from: data)
+    }
+
+    /// 当前账号是否拥有账户级数据（analytics）查询权限。未知时默认 true，避免首次误报不可用。
+    static func saveAccountAnalyticsAvailable(_ available: Bool) {
+        UserDefaults(suiteName: WidgetSnapshot.appGroupID)?.set(available, forKey: analyticsAvailableKey)
+    }
+
+    static func loadAccountAnalyticsAvailable() -> Bool {
+        guard let defaults = UserDefaults(suiteName: WidgetSnapshot.appGroupID),
+              defaults.object(forKey: analyticsAvailableKey) != nil else { return true }
+        return defaults.bool(forKey: analyticsAvailableKey)
     }
 }

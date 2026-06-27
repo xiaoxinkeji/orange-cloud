@@ -40,9 +40,15 @@ struct StorageView: View {
     @State private var r2ViewModel: R2BucketListViewModel
     @State private var d1ViewModel: D1DatabaseListViewModel
     @State private var kvViewModel: KVNamespaceListViewModel
+    @State private var showD1Create = false
+    @State private var databaseToDelete: D1Database?
+    @State private var d1Denied = false
+
+    /// 创建 / 删除 D1 数据库都需要写权限（读权限已是进入 D1 段的前置条件）
+    private var canWriteD1: Bool { auth.hasScope("d1.write") }
 
     init(session: SessionStore) {
-        _r2ViewModel = State(initialValue: R2BucketListViewModel(service: session.r2Service))
+        _r2ViewModel = State(initialValue: R2BucketListViewModel(service: session.r2Service, analyticsService: session.analyticsService))
         _d1ViewModel = State(initialValue: D1DatabaseListViewModel(service: session.d1Service))
         _kvViewModel = State(initialValue: KVNamespaceListViewModel(service: session.kvService))
     }
@@ -54,6 +60,29 @@ struct StorageView: View {
             }
             .background { SkyBackground() }
             .navigationTitle("存储")
+            .toolbar {
+                // 仅 D1 段提供「创建数据库」入口（R2/KV 暂只读浏览）
+                if entitlements.isPro, kind == .d1, auth.hasScope(StorageKind.d1.requiredScope) {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("创建数据库", systemImage: "plus") {
+                            if canWriteD1 { showD1Create = true } else { d1Denied = true }
+                        }
+                    }
+                }
+            }
+            .sheet(isPresented: $showD1Create) {
+                D1CreateView(viewModel: d1ViewModel, accountId: session.selectedAccount?.id ?? "")
+            }
+            .sheet(item: $databaseToDelete) { database in
+                D1DeleteConfirmView(database: database, viewModel: d1ViewModel, accountId: session.selectedAccount?.id ?? "")
+            }
+            .alert("权限不足", isPresented: $d1Denied) {
+                Button("好", role: .cancel) {}
+            } message: {
+                Text("当前授权未包含 D1 写权限（d1.write）。\n请在设置中退出登录后重新授权以启用此功能。")
+            }
+            .sensoryFeedback(.success, trigger: d1ViewModel.didCreate)
+            .sensoryFeedback(.success, trigger: d1ViewModel.didDelete)
         }
     }
 
@@ -105,8 +134,7 @@ struct StorageView: View {
                     StorageRow(
                         icon: "externaldrive", tint: .ocOrange, mono: false,
                         name: bucket.name,
-                        sub: [bucket.location, WorkerScript.parseDate(bucket.creationDate).map { $0.formatted(.dateTime.year().month().day()) }]
-                            .compactMap(\.self).joined(separator: " · ")
+                        sub: r2Subtitle(for: bucket)
                     )
                 }
                 .glassRow()
@@ -116,6 +144,18 @@ struct StorageView: View {
         }
     }
 
+    /// 桶副标题：有用量数据时显示存储/对象/请求，否则回退到位置 · 创建日期
+    private func r2Subtitle(for bucket: R2Bucket) -> String {
+        if let usage = r2ViewModel.usageByBucket[bucket.name], usage.storageBytes > 0 || usage.objectCount > 0 {
+            var parts = [Int64(usage.storageBytes).formatted(.byteCount(style: .file))]
+            if usage.objectCount > 0 { parts.append(String(localized: "\(usage.objectCount) 个对象")) }
+            if usage.totalRequests > 0 { parts.append(String(localized: "本月 \(usage.totalRequests.formatted()) 次操作")) }
+            return parts.joined(separator: " · ")
+        }
+        return [bucket.location, WorkerScript.parseDate(bucket.creationDate).map { $0.formatted(.dateTime.year().month().day()) }]
+            .compactMap(\.self).joined(separator: " · ")
+    }
+
     // MARK: - D1
 
     @ViewBuilder
@@ -123,7 +163,19 @@ struct StorageView: View {
         if d1ViewModel.databases.isEmpty && d1ViewModel.isLoading {
             loadingView
         } else if d1ViewModel.databases.isEmpty {
-            emptyView(icon: "cylinder", title: String(localized: "没有数据库"), body: String(localized: "在 Cloudflare Dashboard 创建 D1 数据库。"))
+            ContentUnavailableView {
+                Label("没有数据库", systemImage: "cylinder")
+            } description: {
+                Text(canWriteD1 ? String(localized: "点击右上角 + 创建第一个数据库") : String(localized: "当前授权仅限读取，无法创建数据库"))
+            } actions: {
+                if canWriteD1 {
+                    Button("创建数据库") { showD1Create = true }
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color.ocOrangePressed)
+                        .fontWeight(.bold)
+                }
+            }
+            .frame(maxHeight: .infinity)
         } else {
             List(d1ViewModel.databases) { database in
                 NavigationLink {
@@ -137,6 +189,13 @@ struct StorageView: View {
                             database.numTables.map { String(localized: "\($0) 张表") },
                         ].compactMap(\.self).joined(separator: " · ")
                     )
+                }
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        if canWriteD1 { databaseToDelete = database } else { d1Denied = true }
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
                 }
                 .glassRow()
             }

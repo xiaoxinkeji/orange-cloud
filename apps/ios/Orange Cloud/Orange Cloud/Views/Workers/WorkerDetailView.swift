@@ -54,6 +54,34 @@ struct WorkerDetailView: View {
             metricsSection
                 .glassRow()
 
+            Section("管理") {
+                ProGatedNavigationLink(
+                    label: String(localized: "变量与密钥"),
+                    systemImage: "key",
+                    requiredScope: "workers-scripts.read",
+                    feature: .workerSecrets
+                ) {
+                    WorkerSecretsView(accountId: script.accountId, scriptName: script.id, session: session)
+                }
+                ProGatedNavigationLink(
+                    label: String(localized: "触发器"),
+                    systemImage: "clock",
+                    requiredScope: "workers-scripts.read",
+                    feature: .workerTriggers
+                ) {
+                    WorkerTriggersView(accountId: script.accountId, scriptName: script.id, session: session)
+                }
+                ProGatedNavigationLink(
+                    label: String(localized: "域名"),
+                    systemImage: "globe",
+                    requiredScope: "workers-scripts.read",
+                    feature: .workerRoutes
+                ) {
+                    WorkerRoutesView(accountId: script.accountId, scriptName: script.id, session: session)
+                }
+            }
+            .glassRow()
+
             Section("调试") {
                 ProGatedNavigationLink(
                     label: String(localized: "实时日志"),
@@ -166,6 +194,10 @@ struct WorkerDetailView: View {
                                 .monospacedDigit()
                         }
                     }
+                } else if metricsViewModel.accountAnalyticsUnavailable {
+                    Label("此账号暂无账户级数据查询权限", systemImage: "chart.bar.xaxis")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                 } else if let error = metricsViewModel.error {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.footnote)
@@ -217,6 +249,7 @@ struct WorkerDetailView: View {
                         startPoint: .top, endPoint: .bottom
                     )
                 )
+                .accessibilityHidden(true)
                 LineMark(
                     x: .value("时间", point.date),
                     y: .value("请求", point.requests)
@@ -224,6 +257,8 @@ struct WorkerDetailView: View {
                 .interpolationMethod(.monotone)
                 .foregroundStyle(Color.ocOrange)
                 .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                .accessibilityLabel(Text(point.date, format: .dateTime.hour().minute()))
+                .accessibilityValue(Text("\(point.requests) 次请求"))
             }
 
             if metricsViewModel.series.contains(where: { $0.errors > 0 }) {
@@ -236,6 +271,8 @@ struct WorkerDetailView: View {
                     .interpolationMethod(.monotone)
                     .foregroundStyle(.red)
                     .lineStyle(StrokeStyle(lineWidth: 1.5, lineCap: .round))
+                    .accessibilityLabel(Text(point.date, format: .dateTime.hour().minute()))
+                    .accessibilityValue(Text("\(point.errors) 个错误"))
                 }
             }
         }

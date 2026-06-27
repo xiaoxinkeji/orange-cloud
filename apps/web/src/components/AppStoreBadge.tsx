@@ -1,6 +1,5 @@
 export const APP_STORE_URL = "https://apps.apple.com/app/id6779323783";
 export const TESTFLIGHT_URL = "https://testflight.apple.com/join/ZGhbsphj";
-
 /**
  * 上架前临时开关：true 时所有 App Store 徽章显示"审核中"状态。
  * TODO: App Store 审核通过后将此值改为 false，恢复真实下载链接。
@@ -24,7 +23,7 @@ function badgeSrc(locale: string): string {
 /**
  * App Store 官方本地化徽章。
  * coming=true 时渲染为不可点击的"审核中"状态——官方图片降透明度，下方显示状态标签。
- * 徽章图片来自 Apple 官方 CDN，遵循《营销资源和识别标志指南》。
+ * 徽章为 Apple 官方本地化黑色徽章 SVG（存 public/appstore/），遵循《营销资源和识别标志指南》。
  */
 export default function AppStoreBadge({
   locale = "en",

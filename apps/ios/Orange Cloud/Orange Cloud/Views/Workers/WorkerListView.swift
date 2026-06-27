@@ -20,12 +20,7 @@ struct WorkerListView: View {
     @State private var searchText = ""
     @State private var tailTarget: CachedWorkerScript?
     @State private var showTailDenied = false
-    @State private var showCreateSheet = false
-    @State private var showDeleteConfirm: CachedWorkerScript?
-    @State private var newName = ""
     @Namespace private var namespace
-
-    private var canWrite: Bool { auth.hasScope("workers-scripts.write") }
 
     init(session: SessionStore) {
         // 只读当前账号的脚本（多账号切换后缓存里会留有别的账号的条目）。
@@ -61,23 +56,18 @@ struct WorkerListView: View {
             .searchable(text: $searchText, prompt: "搜索脚本")
             .navigationDestination(for: CachedWorkerScript.self) { script in
                 WorkerDetailView(script: script, session: session)
-                    .navigationTransition(.zoom(sourceID: script.key, in: namespace))
+                    .zoomNavigationTransition(sourceID: script.key, in: namespace)
             }
             .navigationDestination(item: $tailTarget) { script in
                 WorkerTailView(accountId: script.accountId, scriptName: script.id, session: session)
             }
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("新建", systemImage: "plus") {
-                        showCreateSheet = true
-                    }
-                    .disabled(!canWrite)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("刷新", systemImage: "arrow.clockwise") {
-                        Task { await refresh() }
-                    }
-                    .symbolEffect(.rotate, isActive: viewModel.isLoading)
+                    RefreshButton(
+                        isLoading: viewModel.isLoading,
+                        failed: viewModel.error != nil,
+                        action: { Task { await refresh() } }
+                    )
                 }
             }
             .task {
@@ -87,36 +77,6 @@ struct WorkerListView: View {
                 Button("好", role: .cancel) {}
             } message: {
                 Text("当前授权未包含实时日志权限（workers-tail.read）。\n请在设置中退出登录后重新授权以启用此功能。")
-            }
-            .alert("加载失败", isPresented: .init(
-                get: { viewModel.error != nil },
-                set: { if !$0 { viewModel.error = nil } }
-            )) {
-                Button("好", role: .cancel) {}
-            } message: {
-                Text(viewModel.error ?? "")
-            }
-            .sheet(isPresented: $showCreateSheet) {
-                createSheet
-            }
-            .alert("确认删除", isPresented: .init(
-                get: { showDeleteConfirm != nil },
-                set: { if !$0 { showDeleteConfirm = nil } }
-            )) {
-                Button("取消", role: .cancel) {
-                    showDeleteConfirm = nil
-                }
-                Button("删除", role: .destructive) {
-                    if let script = showDeleteConfirm {
-                        Task {
-                            guard let accountId = session.selectedAccount?.id else { return }
-                            await viewModel.deleteScript(accountId: accountId, name: script.id, context: modelContext)
-                            showDeleteConfirm = nil
-                        }
-                    }
-                }
-            } message: {
-                Text("确定要删除「\(showDeleteConfirm?.id ?? "")」吗？此操作不可撤销。")
             }
         }
     }
@@ -128,7 +88,7 @@ struct WorkerListView: View {
                     NavigationLink(value: script) {
                         WorkerRow(script: script)
                     }
-                    .matchedTransitionSource(id: script.key, in: namespace)
+                    .zoomTransitionSource(id: script.key, in: namespace)
                     .swipeActions(edge: .trailing) {
                         Button {
                             if auth.hasScope("workers-tail.read") {
@@ -140,13 +100,6 @@ struct WorkerListView: View {
                             Label("查看日志", systemImage: "text.alignleft")
                         }
                         .tint(Color.ocOrange)
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            showDeleteConfirm = script
-                        } label: {
-                            Label("删除", systemImage: "trash")
-                        }
                     }
                 }
             } header: {
@@ -173,6 +126,8 @@ struct WorkerListView: View {
                 Task { await refresh() }
             }
             .buttonStyle(.borderedProminent)
+            .tint(Color.ocOrangePressed)
+            .fontWeight(.bold)
         }
     }
 
@@ -180,45 +135,6 @@ struct WorkerListView: View {
         await session.ensureAccounts()
         guard let accountId = session.selectedAccount?.id else { return }
         await viewModel.refresh(accountId: accountId, context: modelContext)
-    }
-
-    // MARK: - Create Sheet
-
-    private var createSheet: some View {
-        NavigationStack {
-            Form {
-                Section("脚本名称") {
-                    TextField("例如 my-worker", text: $newName)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                }
-            }
-            .navigationTitle("新建 Worker")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
-                        newName = ""
-                        showCreateSheet = false
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("创建") {
-                        let name = newName.trimmingCharacters(in: .whitespaces)
-                        guard !name.isEmpty, let accountId = session.selectedAccount?.id else { return }
-                        Task {
-                            let ok = await viewModel.createScript(accountId: accountId, name: name, context: modelContext)
-                            if ok {
-                                newName = ""
-                                showCreateSheet = false
-                            }
-                        }
-                    }
-                    .disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)
-                }
-            }
-        }
-        .presentationDetents([.medium])
     }
 }
 

@@ -312,7 +312,8 @@ struct AnalyticsService {
         )
     }
 
-    /// 账号用量：Workers 调用（今日/周期）+ R2 操作分类（周期）+ R2 当前存储。
+    /// 账号用量：Workers 调用（今日/周期）。R2 拆为独立查询（见 r2Usage），
+    /// 账号无 R2 / 无 R2 数据集权限时不再拖垮 Workers 用量（issue #4）。
     func accountUsage(accountId: String, periodStart: Date? = nil) async throws -> AccountUsage {
         let data: AccountUsageData = try await client.graphQL(
             query: AccountUsageQuery.text,
@@ -329,6 +330,31 @@ struct AnalyticsService {
         }
         let todayRequests = (account.today ?? []).reduce(0) { $0 + ($1.sum?.requests ?? 0) }
         let quantiles = account.month?.first?.quantiles
+
+        return AccountUsage(
+            workersRequestsToday: todayRequests,
+            workersRequestsMonth: monthSum.requests,
+            workersErrorsMonth:   monthSum.errors,
+            cpuP50Us:             quantiles?.cpuTimeP50,
+            cpuP99Us:             quantiles?.cpuTimeP99,
+            cpuTimeMonthUs:       nil,
+            cpuTimeTodayUs:       nil
+        )
+    }
+
+    /// R2 用量（操作分类 + 当前存储）独立查询。schema/权限不支持时抛错由调用方降级，
+    /// 不影响 Workers 主用量（与 CPU/D1/KV 同策略）。
+    func r2Usage(
+        accountId: String,
+        periodStart: Date? = nil
+    ) async throws -> (classA: Int, classB: Int, storageBytes: Int, objectCount: Int) {
+        let data: R2UsageData = try await client.graphQL(
+            query: R2UsageQuery.text,
+            variables: Self.usageVariables(accountId: accountId, periodStart: periodStart)
+        )
+        guard let account = data.viewer.accounts.first else {
+            throw APIError.notFound
+        }
 
         var classA = 0
         var classB = 0
@@ -349,19 +375,41 @@ struct AnalyticsService {
             objectCount  += group.max?.objectCount ?? 0
         }
 
-        return AccountUsage(
-            workersRequestsToday: todayRequests,
-            workersRequestsMonth: monthSum.requests,
-            workersErrorsMonth:   monthSum.errors,
-            cpuP50Us:             quantiles?.cpuTimeP50,
-            cpuP99Us:             quantiles?.cpuTimeP99,
-            cpuTimeMonthUs:       nil,
-            cpuTimeTodayUs:       nil,
-            r2ClassAMonth:        classA,
-            r2ClassBMonth:        classB,
-            r2StorageBytes:       storageBytes,
-            r2ObjectCount:        objectCount
+        return (classA, classB, storageBytes, objectCount)
+    }
+
+    /// 每桶用量（本月操作 Class A/B + 当前存储/对象数快照）。复用账号级 R2 查询的 bucketName 维度。
+    /// authz / schema 不支持时抛错由调用方降级（免费账号账户级 GraphQL 常被 authz 挡）。
+    func r2UsageByBucket(accountId: String, periodStart: Date? = nil) async throws -> [String: R2BucketUsage] {
+        let data: R2UsageData = try await client.graphQL(
+            query: R2UsageQuery.text,
+            variables: Self.usageVariables(accountId: accountId, periodStart: periodStart)
         )
+        guard let account = data.viewer.accounts.first else {
+            throw APIError.notFound
+        }
+
+        var byBucket: [String: R2BucketUsage] = [:]
+        for group in account.r2Storage ?? [] {
+            guard let bucket = group.dimensions?.bucketName, !bucket.isEmpty else { continue }
+            var usage = byBucket[bucket] ?? R2BucketUsage()
+            usage.storageBytes = (group.max?.payloadSize ?? 0) + (group.max?.metadataSize ?? 0)
+            usage.objectCount  = group.max?.objectCount ?? 0
+            byBucket[bucket] = usage
+        }
+        for group in account.r2Ops ?? [] {
+            guard let bucket = group.dimensions?.bucketName, !bucket.isEmpty,
+                  let action = group.dimensions?.actionType else { continue }
+            let count = group.sum?.requests ?? 0
+            var usage = byBucket[bucket] ?? R2BucketUsage()
+            if R2OperationClass.classA.contains(action) {
+                usage.classARequests += count
+            } else if R2OperationClass.classB.contains(action) {
+                usage.classBRequests += count
+            }
+            byBucket[bucket] = usage
+        }
+        return byBucket
     }
 
     private func fetch(

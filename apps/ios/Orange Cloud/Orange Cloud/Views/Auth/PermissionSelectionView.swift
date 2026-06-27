@@ -95,11 +95,11 @@ struct PermissionSelectionView: View {
                             ProgressView().tint(.white)
                         }
                         Text("使用 Cloudflare 账号授权")
-                            .fontWeight(.semibold)
+                            .fontWeight(.bold)
                     }
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(Color.ocOrange)
+                    .background(Color.ocOrangePressed)
                     .foregroundStyle(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
@@ -136,11 +136,11 @@ struct FeaturePermissionRow: View {
                                 .font(.body)
                             if permission.isRequired {
                                 Text("必选")
-                                    .font(.caption2)
-                                    .foregroundStyle(.white)
+                                    .font(.caption2.weight(.semibold))
+                                    .foregroundStyle(Color.ocOrangeText)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
-                                    .background(Color.ocOrange)
+                                    .background(Color.ocOrange.opacity(0.16))
                                     .clipShape(Capsule())
                             }
                         }
@@ -162,6 +162,7 @@ struct FeaturePermissionRow: View {
                 ))
                 .disabled(permission.isRequired)
                 .labelsHidden()
+                .accessibilityLabel(permission.title)
             }
 
             // 编辑权限切换（仅在功能开启且支持编辑时显示）

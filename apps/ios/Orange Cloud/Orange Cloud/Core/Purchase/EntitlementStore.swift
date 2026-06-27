@@ -20,6 +20,17 @@ protocol EntitlementProviding: Observable {
     func restore() async throws
 }
 
+// MARK: - Private
+
+#if !OPENSOURCE_UNLOCKED
+/// Wrapper to hold a Task reference without @Observable macro tracking.
+private final class _TaskHolder: @unchecked Sendable {
+    var task: Task<Void, Never>?
+    init() {}
+    deinit { task?.cancel() }
+}
+#endif
+
 // MARK: - EntitlementStore
 
 @Observable
@@ -70,19 +81,13 @@ final class EntitlementStore: EntitlementProviding {
     /// 是否拥有买断权益
     private var hasLifetime: Bool = false
 
-    /// Transaction.updates 监听任务
-    nonisolated(unsafe) private var transactionListenerTask: Task<Void, Never>? = nil
+    /// Transaction.updates 监听任务（通过 wrapper 持有，避免 @Observable 宏冲突）
+    private let _taskHolder = _TaskHolder()
     #endif
 
     // MARK: - Lifecycle
 
     private init() {}
-
-    deinit {
-        #if !OPENSOURCE_UNLOCKED
-        transactionListenerTask?.cancel()
-        #endif
-    }
 
     // MARK: - Public API
 
@@ -91,7 +96,7 @@ final class EntitlementStore: EntitlementProviding {
         #if OPENSOURCE_UNLOCKED
         // 自签构建：无需任何 StoreKit 操作
         #else
-        transactionListenerTask = listenForTransactions()
+        _taskHolder.task = listenForTransactions()
         Task {
             await loadProducts()
             await checkCurrentEntitlements()

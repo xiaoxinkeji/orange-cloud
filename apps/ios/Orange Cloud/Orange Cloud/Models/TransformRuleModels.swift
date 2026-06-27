@@ -44,6 +44,36 @@ nonisolated struct TransformRule: Codable, Identifiable, Sendable {
         }
         return nil
     }
+
+    // MARK: - View helpers (derived from action_parameters)
+
+    /// `true` when the rule rewrites the URL (action_parameters contains `uri`)
+    var isURLRewrite: Bool {
+        actionParameters?.uri != nil
+    }
+
+    /// `true` when the rule modifies request headers (action_parameters contains `headers`)
+    var isRequestHeader: Bool {
+        actionParameters?.headers != nil
+    }
+
+    /// `true` when the rule modifies response headers.
+    /// Note: Without phase context this cannot be distinguished from request headers,
+    /// so it mirrors `isRequestHeader`. The view uses `isRequestHeader || isResponseHeader`.
+    var isResponseHeader: Bool {
+        actionParameters?.headers != nil
+    }
+
+    /// Human-readable label for the action type, used in the action badge.
+    var actionLabel: String {
+        if isURLRewrite {
+            return String(localized: "URL 改写")
+        }
+        if actionParameters?.headers != nil {
+            return String(localized: "请求头")
+        }
+        return action ?? "rewrite"
+    }
 }
 
 // MARK: - action_parameters
@@ -67,6 +97,11 @@ nonisolated struct HeaderTransform: Codable, Sendable {
     var operation:  String        // "set" | "add" | "remove"
     var value:      String?
     var expression: String?
+
+    /// Human-readable label for the operation, resolved via `HeaderOperation`.
+    var opLabel: String {
+        HeaderOperation(rawValue: operation)?.label ?? operation
+    }
 }
 
 // MARK: - 写入载荷

@@ -31,8 +31,8 @@ struct ZoneDetailView: View {
     @State private var deniedScopeHint = ""
     /// 开关类操作先收口到这里，confirmationDialog 确认后才调 API
     @State private var pendingAction: PendingZoneAction?
-    @State private var edgeCerts: [EdgeCertificate] = []
-    @State private var customCerts: [CustomCertificate] = []
+    @State private var edgeCerts: [SSLCertificatePack] = []
+    @State private var customCerts: [SSLCertificatePack] = []
     @State private var universalSSLEnabled = false
     @State private var certsLoaded = false
 
@@ -550,13 +550,13 @@ struct ZoneDetailView: View {
     private func loadCertificates() async {
         guard !certsLoaded else { return }
         let zoneId = zone.id
-        async let edgeTask = session.sslCertService.listEdgeCertificates(zoneId: zoneId)
-        async let customTask = session.sslCertService.listCustomCertificates(zoneId: zoneId)
-        async let usslTask = session.sslCertService.getUniversalSSL(zoneId: zoneId)
+        async let packsTask = session.sslCertificateService.certificatePacks(zoneId: zoneId)
+        async let usslTask = session.sslCertificateService.universalSSLEnabled(zoneId: zoneId)
 
-        edgeCerts = (try? await edgeTask) ?? []
-        customCerts = (try? await customTask) ?? []
-        universalSSLEnabled = (try? await usslTask)?.enabled ?? false
+        let packs = (try? await packsTask) ?? []
+        edgeCerts = packs.filter { !$0.isUniversal && $0.type != "sni_custom" && $0.type != "legacy_custom" && $0.type != "mh_custom" && $0.type != "keyless" }
+        customCerts = packs.filter { $0.type == "sni_custom" || $0.type == "legacy_custom" || $0.type == "mh_custom" || $0.type == "keyless" }
+        universalSSLEnabled = (try? await usslTask) ?? false
         certsLoaded = true
     }
 
@@ -622,7 +622,7 @@ struct ZoneDetailView: View {
                             }
                             .padding(.horizontal, 14)
                             .padding(.vertical, 9)
-                            if let expires = EdgeCertificate.parseDate(first.expiresOn) {
+                            if let dayStr = first.expiresOnDay, let expires = Self.parseCertDate(dayStr) {
                                 Divider().padding(.leading, 14)
                                 LabeledContent("到期时间") {
                                     Text(expires, format: .dateTime.year().month().day())
@@ -761,6 +761,14 @@ struct ZoneDetailView: View {
             }
             .glassIsland(cornerRadius: OCLayout.chipRadius)
         }
+    }
+
+    private static func parseCertDate(_ str: String) -> Date? {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        return fmt.date(from: str)
     }
 
     private func certStatusBadge(_ status: String?) -> some View {
@@ -957,7 +965,7 @@ private struct PurgeURLSheet: View {
         isPurging = true
         defer { isPurging = false }
         do {
-            _ = try await session.zoneSettingsService.purgeByURL(
+            _ = try await session.zoneSettingsService.purgeFiles(
                 zoneId: zoneId,
                 urls: lines
             )

@@ -89,4 +89,16 @@ struct TransformRuleService {
     func deleteRule(zoneId: String, rulesetId: String, ruleId: String) async throws {
         try await client.delete("zones/\(zoneId)/rulesets/\(rulesetId)/rules/\(ruleId)")
     }
+
+    /// 聚合全部三个 phase 的 transform rules（URL 重写 + 请求头 + 响应头）
+    func listRules(zoneId: String) async throws -> [TransformRule] {
+        var allRules: [TransformRule] = []
+        for phase in TransformPhase.allCases {
+            if let ruleset = try await ruleset(zoneId: zoneId, phase: phase.rawValue),
+               let rules = ruleset.rules {
+                allRules.append(contentsOf: rules)
+            }
+        }
+        return allRules
+    }
 }

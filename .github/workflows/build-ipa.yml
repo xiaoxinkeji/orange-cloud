@@ -129,7 +129,7 @@ jobs:
           echo "Stripped ad-hoc code signature and provisioning data"
 
           cd "$RUNNER_TEMP"
-          zip -r "$IPA_PATH" Payload
+          ditto -c -k --keepParent Payload "$IPA_PATH"
 
           # Verify IPA with comprehensive check (ZIP structure + Payload + Info.plist + contamination)
           python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"

@@ -90,14 +90,12 @@ struct WAFRuleListView: View {
                 }
                 .scrollContentBackground(.hidden)
                 .refreshable { await viewModel.load() }
-                }
             }
         }
         .background { SkyBackground() }
         .searchable(text: $searchText, prompt: "搜索规则")
         .navigationTitle("WAF 防火墙")
         .navigationBarTitleDisplayMode(.inline)
-        .searchable(text: $searchText, prompt: "搜索规则")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button("添加", systemImage: "plus") {

@@ -37,7 +37,6 @@ struct LoadBalancerDetailView: View {
                 Button("刷新", systemImage: "arrow.clockwise") {
                     Task { await load() }
                 }
-                .symbolEffect(.rotate, isActive: isLoading)
             }
         }
         .task { await load() }
@@ -250,7 +249,7 @@ struct LoadBalancerDetailView: View {
             var monitorMap: [String: Monitor] = [:]
             let allMonitors = try await session.loadBalancerService.listMonitors(accountId: accountId)
             for m in allMonitors {
-                if let mid = m.id { monitorMap[mid] = m }
+                monitorMap[m.id] = m
             }
             monitors = monitorMap
         } catch {

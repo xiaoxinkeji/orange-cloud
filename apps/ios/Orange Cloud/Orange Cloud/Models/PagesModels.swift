@@ -11,7 +11,7 @@ import Foundation
 
 // MARK: - 项目
 
-nonisolated struct PagesProject: Codable, Identifiable, Sendable {
+nonisolated struct PagesProject: Codable, Identifiable, Hashable, Sendable {
     let name:              String
     let subdomain:         String?
     let domains:           [String]?
@@ -34,7 +34,7 @@ nonisolated struct PagesProject: Codable, Identifiable, Sendable {
     }
 }
 
-nonisolated struct PagesBuildConfig: Codable, Sendable {
+nonisolated struct PagesBuildConfig: Codable, Hashable, Sendable {
     var buildCommand:   String?
     var destinationDir: String?
     var rootDir:        String?
@@ -46,12 +46,12 @@ nonisolated struct PagesBuildConfig: Codable, Sendable {
     }
 }
 
-nonisolated struct PagesDeploymentConfigs: Codable, Sendable {
+nonisolated struct PagesDeploymentConfigs: Codable, Hashable, Sendable {
     var production: PagesEnvConfig?
     var preview:    PagesEnvConfig?
 }
 
-nonisolated struct PagesEnvConfig: Codable, Sendable {
+nonisolated struct PagesEnvConfig: Codable, Hashable, Sendable {
     var envVars: [String: PagesEnvVar]?
 
     enum CodingKeys: String, CodingKey {
@@ -59,19 +59,19 @@ nonisolated struct PagesEnvConfig: Codable, Sendable {
     }
 }
 
-nonisolated struct PagesEnvVar: Codable, Sendable {
+nonisolated struct PagesEnvVar: Codable, Hashable, Sendable {
     var type:  String?     // plain_text | secret_text
     var value: String?     // secret_text 时为 null
 
     var isSecret: Bool { type == "secret_text" }
 }
 
-nonisolated struct PagesSource: Codable, Sendable {
+nonisolated struct PagesSource: Codable, Hashable, Sendable {
     let type:   String?    // github | gitlab
     let config: PagesSourceConfig?
 }
 
-nonisolated struct PagesSourceConfig: Codable, Sendable {
+nonisolated struct PagesSourceConfig: Codable, Hashable, Sendable {
     let owner:            String?
     let repoName:         String?
     let productionBranch: String?
@@ -91,7 +91,7 @@ nonisolated struct PagesSourceConfig: Codable, Sendable {
 
 // MARK: - 部署
 
-nonisolated struct PagesDeployment: Codable, Identifiable, Sendable {
+nonisolated struct PagesDeployment: Codable, Identifiable, Hashable, Sendable {
     let id:                String
     let shortId:           String?
     let projectName:       String?
@@ -122,7 +122,7 @@ nonisolated struct PagesDeployment: Codable, Identifiable, Sendable {
     var isProduction: Bool { environment == "production" }
 }
 
-nonisolated struct PagesStage: Codable, Identifiable, Sendable {
+nonisolated struct PagesStage: Codable, Identifiable, Hashable, Sendable {
     let name:      String?
     let status:    String?    // success | idle | active | failure | canceled
     let startedOn: String?
@@ -139,12 +139,12 @@ nonisolated struct PagesStage: Codable, Identifiable, Sendable {
     var statusValue: PagesDeployStatus { PagesDeployStatus(rawValue: status ?? "") ?? .unknown }
 }
 
-nonisolated struct PagesDeploymentTrigger: Codable, Sendable {
+nonisolated struct PagesDeploymentTrigger: Codable, Hashable, Sendable {
     let type:     String?
     let metadata: PagesTriggerMetadata?
 }
 
-nonisolated struct PagesTriggerMetadata: Codable, Sendable {
+nonisolated struct PagesTriggerMetadata: Codable, Hashable, Sendable {
     let branch:        String?
     let commitHash:    String?
     let commitMessage: String?
@@ -192,3 +192,33 @@ nonisolated struct PagesProjectUpdate: Codable, Sendable {
 
 /// retry / rollback 的空 POST 体
 nonisolated struct PagesEmptyBody: Codable, Sendable {}
+
+// MARK: - 自定义域名
+
+/// Pages 自定义域名（GET /pages/projects/{name}/domains）
+nonisolated struct PagesDomain: Codable, Identifiable, Sendable {
+    let name:   String
+    let status: String?
+
+    var id: String { name }
+}
+
+// MARK: - 日期解析
+
+extension PagesProject {
+    static func parseDate(_ raw: String?) -> Date? {
+        guard let raw else { return nil }
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime]
+        return fmt.date(from: raw)
+    }
+}
+
+extension PagesDeployment {
+    static func parseDate(_ raw: String?) -> Date? {
+        guard let raw else { return nil }
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime]
+        return fmt.date(from: raw)
+    }
+}

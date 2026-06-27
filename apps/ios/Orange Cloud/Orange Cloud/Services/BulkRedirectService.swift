@@ -148,4 +148,11 @@ struct BulkRedirectService {
         guard response.success, let ruleset = response.result else { throw response.toAPIError() }
         return ruleset
     }
+
+    // MARK: - 展示用（合并列表条目与规则信息）
+
+    /// 返回合并后的转发规则列表供 P3Views 展示（暂为空实现，待接入完整数据聚合）
+    func listRedirects(accountId: String) async throws -> [BulkRedirectRule] {
+        return []
+    }
 }

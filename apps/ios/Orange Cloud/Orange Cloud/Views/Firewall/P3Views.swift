@@ -15,16 +15,16 @@ struct IPRulesListView: View {
 
     @Environment(AuthManager.self) private var auth
 
-    @State private var rules: [IPAccessRule] = []
+    @State private var rules: [FirewallAccessRule] = []
     @State private var isLoading = true
     @State private var error: String?
     @State private var searchText = ""
 
-    private var filteredRules: [IPAccessRule] {
+    private var filteredRules: [FirewallAccessRule] {
         if searchText.isEmpty { return rules }
         return rules.filter { rule in
-            rule.configuration.value.localizedCaseInsensitiveContains(searchText) ||
-            rule.mode.localizedCaseInsensitiveContains(searchText) ||
+            (rule.configuration?.value?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+            (rule.mode?.localizedCaseInsensitiveContains(searchText) ?? false) ||
             (rule.notes?.localizedCaseInsensitiveContains(searchText) ?? false)
         }
     }
@@ -50,7 +50,6 @@ struct IPRulesListView: View {
                 Button("刷新", systemImage: "arrow.clockwise") {
                     Task { await load() }
                 }
-                .symbolEffect(.rotate, isActive: isLoading)
             }
         }
         .task { await load() }
@@ -79,19 +78,19 @@ struct IPRulesListView: View {
         .daybreakList()
     }
 
-    private func ruleRow(_ rule: IPAccessRule) -> some View {
+    private func ruleRow(_ rule: FirewallAccessRule) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(rule.configuration.value)
+                Text(rule.configuration?.value ?? "—")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .monospacedDigit()
                 Spacer()
-                modeBadge(rule.mode)
+                modeBadge(rule.mode ?? "")
             }
 
             HStack(spacing: 6) {
-                Text(rule.targetLabel)
+                Text(rule.configuration?.targetLabel ?? "—")
                     .font(.caption2)
                     .fontWeight(.medium)
                     .foregroundStyle(.secondary)
@@ -104,13 +103,6 @@ struct IPRulesListView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                }
-
-                if let date = IPAccessRule.parseDate(rule.createdOn) {
-                    Spacer()
-                    Text(date, format: .relative(presentation: .named))
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
                 }
             }
         }
@@ -127,7 +119,7 @@ struct IPRulesListView: View {
             default:                             return .secondary
             }
         }()
-        return Text(IPAccessRule.modeLabel(mode))
+        return Text(FirewallAccessRule.modeLabel(mode))
             .font(.caption2)
             .fontWeight(.medium)
             .foregroundStyle(color)
@@ -148,7 +140,7 @@ struct IPRulesListView: View {
         isLoading = true
         error = nil
         do {
-            rules = try await session.firewallRuleService.listRules(zoneId: zoneId)
+            rules = try await session.firewallAccessRuleService.rules(zoneId: zoneId)
         } catch {
             self.error = error.localizedDescription
             rules = []
@@ -302,7 +294,12 @@ struct BulkRedirectsView: View {
         isLoading = true
         error = nil
         do {
-            rules = try await session.bulkRedirectService.listRedirects(zoneId: zoneId)
+            guard let accountId = session.selectedAccount?.id else {
+                error = String(localized: "未选择账号")
+                isLoading = false
+                return
+            }
+            rules = try await session.bulkRedirectService.listRedirects(accountId: accountId)
         } catch {
             self.error = error.localizedDescription
             rules = []

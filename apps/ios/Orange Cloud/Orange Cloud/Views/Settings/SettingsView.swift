@@ -23,8 +23,6 @@ struct SettingsView: View {
     @State private var showAuditPaywall = false
     @State private var showFeedback = false
     @State private var logShareItems: [Any]?
-    @State private var iCloudSync = UserDefaults.standard.bool(forKey: AuthManager.iCloudSyncKey)
-
     /// 「今日」用量的日界口径（App Group，与 Widget 共享），默认 UTC
     @AppStorage(DayBoundary.storageKey, store: UserDefaults(suiteName: WidgetSnapshot.appGroupID))
     private var dayBoundaryRaw = DayBoundary.utc.rawValue
@@ -87,26 +85,8 @@ private var appVersion: String {
                 }
                 .glassRow()
 
-// ── 同步 ──
-                Section {
-                    Toggle(isOn: $iCloudSync) {
-                        HStack(spacing: 12) {
-                            TintIcon(systemImage: "icloud", color: .blue)
-                            Text("iCloud 同步")
-                        }
-                    }
-                } header: {
-                    Text("同步")
-                } footer: {
-                    Text("开启后：登录身份经 iCloud 钥匙串在你的设备间同步（端到端加密），账单日与套餐预设等偏好经 iCloud 同步。关闭将把登录信息从 iCloud 移除，仅保留本机。")
-                }
-                .onChange(of: iCloudSync) {
-                    auth.setICloudSync(iCloudSync)
-                    AccountPrefsStore.shared.applySyncChange(iCloudSync)
-                }
-                .glassRow()
 
-                
+
 
                 // ── Orange Cloud Pro（开源自编译构建无此入口）──
                 #if !OPENSOURCE_UNLOCKED

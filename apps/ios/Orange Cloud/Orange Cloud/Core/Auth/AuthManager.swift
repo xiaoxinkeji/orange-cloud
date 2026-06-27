@@ -118,23 +118,6 @@ final class AuthManager {
         }
     }
 
-/// 云端身份索引合并（只增不删：删除以本机操作为准，避免互相覆盖）
-    private func mergeSessionsFromCloud() {
-        guard iCloudSyncEnabled,
-              let data = NSUbiquitousKeyValueStore.default.data(forKey: Self.sessionsKey),
-              let cloud = try? JSONDecoder().decode([AuthSessionMeta].self, from: data) else { return }
-        var changed = false
-        for meta in cloud where !sessions.contains(where: { $0.id == meta.id }) {
-            sessions.append(meta)
-            changed = true
-        }
-        if changed {
-            if currentSessionId == nil {
-                currentSessionId = preferredSessionId
-            }
-        }
-    }
-
     /// 一次性迁移：移除 iCloud 同步功能后，把已登录身份的 token 从「可同步」钥匙串条目
     /// 迁回本机（不再随 iCloud 钥匙串跨设备同步）。重存即触发 TokenStore 删旧增新。
     private func migrateOffICloudSyncIfNeeded() {

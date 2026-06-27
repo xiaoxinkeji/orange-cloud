@@ -16,13 +16,17 @@ nonisolated struct FirewallAccessRule: Codable, Identifiable, Sendable {
     let notes:         String?
 
     var modeLabel: String {
+        Self.modeLabel(mode ?? "")
+    }
+
+    static func modeLabel(_ mode: String) -> String {
         switch mode {
         case "block":             String(localized: "拦截")
         case "challenge":         String(localized: "质询")
         case "js_challenge":      String(localized: "JS 质询")
         case "managed_challenge": String(localized: "托管质询")
         case "whitelist":         String(localized: "允许")
-        default:                  mode ?? "—"
+        default:                  mode.isEmpty ? "—" : mode
         }
     }
 }

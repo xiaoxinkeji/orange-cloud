@@ -103,4 +103,17 @@ struct PagesService {
     func deleteDeployment(accountId: String, projectName: String, deploymentId: String) async throws {
         try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)/deployments/\(deploymentId)")
     }
+
+    // MARK: - 自定义域名
+
+    /// 项目的自定义域名列表
+    func listDomains(accountId: String, projectName: String) async throws -> [PagesDomain] {
+        let response: CFAPIResponse<[PagesDomain]> = try await client.get(
+            "accounts/\(accountId)/pages/projects/\(projectName)/domains"
+        )
+        guard response.success, let domains = response.result else {
+            throw response.toAPIError()
+        }
+        return domains
+    }
 }

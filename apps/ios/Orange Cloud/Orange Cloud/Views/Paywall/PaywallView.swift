@@ -17,7 +17,6 @@ struct PaywallView: View {
 
     @Environment(EntitlementStore.self) private var entitlements
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.purchase) private var purchase
 
     @State private var selectedID = EntitlementStore.ProductID.yearly
     @State private var isPurchasing = false
@@ -60,12 +59,12 @@ struct PaywallView: View {
             await entitlements.loadProducts()
         }
         .alert("购买失败", isPresented: .init(
-            get: { entitlements.purchaseError != nil },
-            set: { if !$0 { entitlements.purchaseError = nil } }
+            get: { entitlements.errorMessage != nil },
+            set: { if !$0 { entitlements.errorMessage = nil } }
         )) {
             Button("好", role: .cancel) {}
         } message: {
-            Text(entitlements.purchaseError ?? "")
+            Text(entitlements.errorMessage ?? "")
         }
         .sensoryFeedback(.success, trigger: entitlements.isPro)
     }
@@ -275,10 +274,9 @@ struct PaywallView: View {
         isPurchasing = true
         defer { isPurchasing = false }
         do {
-            let result = try await purchase(product)
-            await entitlements.handle(result)
+            try await entitlements.purchase(product: product)
         } catch {
-            entitlements.purchaseError = error.localizedDescription
+            entitlements.errorMessage = error.localizedDescription
         }
     }
 

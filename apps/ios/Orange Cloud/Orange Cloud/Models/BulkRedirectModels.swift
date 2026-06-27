@@ -158,6 +158,22 @@ nonisolated struct FromListInput: Codable, Sendable {
 nonisolated struct RedirectRuleToggle: Codable, Sendable { let enabled: Bool }
 nonisolated struct RedirectEntrypointUpdate: Codable, Sendable { let rules: [RedirectRuleCreate] }
 
+// MARK: - 展示用规则（合并 list item + ruleset rule 信息）
+
+/// 用于 BulkRedirectsView 展示的合并模型，将列表条目与 ruleset 规则信息组合
+nonisolated struct BulkRedirectRule: Identifiable, Sendable {
+    let id: String
+    let description: String?
+    let enabled: Bool?
+    let actionParameters: BulkRedirectActionParams?
+}
+
+nonisolated struct BulkRedirectActionParams: Sendable {
+    let fromValue: String?
+    let toValue: String?
+    let statusLabel: String
+}
+
 extension RedirectRuleCreate {
     /// 启用某重定向列表的标准规则：http.request.full_uri in $<name> + from_list
     static func enabling(listName: String) -> RedirectRuleCreate {

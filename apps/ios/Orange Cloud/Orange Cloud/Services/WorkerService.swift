@@ -206,4 +206,25 @@ struct WorkerService {
     func deleteRoute(zoneId: String, routeId: String) async throws {
         try await client.delete("zones/\(zoneId)/workers/routes/\(routeId)")
     }
+
+    // MARK: - 创建 / 删除脚本
+
+    /// 创建新脚本（上传 boilerplate 代码），返回创建的脚本信息
+    func createScript(accountId: String, scriptName: String, content: String) async throws -> WorkerScript {
+        let metadata = WorkerUploadMetadata(mainModule: "worker.js")
+        let response: CFAPIResponse<WorkerScript> = try await client.multipartRequest(
+            method: "PUT",
+            "accounts/\(accountId)/workers/scripts/\(scriptName)",
+            jsonPartName: "metadata",
+            jsonPart: metadata,
+            file: (name: "worker.js", contentType: "application/javascript+module", content: Data(content.utf8))
+        )
+        guard response.success, let script = response.result else { throw response.toAPIError() }
+        return script
+    }
+
+    /// 删除脚本
+    func deleteScript(accountId: String, scriptName: String) async throws {
+        try await client.delete("accounts/\(accountId)/workers/scripts/\(scriptName)")
+    }
 }

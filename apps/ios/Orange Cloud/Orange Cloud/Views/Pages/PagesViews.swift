@@ -150,7 +150,7 @@ struct PagesRowView: View {
 
                 if let deploy = project.latestDeployment {
                     HStack(spacing: 4) {
-                        deploymentStageBadge(deploy.latestStage ?? deploy.stage ?? "unknown")
+                        deploymentStageBadge(deploy.latestStage?.status ?? "unknown")
                         if let date = PagesProject.parseDate(deploy.modifiedOn ?? deploy.createdOn) {
                             Text("·")
                                 .foregroundStyle(.tertiary)
@@ -289,10 +289,10 @@ struct PagesDetailView: View {
 
                 Spacer()
 
-                deploymentStageBadge(deployment.latestStage ?? deployment.stage ?? "unknown")
+                deploymentStageBadge(deployment.latestStage?.status ?? "unknown")
             }
 
-            if let meta = deployment.meta, let msg = meta.commitMessage {
+            if let meta = deployment.deploymentTrigger?.metadata, let msg = meta.commitMessage {
                 Text(msg)
                     .font(.caption)
                     .foregroundStyle(.secondary)

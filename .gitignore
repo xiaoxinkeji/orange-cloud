@@ -19,6 +19,13 @@ xcuserdata/
 # OS
 .DS_Store
 
+# Python
+__pycache__/
+
+# Temp files
+merge_s.py
+temp_settings_*.swift
+
 # Design handoff extraction (zip 为准)
 _extracted/
 orange-cloud/

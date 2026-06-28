@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 45
 
     steps:
@@ -25,10 +25,9 @@ jobs:
       - name: Select Xcode
         run: |
           ls /Applications/ | grep Xcode
-          sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || \
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_1[6-9]*.app | head -1)/Contents/Developer" || \
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_2[0-9]*.app | head -1)/Contents/Developer" || \
-          sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | tail -1)/Contents/Developer"
+          sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer || \
+          sudo xcode-select -s /Applications/Xcode_26.5.app/Contents/Developer || \
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | head -1)/Contents/Developer"
           xcodebuild -version
 
       - name: Cache SPM dependencies
@@ -131,7 +130,8 @@ jobs:
           echo "Stripped ad-hoc code signature and provisioning data"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --keepParent Payload "$IPA_PATH"
+          # Create IPA with store (no compression) for maximum ZIP compatibility
+          COPYFILE_DISABLE=1 zip -r -X -0 "$IPA_PATH" Payload
 
           # Verify IPA with comprehensive check (ZIP structure + Payload + Info.plist + contamination)
           python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"

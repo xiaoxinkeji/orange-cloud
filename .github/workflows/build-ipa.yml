@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-latest
     timeout-minutes: 45
 
     steps:
@@ -26,9 +26,9 @@ jobs:
         run: |
           ls /Applications/ | grep Xcode
           sudo xcode-select -s /Applications/Xcode_16.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode_16.5.app/Contents/Developer || \
-          sudo xcode-select -s /Applications/Xcode_15.app/Contents/Developer || \
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_1*.app | tail -1)/Contents/Developer"
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_1[6-9]*.app | head -1)/Contents/Developer" || \
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_2[0-9]*.app | head -1)/Contents/Developer" || \
+          sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | tail -1)/Contents/Developer"
           xcodebuild -version
 
       - name: Cache SPM dependencies

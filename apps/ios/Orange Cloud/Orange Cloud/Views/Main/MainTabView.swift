@@ -43,7 +43,7 @@ struct MainTabView: View {
                 }
                 Tab("Pages", systemImage: "doc.richtext", value: AppTab.pages) {
                     if auth.hasAPITokenAvailable {
-                        PagesListView()
+                        PagesProjectListView(session: session)
                             .id(session.selectedAccount?.id)
                     } else {
                         NavigationStack {
@@ -122,7 +122,7 @@ struct MainTabView: View {
 
     @ViewBuilder private var pagesTab: some View {
         if auth.hasAPITokenAvailable {
-            PagesListView()
+            PagesProjectListView(session: session)
                 .id(session.selectedAccount?.id)
         } else {
             NavigationStack {

@@ -42,19 +42,8 @@ struct MainTabView: View {
                     workersTab
                 }
                 Tab("Pages", systemImage: "doc.richtext", value: AppTab.pages) {
-                    if auth.hasAPITokenAvailable {
-                        PagesProjectListView(session: session)
-                            .id(session.selectedAccount?.id)
-                    } else {
-                        NavigationStack {
-                            PermissionDeniedView(
-                                featureName: String(localized: "Pages"),
-                                requiredScope: String(localized: "API Token"),
-                                message: String(localized: "Cloudflare Pages API 仅支持 API Token 认证，OAuth 授权不可用。请前往「设置 → 添加 API Token」后切换身份。")
-                            )
-                            .navigationTitle("Pages")
-                        }
-                    }
+                    PagesProjectListView(session: session)
+                        .id(session.selectedAccount?.id)
                 }
                 Tab("存储", systemImage: "externaldrive", value: AppTab.storage) {
                     storageTab
@@ -121,19 +110,8 @@ struct MainTabView: View {
     }
 
     @ViewBuilder private var pagesTab: some View {
-        if auth.hasAPITokenAvailable {
-            PagesProjectListView(session: session)
-                .id(session.selectedAccount?.id)
-        } else {
-            NavigationStack {
-                PermissionDeniedView(
-                    featureName: String(localized: "Pages"),
-                    requiredScope: String(localized: "API Token"),
-                    message: String(localized: "Cloudflare Pages API 仅支持 API Token 认证，OAuth 授权不可用。请前往「设置 → 添加 API Token」后切换身份。")
-                )
-                .navigationTitle("Pages")
-            }
-        }
+        PagesProjectListView(session: session)
+            .id(session.selectedAccount?.id)
     }
 
     @ViewBuilder private var storageTab: some View {

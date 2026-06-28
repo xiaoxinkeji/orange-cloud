@@ -130,7 +130,39 @@ jobs:
           echo "Stripped ad-hoc code signature and provisioning data"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --keepParent Payload "$IPA_PATH"
+          export IPA_PATH
+          # Use Python zipfile for maximum compatibility (avoids macOS 26 ditto/zip quirks)
+          python3 << 'PYEOF'
+          import zipfile, os, sys
+
+          ipa_path = os.environ["IPA_PATH"]
+          payload_dir = "Payload"
+          payload_root = os.path.dirname(os.path.abspath(payload_dir))
+
+          if not os.path.isdir(payload_dir):
+              print(f"ERROR: Payload directory not found at {payload_dir}", file=sys.stderr)
+              sys.exit(1)
+
+          # Detect symlinks before writing (zipfile follows symlinks by default)
+          symlinks = []
+          for root, dirs, files in os.walk(payload_dir):
+              for name in dirs + files:
+                  fpath = os.path.join(root, name)
+                  if os.path.islink(fpath):
+                      symlinks.append(fpath)
+
+          with zipfile.ZipFile(ipa_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+              for root, dirs, files in os.walk(payload_dir, followlinks=False):
+                  for name in sorted(dirs) + sorted(files):
+                      fpath = os.path.join(root, name)
+                      arcname = os.path.relpath(fpath, payload_root)
+                      zf.write(fpath, arcname)
+
+          if symlinks:
+              print(f"Note: {len(symlinks)} symlinks resolved and stored as files")
+          size_mb = os.path.getsize(ipa_path) / 1024 / 1024
+          print(f"IPA created with Python zipfile: {size_mb:.1f} MB")
+          PYEOF
 
           # Verify IPA with comprehensive check (ZIP structure + Payload + Info.plist + contamination)
           python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"

@@ -57,17 +57,12 @@ def check_zip(ipa_path: Path) -> list:
             return names
 
     except zipfile.BadZipFile:
-        # ditto -c -k produces non-standard ZIP that Python's zipfile rejects
-        # but macOS unzip and most sideloading tools handle it correctly
         import subprocess
         result = subprocess.run(
             ['unzip', '-tq', str(ipa_path)], capture_output=True, text=True
         )
         if result.returncode != 0:
-            raise IPAError(
-                f"ZIP structure invalid (ditto archive rejected by both zipfile and unzip):\n"
-                f"{result.stderr}"
-            )
+            raise IPAError(f"ZIP structure invalid: {result.stderr}")
         names_result = subprocess.run(
             ['unzip', '-l', str(ipa_path)], capture_output=True, text=True
         )
@@ -76,7 +71,7 @@ def check_zip(ipa_path: Path) -> list:
             parts = line.split()
             if len(parts) >= 4 and parts[-1] != 'Name' and not line.startswith('-'):
                 names.append(parts[-1])
-        print(f"  OK ZIP structure (ditto archive): {len(names)} entries")
+        print(f"  OK ZIP structure (fallback unzip): {len(names)} entries")
         return names
 
 
@@ -108,15 +103,6 @@ def check_payload(names: list, ipa_path: Path):
         with zipfile.ZipFile(ipa_path, "r") as zf:
             with zf.open(info_plist) as f:
                 plist = plistlib.load(f)
-    except zipfile.BadZipFile:
-        import subprocess, tempfile
-        with tempfile.TemporaryDirectory() as tmpdir:
-            subprocess.run(
-                ['unzip', '-qo', str(ipa_path), info_plist, '-d', tmpdir],
-                capture_output=True, check=True
-            )
-            with open(os.path.join(tmpdir, info_plist), 'rb') as f:
-                plist = plistlib.load(f)
     except Exception as e:
         raise IPAError(f"Cannot parse Info.plist: {e}")
 
@@ -142,14 +128,15 @@ def check_contamination(names: list):
             contaminants.append(f".DS_Store: {n}")
         if n.startswith("__MACOSX/"):
             contaminants.append(f"__MACOSX: {n}")
-        if basename.startswith("._") and not n.endswith('/'):
+        if basename.startswith("._"):
             contaminants.append(f"AppleDouble: {n}")
 
     if contaminants:
-        print(f"  NOTE: Found non-standard artifacts ({len(contaminants)}), acceptable for ditto:")
-        for c in contaminants[:5]:
-            print(f"    {c}")
-        return
+        raise IPAError(
+            f"ZIP contains non-standard artifacts ({len(contaminants)}):\n"
+            f"  {contaminants[:5]}\n"
+            f"  Fix: repack with Python zipfile or zip -r output.ipa Payload -x '__MACOSX/*' '*.DS_Store' '._*'"
+        )
 
     print("  OK No contamination (__MACOSX / .DS_Store / AppleDouble)")
 

@@ -137,6 +137,32 @@ struct PagesService {
         try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)/deployments/\(deploymentId)")
     }
 
+    // MARK: - 自定义域名
+
+    /// GET /accounts/{id}/pages/projects/{name}/domains
+    func listDomains(accountId: String, projectName: String) async throws -> [PagesDomain] {
+        let response: CFAPIResponseArray<PagesDomain> = try await client.get(
+            "accounts/\(accountId)/pages/projects/\(projectName)/domains"
+        )
+        guard response.success else { throw response.toAPIError() }
+        return response.result ?? []
+    }
+
+    /// POST /accounts/{id}/pages/projects/{name}/domains
+    func addDomain(accountId: String, projectName: String, domain: String) async throws -> PagesDomain {
+        let response: CFAPIResponse<PagesDomain> = try await client.post(
+            "accounts/\(accountId)/pages/projects/\(projectName)/domains",
+            body: PagesDomainAddRequest(domain: domain)
+        )
+        guard response.success, let result = response.result else { throw response.toAPIError() }
+        return result
+    }
+
+    /// DELETE /accounts/{id}/pages/projects/{name}/domains/{domainId}
+    func deleteDomain(accountId: String, projectName: String, domainId: String) async throws {
+        try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)/domains/\(domainId)")
+    }
+
     // MARK: - 直接上传部署（Direct Upload）
     //
     // 流程对齐 wrangler：① 取上传 JWT → ② check-missing 问服务端缺哪些资源

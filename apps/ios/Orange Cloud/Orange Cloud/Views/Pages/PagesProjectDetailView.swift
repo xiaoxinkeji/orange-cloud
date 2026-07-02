@@ -215,6 +215,18 @@ struct PagesProjectDetailView: View {
     private var configSection: some View {
         Section {
             NavigationLink {
+                PagesDomainsView(
+                    accountId: viewModel.accountId,
+                    projectName: viewModel.projectName,
+                    session: session
+                )
+            } label: {
+                HStack(spacing: 12) {
+                    TintIcon(systemImage: "globe", color: .blue)
+                    Text("自定义域名")
+                }
+            }
+            NavigationLink {
                 PagesBuildConfigEditorView(viewModel: viewModel)
             } label: {
                 HStack(spacing: 12) {

@@ -18,6 +18,7 @@ struct WorkerDetailView: View {
     @State private var uploadViewModel: WorkerUploadViewModel
     @State private var showUpload = false
     @State private var uploadDenied = false
+    @State private var showEditor = false
 
     init(script: CachedWorkerScript, session: SessionStore) {
         self.script = script
@@ -63,6 +64,18 @@ struct WorkerDetailView: View {
                 .glassRow()
 
             Section("管理") {
+                Button {
+                    if canWrite { showEditor = true } else { uploadDenied = true }
+                } label: {
+                    HStack(spacing: 12) {
+                        TintIcon(systemImage: "pencil.code", color: .blue)
+                        Text("编辑代码").foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
                 Button {
                     if canWrite { showUpload = true } else { uploadDenied = true }
                 } label: {
@@ -119,6 +132,15 @@ struct WorkerDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showUpload) {
             WorkerUploadView(mode: .replace(scriptName: script.id), viewModel: uploadViewModel) {}
+        }
+        .sheet(isPresented: $showEditor) {
+            NavigationStack {
+                WorkerEditorView(
+                    accountId: script.accountId,
+                    scriptName: script.id,
+                    session: session
+                )
+            }
         }
         .sensoryFeedback(.success, trigger: uploadViewModel.didUpload)
         .alert("权限不足", isPresented: $uploadDenied) {

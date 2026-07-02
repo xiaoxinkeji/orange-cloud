@@ -9,6 +9,17 @@
 import SwiftUI
 import SwiftData
 
+enum WorkerSortOrder: String, CaseIterable, Sendable {
+    case name, created, modified
+    var label: String {
+        switch self {
+        case .name:     String(localized: "名称")
+        case .created:  String(localized: "创建日期")
+        case .modified: String(localized: "最近更新")
+        }
+    }
+}
+
 struct WorkerListView: View {
 
     @Environment(SessionStore.self) private var session
@@ -19,10 +30,12 @@ struct WorkerListView: View {
     @State private var viewModel: WorkerListViewModel
     @State private var uploadViewModel: WorkerUploadViewModel
     @State private var searchText = ""
+    @State private var sortOrder: WorkerSortOrder = .name
     @State private var tailTarget: CachedWorkerScript?
     @State private var showTailDenied = false
     @State private var showCreate = false
     @State private var createDenied = false
+    @State private var showSortPicker = false
 
     private var canWrite: Bool { auth.hasScope("workers-scripts.write") }
 
@@ -38,9 +51,29 @@ struct WorkerListView: View {
         _uploadViewModel = State(initialValue: WorkerUploadViewModel(service: session.workerService, accountId: accountId))
     }
 
+    private var sortedScripts: [CachedWorkerScript] {
+        switch sortOrder {
+        case .name:
+            cachedScripts.sorted { $0.id.localizedCaseInsensitiveCompare($1.id) == .orderedAscending }
+        case .created:
+            cachedScripts.sorted { lhs, rhs in
+                let l = WorkerScript.parseDate(lhs.createdOn) ?? .distantPast
+                let r = WorkerScript.parseDate(rhs.createdOn) ?? .distantPast
+                return l > r
+            }
+        case .modified:
+            cachedScripts.sorted { lhs, rhs in
+                let l = WorkerScript.parseDate(lhs.modifiedOn) ?? .distantPast
+                let r = WorkerScript.parseDate(rhs.modifiedOn) ?? .distantPast
+                return l > r
+            }
+        }
+    }
+
     private var filteredScripts: [CachedWorkerScript] {
-        guard !searchText.isEmpty else { return cachedScripts }
-        return cachedScripts.filter { $0.id.localizedCaseInsensitiveContains(searchText) }
+        let sorted = sortedScripts
+        guard !searchText.isEmpty else { return sorted }
+        return sorted.filter { $0.id.localizedCaseInsensitiveContains(searchText) }
     }
 
     var body: some View {
@@ -76,11 +109,21 @@ struct WorkerListView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
+                    Button(sortOrder.label, systemImage: "arrow.up.arrow.down") {
+                        showSortPicker = true
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
                     RefreshButton(
                         isLoading: viewModel.isLoading,
                         failed: viewModel.error != nil,
                         action: { Task { await refresh() } }
                     )
+                }
+            }
+            .confirmationDialog("排序方式", isPresented: $showSortPicker, titleVisibility: .visible) {
+                ForEach(WorkerSortOrder.allCases, id: \.rawValue) { order in
+                    Button(order.label) { sortOrder = order }
                 }
             }
             .sheet(isPresented: $showCreate) {

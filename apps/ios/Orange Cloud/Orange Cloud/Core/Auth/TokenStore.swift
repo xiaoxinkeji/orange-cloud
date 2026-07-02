@@ -60,6 +60,10 @@ nonisolated enum TokenStore {
 
         var query = baseQuery(account: account)
         query[kSecValueData as String] = data
+        // kSecAttrAccessibleAfterFirstUnlock：设备重启后、首次解锁前不可读，
+        // 首次解锁后所有进程（包括后台/Widget）均可读取。比 ThisDeviceOnly 更宽松，
+        // 保证后台刷新任务能读到 token 做静默刷新。结合 kSecAttrSynchronizable=false
+        // 防止跨设备同步，不怕轮换后的并发刷新互相作废。
         query[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
         // token 仅按设备本地保管，绝不随 iCloud 钥匙串跨设备同步
         // （OAuth 刷新令牌每次轮换，同步旧令牌会导致并发刷新互相作废而误登出）
@@ -68,6 +72,7 @@ nonisolated enum TokenStore {
         query[kSecAttrAccessGroup as String] = sharedAccessGroup
         let sharedStatus = SecItemAdd(query as CFDictionary, nil)
         if sharedStatus == errSecSuccess {
+            AppLog.auth.info("keychain save OK (shared group) account=\(account)")
             return true
         }
         query.removeValue(forKey: kSecAttrAccessGroup as String)
@@ -76,6 +81,19 @@ nonisolated enum TokenStore {
             // 两次写入都失败 = token 已被上面的 SecItemDelete 清掉、新值又没写进去，
             // 下次读取必是 "token missing"。这里必须留痕，否则表象与静默丢 token 无法区分。
             AppLog.auth.error("keychain token save FAILED account=\(account) sharedStatus=\(sharedStatus) fallbackStatus=\(fallbackStatus)")
+            // 尝试最后一次：用最简单查询写入
+            var lastQuery = baseQuery(account: account)
+            lastQuery[kSecValueData as String] = data
+            lastQuery[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+            lastQuery[kSecAttrSynchronizable as String] = false
+            let lastStatus = SecItemAdd(lastQuery as CFDictionary, nil)
+            if lastStatus == errSecSuccess {
+                AppLog.auth.notice("keychain save recovered (simple fallback) account=\(account)")
+                return true
+            }
+            AppLog.auth.error("keychain save truly FAILED account=\(account) lastStatus=\(lastStatus)")
+        } else {
+            AppLog.auth.info("keychain save OK (fallback) account=\(account)")
         }
         return fallbackStatus == errSecSuccess
     }

@@ -205,6 +205,39 @@ nonisolated struct PagesCreateRequest: Codable, Sendable {
 /// retry / rollback 的空 POST 体
 nonisolated struct PagesEmptyBody: Codable, Sendable {}
 
+// MARK: - 自定义域名
+
+nonisolated struct PagesDomain: Codable, Identifiable, Sendable {
+    let id:              String
+    let domainId:        String?
+    let name:            String
+    let status:          String?
+    let verificationData: PagesDomainVerification?
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, status
+        case domainId           = "domain_id"
+        case verificationData   = "verification_data"
+    }
+}
+
+nonisolated struct PagesDomainVerification: Codable, Sendable {
+    let status:  String?
+    let txtName: String?
+    let txtValue: String?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case txtName  = "txt_name"
+        case txtValue = "txt_value"
+    }
+}
+
+/// POST 添加域名请求体
+nonisolated struct PagesDomainAddRequest: Codable, Sendable {
+    let domain: String
+}
+
 // MARK: - 直接上传部署（Direct Upload）
 
 /// GET .../upload-token 的 result（资源上传用的短期 JWT）

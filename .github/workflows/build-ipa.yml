@@ -63,51 +63,48 @@ jobs:
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
           echo "Marketing version kept from upstream project.pbxproj"
 
-      - name: Build app
+      - name: Build archive
         working-directory: apps/ios/Orange Cloud
         run: |
           set -eo pipefail
           echo "=== Available targets & schemes ==="
           xcodebuild -project "Orange Cloud.xcodeproj" -list
-          echo "=== Building for iOS device ==="
-          xcodebuild build \
+          echo "=== Building archive ==="
+          xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
             -scheme "Orange Cloud" \
             -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            -archivePath "$RUNNER_TEMP/OrangeCloud.xcarchive" \
+            -destination "generic/platform=iOS" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_ALLOWED=YES \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
             | tee build.log
           tail -20 build.log
-          echo "=== Locating .app ==="
-          APP_PATH=$(find "$RUNNER_TEMP/DerivedData/Build/Products" -name "Orange Cloud.app" -type d | head -1)
-          echo "APP_PATH=$APP_PATH" >> $GITHUB_ENV
-          if [ -z "$APP_PATH" ]; then
-            echo "::error::Could not find Orange Cloud.app in build products"
-            find "$RUNNER_TEMP/DerivedData/Build" -name "*.app" -type d
-            exit 1
-          fi
-          ls -la "$APP_PATH/"
-          ls -la "$APP_PATH/PlugIns/" 2>/dev/null || echo "  (no PlugIns)"
 
       - name: Create unsigned IPA
         id: ipa
         run: |
           set -eo pipefail
-          APP_PATH="${{ env.APP_PATH }}"
+          ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
           PAYLOAD="$RUNNER_TEMP/Payload"
           IPA_PATH="$RUNNER_TEMP/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
 
           mkdir -p "$PAYLOAD"
-          cp -R "$APP_PATH" "$PAYLOAD/"
+          cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
-          # Only strip top-level _CodeSignature (keep nested ones intact like v2.2.7)
-          # Do NOT strip PlugIns, Metadata.appintents, nlu.appintents, or lproj
-          rm -rf "$PAYLOAD/Orange Cloud.app/_CodeSignature" 2>/dev/null || true
+          # Strip _CodeSignature from ALL levels (top .app + nested extensions)
+          find "$PAYLOAD/Orange Cloud.app" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true
           rm -f "$PAYLOAD/Orange Cloud.app/embedded.mobileprovision" 2>/dev/null || true
+          rm -rf "$PAYLOAD/Orange Cloud.app/SC_Info" 2>/dev/null || true
+
+          # Keep PlugIns, Metadata.appintents, nlu.appintents, all lproj intact
+          echo "=== App bundle contents ==="
+          find "$PAYLOAD/Orange Cloud.app" -maxdepth 1 -type d | sort
+          echo "=== PlugIns ==="
+          ls "$PAYLOAD/Orange Cloud.app/PlugIns/" 2>/dev/null || echo "  (none)"
 
           cd "$RUNNER_TEMP"
           ditto -c -k --keepParent --sequesterRsrc Payload "$IPA_PATH"

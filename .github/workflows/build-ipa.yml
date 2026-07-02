@@ -24,10 +24,23 @@ jobs:
 
       - name: Select Xcode
         run: |
-          ls /Applications/ | grep Xcode
-          sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer || \
-          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | head -1)/Contents/Developer"
+          echo "Available Xcode versions:"
+          ls -d /Applications/Xcode*.app 2>/dev/null || ls /Applications/ | grep -i xcode || true
+          if [ -d "/Applications/Xcode_26.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+          elif [ -d "/Applications/Xcode.app" ]; then
+            sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          else
+            XCODE_APP=$(ls -d /Applications/Xcode*.app 2>/dev/null | head -1)
+            if [ -z "$XCODE_APP" ]; then
+              echo "::error::No Xcode found in /Applications"
+              exit 1
+            fi
+            sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          fi
           xcodebuild -version
+          echo "SDK platforms:"
+          xcodebuild -showsdks 2>/dev/null | grep -i ios || true
 
       - name: Cache SPM dependencies
         uses: actions/cache@v5
@@ -38,7 +51,7 @@ jobs:
           key: xcode-${{ runner.os }}-${{ hashFiles('apps/ios/Orange Cloud/Orange Cloud.xcodeproj/project.pbxproj') }}
           restore-keys: xcode-${{ runner.os }}-
 
-      - name: Set version tag
+      - name: Set version info
         id: version
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
@@ -47,28 +60,16 @@ jobs:
             RAW="${{ github.ref_name }}"
           fi
           echo "tag=$RAW" >> $GITHUB_OUTPUT
-          V=$(echo "$RAW" | sed 's/^v//')
-          echo "number=$V" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Set marketing version
-        working-directory: apps/ios/Orange Cloud
-        run: |
-          python3 -c "
-          import re
-          v = '${{ steps.version.outputs.number }}'
-          with open('Orange Cloud.xcodeproj/project.pbxproj', 'r') as f:
-              content = f.read()
-          content = re.sub(r'MARKETING_VERSION = [0-9.]+;', f'MARKETING_VERSION = {v};', content)
-          with open('Orange Cloud.xcodeproj/project.pbxproj', 'w') as f:
-              f.write(content)
-          print(f'Set MARKETING_VERSION = {v}')
-          "
+          echo "Marketing version kept from upstream project.pbxproj"
 
       - name: Build archive
         working-directory: apps/ios/Orange Cloud
         run: |
           set -eo pipefail
+          echo "=== Available targets & schemes ==="
+          xcodebuild -project "Orange Cloud.xcodeproj" -list
+          echo "=== Building ==="
           xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
             -scheme "Orange Cloud" \

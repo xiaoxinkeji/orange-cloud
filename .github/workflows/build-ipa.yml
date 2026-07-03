@@ -67,8 +67,14 @@ jobs:
         working-directory: apps/ios/Orange Cloud
         run: |
           set -eo pipefail
+          echo "=== Xcode version ==="
+          xcodebuild -version
+          echo "=== Swift version ==="
+          swift --version 2>/dev/null || true
           echo "=== Available targets & schemes ==="
           xcodebuild -project "Orange Cloud.xcodeproj" -list
+          echo "=== Build settings ==="
+          xcodebuild -project "Orange Cloud.xcodeproj" -scheme "Orange Cloud" -configuration Release -showBuildSettings 2>/dev/null | head -40
           echo "=== Building archive ==="
           xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
@@ -81,8 +87,9 @@ jobs:
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
-            | tee build.log
-          tail -20 build.log
+            2>&1 | tee build.log
+          echo "=== Last 50 lines ==="
+          tail -50 build.log
 
       - name: Create unsigned IPA
         id: ipa

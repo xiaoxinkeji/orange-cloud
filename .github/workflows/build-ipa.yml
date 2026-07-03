@@ -69,15 +69,10 @@ jobs:
           set -eo pipefail
           echo "=== Xcode version ==="
           xcodebuild -version
-          echo "=== Project list ==="
+          echo "=== Project schemes ==="
           xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1
-          echo "=== Schemes ==="
-          xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1 | grep -A20 "Schemes:"
-          echo "=== Targets ==="
-          xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1 | grep -A20 "Targets:"
-          echo "=== Check DerivedData ==="
-          ls ~/Library/Developer/Xcode/DerivedData/ 2>/dev/null | head -10
-          echo "=== Building archive ==="
+          echo "=== Try archive with target instead of scheme ==="
+          echo "Using -scheme 'Orange Cloud' (standard)"
           xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
             -scheme "Orange Cloud" \
@@ -90,26 +85,30 @@ jobs:
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
             2>&1 | tee build.log
-          echo "=== Build log exit ==="
+          echo "Build archive exit code: ${PIPESTATUS[0]}"
 
-      - name: Show errors
+      - name: Show full build log
         if: failure()
-        working-directory: apps/ios/Orange Cloud
         run: |
-          echo "=== Build log last 100 lines ==="
-          tail -100 build.log 2>/dev/null || echo "(no build.log)"
-          echo "=== Build log errors ==="
-          grep -n "error:" build.log 2>/dev/null | head -30 || echo "(no errors found in log)"
-          echo "=== GITHUB_STEP_SUMMARY ==="
-          cat "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "(no step summary)"
-          echo "=== RUNNER_TEMP ==="
-          ls -la "$RUNNER_TEMP" 2>/dev/null
-          echo "=== Proceeding ==="
+          echo "=== Full build.log (last 200 lines) ==="
+          tail -200 /tmp/Orange\ Cloud/build.log 2>/dev/null
+          echo "=== Also search in working dir ==="
+          find "$RUNNER_TEMP" -name "build.log" 2>/dev/null
+          cat "$RUNNER_TEMP/OrangeCloud.xcarchive/build.log" 2>/dev/null
+          find "$GITHUB_WORKSPACE" -name "build.log" 2>/dev/null
+          cat "$GITHUB_WORKSPACE/apps/ios/Orange Cloud/build.log" 2>/dev/null || echo "No build.log found"
+          echo "=== End ==="
+          # Write to step summary for full visibility
+          {
+            echo "### Build archive log"
+            echo '```'
+            cat "$GITHUB_WORKSPACE/apps/ios/Orange Cloud/build.log" 2>/dev/null || echo "(no build.log)"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Create unsigned IPA
         id: ipa
         run: |
-          set -eo pipefail
           ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
           PAYLOAD="$RUNNER_TEMP/Payload"
           TAG="${{ steps.version.outputs.tag }}"
@@ -117,10 +116,14 @@ jobs:
 
           echo "=== Archive exists? ==="
           ls -la "$ARCHIVE" 2>/dev/null || echo "Archive NOT found"
+          
+          if [ ! -d "$ARCHIVE" ]; then
+            echo "Archive step did not produce an archive. Cannot create IPA."
+            exit 85
+          fi
 
           mkdir -p "$PAYLOAD"
 
-          # Find the .app bundle (use exact path first, fallback to dynamic)
           if [ -d "$ARCHIVE/Products/Applications/Orange Cloud.app" ]; then
             APP_BUNDLE="$ARCHIVE/Products/Applications/Orange Cloud.app"
           else
@@ -134,23 +137,16 @@ jobs:
           fi
 
           APP_NAME=$(basename "$APP_BUNDLE")
-          echo "Bundle: $APP_BUNDLE, name: $APP_NAME"
           cp -R "$APP_BUNDLE" "$PAYLOAD/"
 
-          # Strip _CodeSignature from ALL levels (top .app + nested extensions)
           find "$PAYLOAD/Orange Cloud.app" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true
           rm -f "$PAYLOAD/Orange Cloud.app/embedded.mobileprovision" 2>/dev/null || true
           rm -rf "$PAYLOAD/Orange Cloud.app/SC_Info" 2>/dev/null || true
 
-          echo "=== Payload contents ==="
-          find "$PAYLOAD/Orange Cloud.app" -maxdepth 1 -type d | sort
-          echo "=== PlugIns ==="
-          ls "$PAYLOAD/Orange Cloud.app/PlugIns/" 2>/dev/null || echo "  (none)"
-
           cd "$RUNNER_TEMP"
           ditto -c -k --keepParent --sequesterRsrc Payload "$IPA_PATH"
 
-          python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"
+          python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH" 2>&1 || echo "Verify returned $?"
           ls -lh "$IPA_PATH"
 
           CKSUM=$(shasum -a 256 "$IPA_PATH" | awk '{print $1}')

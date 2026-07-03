@@ -67,8 +67,16 @@ jobs:
         working-directory: apps/ios/Orange Cloud
         run: |
           set -eo pipefail
-          echo "=== Available targets & schemes ==="
-          xcodebuild -project "Orange Cloud.xcodeproj" -list
+          echo "=== Xcode version ==="
+          xcodebuild -version
+          echo "=== Project list ==="
+          xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1
+          echo "=== Schemes ==="
+          xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1 | grep -A20 "Schemes:"
+          echo "=== Targets ==="
+          xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1 | grep -A20 "Targets:"
+          echo "=== Check DerivedData ==="
+          ls ~/Library/Developer/Xcode/DerivedData/ 2>/dev/null | head -10
           echo "=== Building archive ==="
           xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
@@ -81,8 +89,22 @@ jobs:
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
-            | tee build.log
-          tail -20 build.log
+            2>&1 | tee build.log
+          echo "=== Build log exit ==="
+
+      - name: Show errors
+        if: failure()
+        working-directory: apps/ios/Orange Cloud
+        run: |
+          echo "=== Build log last 100 lines ==="
+          tail -100 build.log 2>/dev/null || echo "(no build.log)"
+          echo "=== Build log errors ==="
+          grep -n "error:" build.log 2>/dev/null | head -30 || echo "(no errors found in log)"
+          echo "=== GITHUB_STEP_SUMMARY ==="
+          cat "$GITHUB_STEP_SUMMARY" 2>/dev/null || echo "(no step summary)"
+          echo "=== RUNNER_TEMP ==="
+          ls -la "$RUNNER_TEMP" 2>/dev/null
+          echo "=== Proceeding ==="
 
       - name: Create unsigned IPA
         id: ipa
@@ -93,22 +115,26 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           IPA_PATH="$RUNNER_TEMP/OrangeCloud-$TAG-unsigned.ipa"
 
+          echo "=== Archive exists? ==="
+          ls -la "$ARCHIVE" 2>/dev/null || echo "Archive NOT found"
+
           mkdir -p "$PAYLOAD"
 
           # Find the .app bundle (use exact path first, fallback to dynamic)
           if [ -d "$ARCHIVE/Products/Applications/Orange Cloud.app" ]; then
             APP_BUNDLE="$ARCHIVE/Products/Applications/Orange Cloud.app"
           else
-            APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 | head -1)
+            APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 2>/dev/null | head -1)
           fi
 
           if [ -z "$APP_BUNDLE" ]; then
             echo "::error::No .app bundle found in archive!"
-            find "$ARCHIVE" -maxdepth 5
+            find "$ARCHIVE" -maxdepth 5 2>/dev/null
             exit 1
           fi
 
           APP_NAME=$(basename "$APP_BUNDLE")
+          echo "Bundle: $APP_BUNDLE, name: $APP_NAME"
           cp -R "$APP_BUNDLE" "$PAYLOAD/"
 
           # Strip _CodeSignature from ALL levels (top .app + nested extensions)
@@ -116,8 +142,7 @@ jobs:
           rm -f "$PAYLOAD/Orange Cloud.app/embedded.mobileprovision" 2>/dev/null || true
           rm -rf "$PAYLOAD/Orange Cloud.app/SC_Info" 2>/dev/null || true
 
-          # Keep PlugIns, Metadata.appintents, nlu.appintents, all lproj intact
-          echo "=== App bundle contents ==="
+          echo "=== Payload contents ==="
           find "$PAYLOAD/Orange Cloud.app" -maxdepth 1 -type d | sort
           echo "=== PlugIns ==="
           ls "$PAYLOAD/Orange Cloud.app/PlugIns/" 2>/dev/null || echo "  (none)"

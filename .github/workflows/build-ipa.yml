@@ -142,7 +142,10 @@ jobs:
           ls "$APP_BUNDLE_IN_PAYLOAD/PlugIns/" 2>/dev/null || echo "  (none)"
 
           cd "$RUNNER_TEMP"
-          ditto -c -k --keepParent --sequesterRsrc Payload "$IPA_PATH"
+          echo "=== Creating IPA with zip ==="
+          zip -r "$IPA_PATH" Payload/ -x "*.DS_Store" -x "__MACOSX/*"
+          echo "=== IPA created ==="
+          ls -lh "$IPA_PATH"
 
           python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"
           ls -lh "$IPA_PATH"

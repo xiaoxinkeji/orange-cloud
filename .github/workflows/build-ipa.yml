@@ -66,7 +66,7 @@ jobs:
       - name: Build archive
         working-directory: apps/ios/Orange Cloud
         run: |
-          set -eo pipefail
+          set -e  # no pipefail — find|head and tee with SIGPIPE can break pipefail
           echo "=== Available targets & schemes ==="
           xcodebuild -project "Orange Cloud.xcodeproj" -list
           echo "=== Building archive ==="
@@ -106,18 +106,40 @@ jobs:
       - name: Create unsigned IPA
         id: ipa
         run: |
-          set -eo pipefail
-          echo "RUNNER_TEMP=$RUNNER_TEMP"
-          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
-          echo "HOME=$HOME"
+          set -e  # no pipefail
           ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
-          echo "ARCHIVE=$ARCHIVE"
-          ls -la "$RUNNER_TEMP" || true
-          ls -la "$ARCHIVE" || true
-          find "$ARCHIVE" -maxdepth 5 2>/dev/null | head -50 || echo "Archive not found"
-          echo "Done"
-          # Make a dummy success
-          echo "checksum=placeholder" >> $GITHUB_OUTPUT
+          PAYLOAD="$RUNNER_TEMP/Payload"
+          TAG="${{ steps.version.outputs.tag }}"
+          IPA_PATH="$RUNNER_TEMP/OrangeCloud-$TAG-unsigned.ipa"
+
+          echo "=== Archive contents ==="
+          find "$ARCHIVE" -maxdepth 4 -type d | head -30
+          echo "=== Find .app bundle ==="
+          APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "::error::No .app found"
+            find "$ARCHIVE" -maxdepth 5 2>/dev/null | head -50
+            exit 1
+          fi
+          echo "Bundle: $APP_BUNDLE"
+          APP_NAME=$(basename "$APP_BUNDLE")
+          mkdir -p "$PAYLOAD"
+          cp -R "$APP_BUNDLE" "$PAYLOAD/"
+
+          # Strip signing
+          BP="$PAYLOAD/$APP_NAME"
+          find "$BP" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true
+          rm -f "$BP/embedded.mobileprovision" "$BP/SC_Info" 2>/dev/null || true
+
+          # Create IPA
+          cd "$RUNNER_TEMP"
+          zip -r "$IPA_PATH" Payload/ -x "*.DS_Store" -x "__MACOSX/*"
+          python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"
+
+          CKSUM=$(shasum -a 256 "$IPA_PATH" | awk '{print $1}')
+          echo "checksum=$CKSUM" >> $GITHUB_OUTPUT
+          echo "SHA256: $CKSUM"
+          ls -lh "$IPA_PATH"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v6

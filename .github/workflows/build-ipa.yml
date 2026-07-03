@@ -81,8 +81,27 @@ jobs:
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
-            | tee build.log
-          tail -20 build.log
+            2>&1 | tee build.log || true
+          EXIT_CODE=${PIPESTATUS[0]}
+          echo "=== Last 100 lines ==="
+          tail -100 build.log
+          echo "=== Exit code: $EXIT_CODE ==="
+          if [ "$EXIT_CODE" -ne 0 ]; then
+            # Output build log to step summary for visibility
+            {
+              echo "### Xcode Build Failed (exit code $EXIT_CODE)"
+              echo ""
+              echo '```'
+              grep -n "error:" build.log | head -30 || echo "(no 'error:' lines found)"
+              echo '```'
+              echo ""
+              echo "Full log (last 50 lines):"
+              echo '```'
+              tail -50 build.log
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit $EXIT_CODE
+          fi
 
       - name: Create unsigned IPA
         id: ipa

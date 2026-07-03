@@ -18,6 +18,7 @@ struct PagesProjectDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     init(project: PagesProject, session: SessionStore) {
+        self.session = session
         let accountId = session.selectedAccount?.id ?? ""
         _viewModel = State(initialValue: PagesProjectDetailViewModel(
             project: project,

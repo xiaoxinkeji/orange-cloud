@@ -14,7 +14,8 @@ struct PagesProjectDetailView: View {
     @State private var deployViewModel: PagesDeployViewModel
     @State private var showDeleteConfirm = false
     @State private var showDeploy = false
-    @Environment(\.dismiss) private var dismiss
+    let session: SessionStore
+    @Environment(\\.dismiss) private var dismiss
 
     init(project: PagesProject, session: SessionStore) {
         let accountId = session.selectedAccount?.id ?? ""

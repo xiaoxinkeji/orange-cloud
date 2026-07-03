@@ -66,7 +66,7 @@ jobs:
       - name: Build archive
         working-directory: apps/ios/Orange Cloud
         run: |
-          set -e  # no pipefail — find|head and tee with SIGPIPE can break pipefail
+          set -eo pipefail
           echo "=== Available targets & schemes ==="
           xcodebuild -project "Orange Cloud.xcodeproj" -list
           echo "=== Building archive ==="
@@ -81,65 +81,56 @@ jobs:
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
-            2>&1 | tee build.log || true
-          EXIT_CODE=${PIPESTATUS[0]}
-          echo "=== Last 100 lines ==="
-          tail -100 build.log
-          echo "=== Exit code: $EXIT_CODE ==="
-          if [ "$EXIT_CODE" -ne 0 ]; then
-            # Output build log to step summary for visibility
-            {
-              echo "### Xcode Build Failed (exit code $EXIT_CODE)"
-              echo ""
-              echo '```'
-              grep -n "error:" build.log | head -30 || echo "(no 'error:' lines found)"
-              echo '```'
-              echo ""
-              echo "Full log (last 50 lines):"
-              echo '```'
-              tail -50 build.log
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit $EXIT_CODE
-          fi
+            | tee build.log
+          tail -20 build.log
 
       - name: Create unsigned IPA
         id: ipa
         run: |
-          set -e  # no pipefail
+          set -eo pipefail
           ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
           PAYLOAD="$RUNNER_TEMP/Payload"
           TAG="${{ steps.version.outputs.tag }}"
           IPA_PATH="$RUNNER_TEMP/OrangeCloud-$TAG-unsigned.ipa"
 
-          echo "=== Archive contents ==="
-          find "$ARCHIVE" -maxdepth 4 -type d | head -30
-          echo "=== Find .app bundle ==="
-          APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 | head -1)
+          mkdir -p "$PAYLOAD"
+
+          # Find the .app bundle (use exact path first, fallback to dynamic)
+          if [ -d "$ARCHIVE/Products/Applications/Orange Cloud.app" ]; then
+            APP_BUNDLE="$ARCHIVE/Products/Applications/Orange Cloud.app"
+          else
+            APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 | head -1)
+          fi
+
           if [ -z "$APP_BUNDLE" ]; then
-            echo "::error::No .app found"
-            find "$ARCHIVE" -maxdepth 5 2>/dev/null | head -50
+            echo "::error::No .app bundle found in archive!"
+            find "$ARCHIVE" -maxdepth 5
             exit 1
           fi
-          echo "Bundle: $APP_BUNDLE"
+
           APP_NAME=$(basename "$APP_BUNDLE")
-          mkdir -p "$PAYLOAD"
           cp -R "$APP_BUNDLE" "$PAYLOAD/"
 
-          # Strip signing
-          BP="$PAYLOAD/$APP_NAME"
-          find "$BP" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true
-          rm -f "$BP/embedded.mobileprovision" "$BP/SC_Info" 2>/dev/null || true
+          # Strip _CodeSignature from ALL levels (top .app + nested extensions)
+          find "$PAYLOAD/Orange Cloud.app" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true
+          rm -f "$PAYLOAD/Orange Cloud.app/embedded.mobileprovision" 2>/dev/null || true
+          rm -rf "$PAYLOAD/Orange Cloud.app/SC_Info" 2>/dev/null || true
 
-          # Create IPA
+          # Keep PlugIns, Metadata.appintents, nlu.appintents, all lproj intact
+          echo "=== App bundle contents ==="
+          find "$PAYLOAD/Orange Cloud.app" -maxdepth 1 -type d | sort
+          echo "=== PlugIns ==="
+          ls "$PAYLOAD/Orange Cloud.app/PlugIns/" 2>/dev/null || echo "  (none)"
+
           cd "$RUNNER_TEMP"
-          zip -r "$IPA_PATH" Payload/ -x "*.DS_Store" -x "__MACOSX/*"
+          ditto -c -k --keepParent --sequesterRsrc Payload "$IPA_PATH"
+
           python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"
+          ls -lh "$IPA_PATH"
 
           CKSUM=$(shasum -a 256 "$IPA_PATH" | awk '{print $1}')
           echo "checksum=$CKSUM" >> $GITHUB_OUTPUT
           echo "SHA256: $CKSUM"
-          ls -lh "$IPA_PATH"
 
       - name: Upload IPA artifact
         uses: actions/upload-artifact@v6

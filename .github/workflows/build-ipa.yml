@@ -67,23 +67,7 @@ jobs:
         working-directory: apps/ios/Orange Cloud
         run: |
           set -eo pipefail
-
-          # Output plan to GITHUB_STEP_SUMMARY first
-          echo "### Build environment" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          echo "PWD: $(pwd)" >> "$GITHUB_STEP_SUMMARY"
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE" >> "$GITHUB_STEP_SUMMARY"
-          echo "RUNNER_TEMP: $RUNNER_TEMP" >> "$GITHUB_STEP_SUMMARY"
-
-          echo "=== Xcode version ==="
-          xcodebuild -version 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
-
-          echo "=== Project list ==="
-          xcodebuild -project "Orange Cloud.xcodeproj" -list 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
-
           echo "=== Building archive ==="
-          # Don't use pipefail with tee for the archive itself — capture both output and exit code
-          set +e
           xcodebuild archive \
             -project "Orange Cloud.xcodeproj" \
             -scheme "Orange Cloud" \
@@ -96,59 +80,28 @@ jobs:
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
             2>&1 | tee build.log
-          EXIT_CODE=${PIPESTATUS[0]}
-          set -e
-
-          echo "exit_code=$EXIT_CODE" >> "$GITHUB_STEP_SUMMARY"
-
-          echo "=== Build log (errors) ===" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          grep -n "error:" build.log 2>/dev/null | head -30 >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-          echo "=== Last 50 lines ===" >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          tail -50 build.log >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-          if [ "$EXIT_CODE" -ne 0 ]; then
-            exit $EXIT_CODE
-          fi
+          echo "=== Build completed ==="
 
       - name: Create unsigned IPA
         id: ipa
         run: |
+          set -eo pipefail
           ARCHIVE="$RUNNER_TEMP/OrangeCloud.xcarchive"
           PAYLOAD="$RUNNER_TEMP/Payload"
           TAG="${{ steps.version.outputs.tag }}"
           IPA_PATH="$RUNNER_TEMP/OrangeCloud-$TAG-unsigned.ipa"
 
-          if [ ! -d "$ARCHIVE" ]; then
-            echo "Archive NOT found at $ARCHIVE"
-            exit 85
-          fi
-
           mkdir -p "$PAYLOAD"
-          if [ -d "$ARCHIVE/Products/Applications/Orange Cloud.app" ]; then
-            APP_BUNDLE="$ARCHIVE/Products/Applications/Orange Cloud.app"
-          else
-            APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 | head -1)
-          fi
+          cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
 
-          if [ -z "$APP_BUNDLE" ]; then
-            echo "::error::No .app bundle found!"
-            find "$ARCHIVE" -maxdepth 5
-            exit 1
-          fi
-
-          APP_NAME=$(basename "$APP_BUNDLE")
-          cp -R "$APP_BUNDLE" "$PAYLOAD/"
+          # Strip _CodeSignature from ALL levels (top .app + nested extensions)
           find "$PAYLOAD/Orange Cloud.app" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true
           rm -f "$PAYLOAD/Orange Cloud.app/embedded.mobileprovision" 2>/dev/null || true
           rm -rf "$PAYLOAD/Orange Cloud.app/SC_Info" 2>/dev/null || true
 
           cd "$RUNNER_TEMP"
           ditto -c -k --keepParent --sequesterRsrc Payload "$IPA_PATH"
+
           python3 "$GITHUB_WORKSPACE/scripts/verify-ipa.py" --ci "$IPA_PATH"
           ls -lh "$IPA_PATH"
 

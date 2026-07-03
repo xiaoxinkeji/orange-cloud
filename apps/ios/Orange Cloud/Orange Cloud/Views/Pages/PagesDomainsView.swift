@@ -109,7 +109,8 @@ struct PagesDomainsView: View {
             }
             Button("取消", role: .cancel) {}
         } message: {
-            Text("将从 Pages 项目「\\(projectName)」中移除域名「\\(deleteTarget?.name ?? "")」。此操作不可撤销。")
+            let domainName = deleteTarget?.name ?? ""
+            Text("将从 Pages 项目「\\(projectName)」中移除域名「\\(domainName)」。此操作不可撤销。")
         }
         .alert("出错了", isPresented: .init(
             get: { error != nil }, set: { if !$0 { error = nil } }

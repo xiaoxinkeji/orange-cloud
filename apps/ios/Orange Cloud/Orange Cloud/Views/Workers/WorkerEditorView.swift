@@ -62,6 +62,13 @@ struct WorkerEditorView: View {
         } message: {
             Text(saveError ?? "")
         }
+        .alert("加载失败", isPresented: .init(
+            get: { error != nil }, set: { if !$0 { error = nil; isLoading = false } }
+        )) {
+            Button("好", role: .cancel) {}
+        } message: {
+            Text(error ?? "")
+        }
     }
 
     // MARK: - 编辑器

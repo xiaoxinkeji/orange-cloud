@@ -111,8 +111,19 @@ jobs:
           PAYLOAD="$RUNNER_TEMP/Payload"
           IPA_PATH="$RUNNER_TEMP/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa"
 
+          echo "=== Archive structure ==="
+          find "$ARCHIVE" -maxdepth 4 -type d | head -30
+
           mkdir -p "$PAYLOAD"
-          cp -R "$ARCHIVE/Products/Applications/Orange Cloud.app" "$PAYLOAD/"
+          APP_BUNDLE=$(find "$ARCHIVE/Products" -name "*.app" -type d -maxdepth 3 | head -1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "::error::No .app bundle found in archive"
+            echo "=== Full archive listing ==="
+            find "$ARCHIVE" -maxdepth 5 | head -50
+            exit 1
+          fi
+          echo "Found app bundle: $APP_BUNDLE"
+          cp -R "$APP_BUNDLE" "$PAYLOAD/"
 
           # Strip _CodeSignature from ALL levels (top .app + nested extensions)
           find "$PAYLOAD/Orange Cloud.app" -name "_CodeSignature" -type d -exec rm -rf {} + 2>/dev/null || true

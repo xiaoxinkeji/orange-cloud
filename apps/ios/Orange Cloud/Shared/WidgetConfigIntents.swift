@@ -17,7 +17,7 @@ import AppIntents
 
 // MARK: - 账号选项（账号总览 / 用量 Widget 可固定某个账号）
 
-nonisolated struct WidgetAccountEntity: AppEntity, Identifiable {
+struct WidgetAccountEntity: AppEntity, Identifiable {
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "账号"
     static let defaultQuery = WidgetAccountEntityQuery()
@@ -41,7 +41,7 @@ nonisolated struct WidgetAccountEntity: AppEntity, Identifiable {
     }
 }
 
-nonisolated struct WidgetAccountEntityQuery: EntityQuery {
+struct WidgetAccountEntityQuery: EntityQuery {
 
     private func all() -> [WidgetAccountEntity] {
         WidgetDataStore.loadAccounts().map(WidgetAccountEntity.init)
@@ -68,7 +68,7 @@ nonisolated struct WidgetAccountEntityQuery: EntityQuery {
 
 // MARK: - 账号总览 Widget：配置 Intent（固定某个账号）
 
-nonisolated struct AccountOverviewConfigIntent: WidgetConfigurationIntent {
+struct AccountOverviewConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "选择账号"
     static let description = IntentDescription("展示某个账号的 24 小时请求与域名状态")
 
@@ -78,7 +78,7 @@ nonisolated struct AccountOverviewConfigIntent: WidgetConfigurationIntent {
 
 // MARK: - 用量 Widget：服务选项
 
-nonisolated struct UsageServiceEntity: AppEntity, Identifiable {
+struct UsageServiceEntity: AppEntity, Identifiable {
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "服务"
     static let defaultQuery = UsageServiceEntityQuery()
@@ -98,7 +98,7 @@ nonisolated struct UsageServiceEntity: AppEntity, Identifiable {
     ]
 }
 
-nonisolated struct UsageServiceEntityQuery: EntityQuery {
+struct UsageServiceEntityQuery: EntityQuery {
 
     func entities(for identifiers: [UsageServiceEntity.ID]) async throws -> [UsageServiceEntity] {
         UsageServiceEntity.all.filter { identifiers.contains($0.id) }
@@ -113,7 +113,7 @@ nonisolated struct UsageServiceEntityQuery: EntityQuery {
     }
 }
 
-nonisolated struct UsageConfigIntent: WidgetConfigurationIntent {
+struct UsageConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "选择服务"
     static let description = IntentDescription("展示某个服务的额度使用情况")
 
@@ -129,7 +129,7 @@ nonisolated struct UsageConfigIntent: WidgetConfigurationIntent {
 
 // MARK: - 域名 Widget：可选择的域名实体（来自快照）
 
-nonisolated struct WidgetZoneEntity: AppEntity, Identifiable {
+struct WidgetZoneEntity: AppEntity, Identifiable {
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "域名"
     static let defaultQuery = WidgetZoneEntityQuery()
@@ -142,7 +142,7 @@ nonisolated struct WidgetZoneEntity: AppEntity, Identifiable {
     }
 }
 
-nonisolated struct WidgetZoneEntityQuery: EntityQuery {
+struct WidgetZoneEntityQuery: EntityQuery {
 
     /// 快照优先；为空时直接用 token 从 API 拉域名列表（不依赖打开 App）
     private func allEntities() async -> [WidgetZoneEntity] {
@@ -189,7 +189,7 @@ nonisolated struct WidgetZoneEntityQuery: EntityQuery {
 // MARK: - 域名 Widget：指标选项
 
 /// 指标的展示/取数逻辑（视图层用，不直接做 intent 参数）
-nonisolated enum ZoneWidgetMetric: String {
+enum ZoneWidgetMetric: String {
     case requests
     case bandwidth
     case threats
@@ -240,7 +240,7 @@ nonisolated enum ZoneWidgetMetric: String {
     }
 }
 
-nonisolated struct ZoneMetricEntity: AppEntity, Identifiable {
+struct ZoneMetricEntity: AppEntity, Identifiable {
 
     static let typeDisplayRepresentation: TypeDisplayRepresentation = "指标"
     static let defaultQuery = ZoneMetricEntityQuery()
@@ -257,7 +257,7 @@ nonisolated struct ZoneMetricEntity: AppEntity, Identifiable {
     ].map { ZoneMetricEntity(id: $0.rawValue, name: $0.displayName) }
 }
 
-nonisolated struct ZoneMetricEntityQuery: EntityQuery {
+struct ZoneMetricEntityQuery: EntityQuery {
 
     func entities(for identifiers: [ZoneMetricEntity.ID]) async throws -> [ZoneMetricEntity] {
         ZoneMetricEntity.all.filter { identifiers.contains($0.id) }
@@ -274,7 +274,7 @@ nonisolated struct ZoneMetricEntityQuery: EntityQuery {
 
 // MARK: - 域名 Widget：配置 Intent
 
-nonisolated struct ZoneStatConfigIntent: WidgetConfigurationIntent {
+struct ZoneStatConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "选择域名与指标"
     static let description = IntentDescription("展示某个域名的单项 24h 指标")
 
@@ -290,7 +290,7 @@ nonisolated struct ZoneStatConfigIntent: WidgetConfigurationIntent {
     }
 }
 
-nonisolated struct ZoneChartConfigIntent: WidgetConfigurationIntent {
+struct ZoneChartConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "选择域名"
     static let description = IntentDescription("展示某个域名的请求地形与总览")
 

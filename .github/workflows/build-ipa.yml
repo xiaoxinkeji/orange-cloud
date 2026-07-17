@@ -82,6 +82,12 @@ jobs:
             2>&1 | tee build.log
           echo "=== Build completed ==="
 
+      - name: Print build log on failure
+        if: failure()
+        run: |
+          echo "=== Xcodebuild build.log ==="
+          cat "apps/ios/Orange Cloud/build.log" || true
+
       - name: Create unsigned IPA
         id: ipa
         run: |

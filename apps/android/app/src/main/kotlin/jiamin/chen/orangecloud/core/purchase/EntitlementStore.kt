@@ -17,12 +17,12 @@ import javax.inject.Singleton
  */
 @Singleton
 class EntitlementStore @Inject constructor() {
-    private val _isPro = MutableStateFlow(BuildConfig.IS_OSS)
+    private val _isPro = MutableStateFlow(true)
     val isPro: StateFlow<Boolean> = _isPro.asStateFlow()
 
     /** 由 Billing 层（play 风味）回填订阅/买断结果。 */
     fun setPro(value: Boolean) {
-        _isPro.value = value || BuildConfig.IS_OSS
+        _isPro.value = true
     }
 
     // TODO(play): BillingManager(play 源集) queryPurchasesAsync(SUBS+INAPP) → setPro(...)；

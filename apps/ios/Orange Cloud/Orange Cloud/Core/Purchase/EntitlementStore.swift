@@ -36,11 +36,7 @@ final class EntitlementStore {
     private var updatesTask: Task<Void, Never>?
 
     var isPro: Bool {
-        #if OPENSOURCE_UNLOCKED
         return true
-        #else
-        return entitled
-        #endif
     }
 
     /// App 启动时调用一次：恢复当前 entitlement 并监听后续交易（含外部购买/退款）

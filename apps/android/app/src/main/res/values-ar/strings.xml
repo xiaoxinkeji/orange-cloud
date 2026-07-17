@@ -356,6 +356,9 @@
     <string name="waf_deleted">تم الحذف</string>
     <string name="waf_delete_confirm_title">حذف هذه القاعدة؟</string>
     <string name="waf_delete_confirm_msg">لا يمكن التراجع؛ تتوقف القاعدة عن العمل فورًا.</string>
+    <string name="waf_edit_title">تعديل القاعدة</string>
+    <string name="waf_edit_unsupported_title">التعديل غير مدعوم</string>
+    <string name="waf_edit_unsupported_msg">القواعد التي تتضمن معلمات إضافية (مثل التخطي) لا يمكن تعديلها داخل التطبيق حالياً. يُرجى تعديلها من لوحة تحكم Cloudflare.</string>
     <string name="tunnel_title">الأنفاق</string>
     <string name="tunnel_empty">لا توجد أنفاق بعد</string>
     <string name="tunnel_connections">%1$d اتصالات نشطة</string>
@@ -992,7 +995,7 @@
     <string name="pages_deploy_progress">جارٍ الرفع %1$d / %2$d</string>
     <string name="pages_deployed">تم النشر</string>
     <string name="pages_deploy_empty">لم يُعثر على ملفات قابلة للنشر</string>
-    <string name="pages_deploy_too_big">الملف %1$s يتجاوز حد 25 ميجابايت</string>
+    <string name="pages_deploy_too_big">الملف %1$s يتجاوز حد 25 MB</string>
     <string name="dev_ai_task_other">أخرى</string>
     <string name="dev_ai_info_task">المهمة</string>
     <string name="dev_ai_info_model">النموذج</string>
@@ -1104,4 +1107,34 @@
     <string name="alerting_empty">لا توجد أنواع تنبيهات لهذا الحساب.</string>
     <string name="perm_notifications">الإشعارات</string>
     <string name="perm_notifications_desc">ادفع تنبيهات Cloudflare إلى جهازك</string>
+    <!-- Pages 自定义域名 + 列表排序 -->
+    <string name="pages_domains_section">نطاقات مخصصة</string>
+    <string name="pages_domain_add">إضافة نطاق</string>
+    <string name="pages_domain_add_hint">بعد الإضافة، وجِّه DNS النطاق إلى هذا المشروع ليصبح ساريًا.</string>
+    <string name="pages_domain_empty">لا توجد نطاقات مخصصة</string>
+    <string name="pages_domain_delete_title">حذف النطاق؟</string>
+    <string name="pages_domain_delete_msg">ستتم إزالة %1$s من مشروع Pages هذا، دون التأثير على سجلات DNS الحالية.</string>
+    <string name="pages_domain_retry">إعادة التحقق</string>
+    <string name="pages_domain_added">تمت إضافة النطاق</string>
+    <string name="pages_domain_deleted">تم حذف النطاق</string>
+    <string name="pages_cname_created">تمت إضافة سجل CNAME</string>
+    <string name="pages_domain_status_active">نشط</string>
+    <string name="pages_domain_status_pending">قيد التحقق</string>
+    <string name="pages_domain_status_initializing">قيد التهيئة</string>
+    <string name="pages_domain_status_deactivated">معطَّل</string>
+    <string name="pages_domain_status_blocked">محظور</string>
+    <string name="pages_domain_status_error">خطأ</string>
+    <string name="pages_txt_title">سجل TXT للتحقق</string>
+    <string name="pages_txt_name">اسم السجل</string>
+    <string name="pages_txt_value">قيمة السجل</string>
+    <string name="pages_dns_resolved">يشير إلى هذا المشروع</string>
+    <string name="pages_dns_conflicting">لا يشير إلى هذا المشروع</string>
+    <string name="pages_dns_missing">لا يوجد سجل DNS بعد</string>
+    <string name="pages_dns_add_cname">إضافة سجل CNAME</string>
+    <string name="pages_dns_add_cname_hint">سيُضاف سجل CNAME مفعَّل الوكيل يشير إلى %1$s في منطقة النطاق.</string>
+    <string name="pages_dns_external">هذا النطاق ليس ضمن منطقة Cloudflare في هذا الحساب. أضِف سجل CNAME يشير إلى %1$s لدى مزوِّد DNS الخاص بك.</string>
+    <string name="sort_label">الترتيب</string>
+    <string name="sort_default">افتراضي (الاسم)</string>
+    <string name="sort_created">تاريخ الإنشاء</string>
+    <string name="sort_modified">آخر تحديث</string>
 </resources>

@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
+    <string name="whatsnew_1_6_0_0_title">Benutzerdefinierte Domains für Pages</string>
+    <string name="whatsnew_1_6_0_0_detail">Verwalte benutzerdefinierte Domains direkt im Pages-Projekt: hinzufügen, entfernen, erneut validieren und DNS-Status prüfen – mit Ein-Tipp-CNAME, wenn die Zone der Domain in deinem Konto liegt.</string>
+    <string name="whatsnew_1_6_0_1_title">Listensortierung</string>
+    <string name="whatsnew_1_6_0_1_detail">Workers- und Pages-Listen lassen sich jetzt nach Name (Standard), Erstellungsdatum oder letzter Aktualisierung sortieren – die Auswahl wird gemerkt.</string>
     <string name="whatsnew_1_5_0_0_title">Entwickler-Toolbox ohne Anmeldung</string>
     <string name="whatsnew_1_5_0_0_detail">Praktische Netzwerk-Tools, die du ohne Anmeldung nutzen kannst: DNS-Abfrage, SSL-Zertifikatsprüfung, HTTP-Header, WHOIS, IP-Geolokalisierung, ein CIDR-Rechner und Cloudflare-Trace – direkt vom Anmeldebildschirm aus erreichbar.</string>
     <string name="whatsnew_1_5_0_1_title">Push-Center</string>

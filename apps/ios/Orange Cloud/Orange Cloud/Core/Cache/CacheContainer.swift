@@ -24,6 +24,14 @@ nonisolated enum CacheContainer {
             isStoredInMemoryOnly: false,
             cloudKitDatabase: .none
         )
+        // 上一轮运行中 fetch 连续抛 ObjC 异常（见 CachePolicy.safeFetch）说明本机缓存库
+        // 大概率已损坏——容器活着时不能动店文件，标记留到此刻（容器创建前）清库重建。
+        if UserDefaults.standard.bool(forKey: rebuildFlagKey) {
+            AppLog.app.error("缓存库带损坏标记，启动前清库重建")
+            destroyStoreFiles(at: configuration.url)
+            UserDefaults.standard.removeObject(forKey: rebuildFlagKey)
+            UserDefaults.standard.removeObject(forKey: fetchExceptionCountKey)
+        }
         do {
             return try ModelContainer(for: schema, configurations: [configuration])
         } catch {
@@ -40,6 +48,40 @@ nonisolated enum CacheContainer {
             return try! ModelContainer(for: schema, configurations: [memory])
         }
     }()
+
+    /// 启动早期在主线程串行预热一次实体解析。Sentry APPLE-IOS-Y（1.8.2+27~1.8.3+30）：
+    /// iOS 17.x 冷启动后数秒内的首次 fetch 抛「could not locate an NSEntityDescription for
+    /// entity name 'CachedZone'」，疑为首次实体解析的并发竞态（@Query / Intents 查询 /
+    /// ViewModel fetch 同窗口首触）。在任何并发访问前做一次守卫下的空谓词 fetch 灌热实体
+    /// 描述；即便竞态假说不成立，异常也会被 SafeCache 兜住并计入店健康。
+    @MainActor
+    static func warmUp() {
+        _ = SafeCache.fetch(FetchDescriptor<CachedZone>(), context: shared.mainContext)
+    }
+
+    // MARK: - 店健康记录（TF 崩溃点 D8tiH4pqdctLgx_nCLGnZ：单机纯谓词 fetch 也抛 NSException）
+
+    private static let rebuildFlagKey = "ocCacheStoreNeedsRebuild"
+    private static let fetchExceptionCountKey = "ocCacheFetchExceptionCount"
+    /// 连续异常达到该数即标记下次启动清库（缓存可随时从 API 重拉，重建成本 ≈ 一次刷新）
+    private static let rebuildThreshold = 2
+
+    /// fetch 抛 ObjC 异常时调用（CachePolicy.safeFetch）。计数持久化，跨启动累计。
+    static func noteFetchException() {
+        let count = UserDefaults.standard.integer(forKey: fetchExceptionCountKey) + 1
+        UserDefaults.standard.set(count, forKey: fetchExceptionCountKey)
+        if count >= rebuildThreshold {
+            UserDefaults.standard.set(true, forKey: rebuildFlagKey)
+            AppLog.app.error("缓存 fetch 连续 \(count) 次抛 ObjC 异常，已标记下次启动清库重建")
+        }
+    }
+
+    /// fetch 正常完成时调用：清零连续异常计数（偶发异常不触发重建）。
+    static func noteFetchHealthy() {
+        if UserDefaults.standard.integer(forKey: fetchExceptionCountKey) != 0 {
+            UserDefaults.standard.removeObject(forKey: fetchExceptionCountKey)
+        }
+    }
 
     /// 删除磁盘上的 SwiftData 存储文件（含 -wal / -shm 旁文件），供损坏后清库重建。
     private static func destroyStoreFiles(at storeURL: URL) {

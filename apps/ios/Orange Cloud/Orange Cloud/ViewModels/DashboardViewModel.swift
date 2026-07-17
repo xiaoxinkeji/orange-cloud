@@ -121,32 +121,43 @@ final class DashboardViewModel {
             loadFailed = true
             return
         }
-        try? CacheSync.syncZones(zones, accountId: accountId, accountName: accountName, context: context)
+        CacheSync.syncZones(zones, accountId: accountId, accountName: accountName, context: context)
 
         if canReadWorkers, let scripts = try? await workerService.listScripts(accountId: accountId) {
-            try? CacheSync.syncWorkers(scripts, accountId: accountId, context: context)
+            CacheSync.syncWorkers(scripts, accountId: accountId, context: context)
         }
 
         if canReadDNS {
             // 每个 Zone 一个轻量请求并发取 total_count；域名特别多时只统计前 50 个
             let service = dnsService
             let zoneIds = zones.prefix(50).map(\.id)
-            let total = await withTaskGroup(of: Int?.self) { group in
+            let counts = await withTaskGroup(of: (String, Int)?.self) { group in
                 for zoneId in zoneIds {
                     group.addTask {
-                        try? await service.recordCount(zoneId: zoneId)
+                        (try? await service.recordCount(zoneId: zoneId)).map { (zoneId, $0) }
                     }
                 }
-                var sum = 0
-                var anySuccess = zoneIds.isEmpty
-                for await count in group where count != nil {
-                    sum += count!
-                    anySuccess = true
+                var acc: [(zoneId: String, count: Int)] = []
+                for await pair in group {
+                    if let pair { acc.append(pair) }
                 }
-                return anySuccess ? sum : nil as Int?
+                return acc
             }
-            if let total {
-                dnsRecordTotal = total
+            if zoneIds.isEmpty {
+                dnsRecordTotal = 0
+            } else if !counts.isEmpty {
+                dnsRecordTotal = counts.reduce(0) { $0 + $1.count }
+                // 分域名回写缓存：域名详情页首屏直显记录数（不再默认 0 条等进列表刷新）
+                SafeCache.perform("dnsRecordCount 回写") {
+                    let rows = try context.fetch(
+                        FetchDescriptor<CachedZone>(predicate: #Predicate { $0.accountId == accountId })
+                    )
+                    let byId = Dictionary(rows.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+                    for (zoneId, count) in counts {
+                        byId[zoneId]?.dnsRecordCount = count
+                    }
+                    try context.save()
+                }
             }
         }
 
@@ -184,10 +195,23 @@ final class DashboardViewModel {
             return
         }
 
+        // 订阅接口需要 billing 权限（OAuth token 不带）：首个确定性拒绝后按账号跨启动记住，
+        // 不再每次冷启动发一条注定 403 的探测（同账户级分析 authz 的惰性识别）；
+        // 下拉刷新（force）会重探，权限恢复时自动回归并摘除标记。
         if force || billingAttemptedForAccount != accountId {
             billingAttemptedForAccount = accountId
-            billing = (try? await accountService.listSubscriptions(accountId: accountId))
-                .map(BillingInfo.derive(from:))
+            if force || !BillingProbeCache.isUnavailable(accountId: accountId) {
+                do {
+                    billing = BillingInfo.derive(from: try await accountService.listSubscriptions(accountId: accountId))
+                    BillingProbeCache.markAvailable(accountId: accountId)
+                } catch {
+                    billing = nil
+                    if let apiError = error as? APIError, apiError.isPermissionDenied {
+                        BillingProbeCache.markUnavailable(accountId: accountId)
+                        AppLog.network.info("subscriptions endpoint permission denied; skipping billing probe for account=\(accountId)")
+                    }
+                }
+            }
         }
 
         // 订阅周期有效才采用：必须在过去、未结束，且不超过 GraphQL 数据留存（约 31 天）
@@ -357,6 +381,31 @@ final class DashboardViewModel {
         WidgetCenter.shared.reloadTimelines(ofKind: "ZoneStatusWidget")
         // 数据刷新后把最新快照推给 Apple Watch
         WatchSessionManager.shared.pushCurrentState()
+    }
+}
+
+/// 订阅接口可用性缓存（按账号，跨启动持久）：OAuth token 无 billing 权限时该接口恒 403（cf=10000），
+/// 首个确定性拒绝后记住不再探测，免得每次启动固定一条 403 噪音；下拉刷新（force）会绕过重探。
+nonisolated enum BillingProbeCache {
+
+    private static let key = "billingProbeUnavailableAccounts"
+
+    static func isUnavailable(accountId: String) -> Bool {
+        (UserDefaults.standard.stringArray(forKey: key) ?? []).contains(accountId)
+    }
+
+    static func markUnavailable(accountId: String) {
+        var list = UserDefaults.standard.stringArray(forKey: key) ?? []
+        guard !list.contains(accountId) else { return }
+        list.append(accountId)
+        UserDefaults.standard.set(list, forKey: key)
+    }
+
+    static func markAvailable(accountId: String) {
+        var list = UserDefaults.standard.stringArray(forKey: key) ?? []
+        guard let index = list.firstIndex(of: accountId) else { return }
+        list.remove(at: index)
+        UserDefaults.standard.set(list, forKey: key)
     }
 }
 

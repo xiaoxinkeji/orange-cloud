@@ -429,6 +429,9 @@
     <string name="waf_deleted">已删除</string>
     <string name="waf_delete_confirm_title">删除此规则？</string>
     <string name="waf_delete_confirm_msg">此操作不可撤销，规则将立即停止生效。</string>
+    <string name="waf_edit_title">编辑规则</string>
+    <string name="waf_edit_unsupported_title">暂不支持编辑</string>
+    <string name="waf_edit_unsupported_msg">「跳过」等带额外参数的规则暂不支持在 App 内编辑，请在 Cloudflare Dashboard 中修改。</string>
 
     <!-- Tunnel -->
     <string name="tunnel_title">隧道</string>
@@ -1232,4 +1235,34 @@
     <string name="alerting_empty">该账号暂无可用告警类型。</string>
     <string name="perm_notifications">通知</string>
     <string name="perm_notifications_desc">把 Cloudflare 告警推到设备</string>
+    <!-- Pages 自定义域名 + 列表排序 -->
+    <string name="pages_domains_section">自定义域名</string>
+    <string name="pages_domain_add">添加域名</string>
+    <string name="pages_domain_add_hint">挂载后需将域名解析指向本项目才能生效。</string>
+    <string name="pages_domain_empty">暂无自定义域名</string>
+    <string name="pages_domain_delete_title">删除域名？</string>
+    <string name="pages_domain_delete_msg">将从该 Pages 项目移除 %1$s，不影响已有 DNS 记录。</string>
+    <string name="pages_domain_retry">重新验证</string>
+    <string name="pages_domain_added">已添加域名</string>
+    <string name="pages_domain_deleted">已删除域名</string>
+    <string name="pages_cname_created">已添加 CNAME 记录</string>
+    <string name="pages_domain_status_active">生效中</string>
+    <string name="pages_domain_status_pending">验证中</string>
+    <string name="pages_domain_status_initializing">初始化</string>
+    <string name="pages_domain_status_deactivated">已停用</string>
+    <string name="pages_domain_status_blocked">已封锁</string>
+    <string name="pages_domain_status_error">错误</string>
+    <string name="pages_txt_title">验证 TXT 记录</string>
+    <string name="pages_txt_name">记录名</string>
+    <string name="pages_txt_value">记录值</string>
+    <string name="pages_dns_resolved">已指向本项目</string>
+    <string name="pages_dns_conflicting">未指向本项目</string>
+    <string name="pages_dns_missing">尚无解析记录</string>
+    <string name="pages_dns_add_cname">添加 CNAME 记录</string>
+    <string name="pages_dns_add_cname_hint">将在该域名所在的区域添加一条已代理的 CNAME 记录，指向 %1$s。</string>
+    <string name="pages_dns_external">该域名不在当前账号的 Cloudflare 区域内，请在域名服务商处添加指向 %1$s 的 CNAME 记录。</string>
+    <string name="sort_label">排序</string>
+    <string name="sort_default">默认（名称）</string>
+    <string name="sort_created">创建日期</string>
+    <string name="sort_modified">最近更新</string>
 </resources>

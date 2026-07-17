@@ -245,6 +245,9 @@
     <string name="waf_deleted">Eliminado</string>
     <string name="waf_delete_confirm_title">¿Eliminar esta regla?</string>
     <string name="waf_delete_confirm_msg">No se puede deshacer; la regla deja de aplicarse de inmediato.</string>
+    <string name="waf_edit_title">Editar regla</string>
+    <string name="waf_edit_unsupported_title">Edición no disponible</string>
+    <string name="waf_edit_unsupported_msg">Las reglas con parámetros adicionales (como Omitir) aún no se pueden editar en la app. Modifícalas en el panel de Cloudflare.</string>
 
     <string name="tunnel_title">Túneles</string>
     <string name="tunnel_empty">Aún no hay túneles</string>
@@ -1144,4 +1147,34 @@
     <string name="alerting_empty">No hay tipos de alerta para esta cuenta.</string>
     <string name="perm_notifications">Notificaciones</string>
     <string name="perm_notifications_desc">Envía alertas de Cloudflare a tu dispositivo</string>
+    <!-- Pages 自定义域名 + 列表排序 -->
+    <string name="pages_domains_section">Dominios personalizados</string>
+    <string name="pages_domain_add">Agregar dominio</string>
+    <string name="pages_domain_add_hint">Después de agregarlo, apunta el DNS del dominio a este proyecto para que surta efecto.</string>
+    <string name="pages_domain_empty">No hay dominios personalizados</string>
+    <string name="pages_domain_delete_title">¿Eliminar dominio?</string>
+    <string name="pages_domain_delete_msg">Se quitará %1$s de este proyecto de Pages. Los registros DNS existentes no se verán afectados.</string>
+    <string name="pages_domain_retry">Volver a validar</string>
+    <string name="pages_domain_added">Dominio agregado</string>
+    <string name="pages_domain_deleted">Dominio eliminado</string>
+    <string name="pages_cname_created">Registro CNAME agregado</string>
+    <string name="pages_domain_status_active">Activo</string>
+    <string name="pages_domain_status_pending">Verificando</string>
+    <string name="pages_domain_status_initializing">Inicializando</string>
+    <string name="pages_domain_status_deactivated">Desactivado</string>
+    <string name="pages_domain_status_blocked">Bloqueado</string>
+    <string name="pages_domain_status_error">Error</string>
+    <string name="pages_txt_title">Registro TXT de verificación</string>
+    <string name="pages_txt_name">Nombre del registro</string>
+    <string name="pages_txt_value">Valor del registro</string>
+    <string name="pages_dns_resolved">Apunta a este proyecto</string>
+    <string name="pages_dns_conflicting">No apunta a este proyecto</string>
+    <string name="pages_dns_missing">Aún no hay registro DNS</string>
+    <string name="pages_dns_add_cname">Agregar registro CNAME</string>
+    <string name="pages_dns_add_cname_hint">Se agregará un registro CNAME con proxy que apunta a %1$s en la zona del dominio.</string>
+    <string name="pages_dns_external">Este dominio no está en una zona de Cloudflare de esta cuenta. Agrega un registro CNAME que apunte a %1$s en tu proveedor de DNS.</string>
+    <string name="sort_label">Ordenar</string>
+    <string name="sort_default">Predeterminado (nombre)</string>
+    <string name="sort_created">Fecha de creación</string>
+    <string name="sort_modified">Actualización reciente</string>
 </resources>

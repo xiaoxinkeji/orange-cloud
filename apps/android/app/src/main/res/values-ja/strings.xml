@@ -244,6 +244,9 @@
     <string name="waf_deleted">削除しました</string>
     <string name="waf_delete_confirm_title">このルールを削除しますか？</string>
     <string name="waf_delete_confirm_msg">この操作は元に戻せません。ルールは直ちに適用停止されます。</string>
+    <string name="waf_edit_title">ルールを編集</string>
+    <string name="waf_edit_unsupported_title">編集には未対応</string>
+    <string name="waf_edit_unsupported_msg">「スキップ」など追加パラメータを持つルールはアプリ内では編集できません。Cloudflare ダッシュボードで変更してください。</string>
 
     <string name="tunnel_title">トンネル</string>
     <string name="tunnel_empty">トンネルがありません</string>
@@ -1143,4 +1146,34 @@
     <string name="alerting_empty">このアカウントに利用可能なアラートがありません。</string>
     <string name="perm_notifications">通知</string>
     <string name="perm_notifications_desc">Cloudflare のアラートを端末に通知</string>
+    <!-- Pages 自定义域名 + 列表排序 -->
+    <string name="pages_domains_section">カスタムドメイン</string>
+    <string name="pages_domain_add">ドメインを追加</string>
+    <string name="pages_domain_add_hint">追加後、ドメインの DNS をこのプロジェクトに向けると有効になります。</string>
+    <string name="pages_domain_empty">カスタムドメインはありません</string>
+    <string name="pages_domain_delete_title">ドメインを削除しますか？</string>
+    <string name="pages_domain_delete_msg">%1$s をこの Pages プロジェクトから削除します。既存の DNS レコードには影響しません。</string>
+    <string name="pages_domain_retry">再検証</string>
+    <string name="pages_domain_added">ドメインを追加しました</string>
+    <string name="pages_domain_deleted">ドメインを削除しました</string>
+    <string name="pages_cname_created">CNAME レコードを追加しました</string>
+    <string name="pages_domain_status_active">有効</string>
+    <string name="pages_domain_status_pending">検証中</string>
+    <string name="pages_domain_status_initializing">初期化中</string>
+    <string name="pages_domain_status_deactivated">無効化済み</string>
+    <string name="pages_domain_status_blocked">ブロック済み</string>
+    <string name="pages_domain_status_error">エラー</string>
+    <string name="pages_txt_title">検証用 TXT レコード</string>
+    <string name="pages_txt_name">レコード名</string>
+    <string name="pages_txt_value">レコード値</string>
+    <string name="pages_dns_resolved">このプロジェクトを指しています</string>
+    <string name="pages_dns_conflicting">このプロジェクトを指していません</string>
+    <string name="pages_dns_missing">DNS レコードがありません</string>
+    <string name="pages_dns_add_cname">CNAME レコードを追加</string>
+    <string name="pages_dns_add_cname_hint">ドメインのゾーンに %1$s を指すプロキシ済み CNAME レコードを追加します。</string>
+    <string name="pages_dns_external">このドメインは現在のアカウントの Cloudflare ゾーンにありません。DNS プロバイダーで %1$s を指す CNAME レコードを追加してください。</string>
+    <string name="sort_label">並べ替え</string>
+    <string name="sort_default">デフォルト（名前）</string>
+    <string name="sort_created">作成日</string>
+    <string name="sort_modified">最近の更新</string>
 </resources>

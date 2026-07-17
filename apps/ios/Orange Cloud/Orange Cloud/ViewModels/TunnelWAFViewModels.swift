@@ -129,6 +129,21 @@ final class TunnelDetailViewModel {
         isLoadingConfig = false
     }
 
+    /// 删除本隧道（危险区）。成功返回 true，视图随即 dismiss 回列表（列表 .task 会重拉）。
+    func deleteTunnel() async -> Bool {
+        guard !isSaving else { return false }
+        isSaving = true
+        error = nil
+        defer { isSaving = false }
+        do {
+            try await tunnelService.deleteTunnel(accountId: accountId, tunnelId: tunnel.id)
+            return true
+        } catch {
+            self.error = error.localizedDescription
+            return false
+        }
+    }
+
     /// 清理失活连接（危险区）。活跃的 cloudflared 会自动重连。
     func cleanupConnections() async {
         guard !isSaving else { return }
@@ -316,6 +331,23 @@ final class WAFRulesViewModel {
             } else {
                 ruleset = try await service.createRuleset(zoneId: zoneId, rule: draft)
             }
+            return true
+        } catch {
+            self.error = error.localizedDescription
+            return false
+        }
+    }
+
+    /// 编辑既有规则（整条 PATCH）。成功返回 true。
+    func updateRule(ruleId: String, draft: WAFRuleCreate) async -> Bool {
+        guard let rulesetId = ruleset?.id, !isSaving else { return false }
+        isSaving = true
+        error = nil
+        defer { isSaving = false }
+        do {
+            ruleset = try await service.updateRule(
+                zoneId: zoneId, rulesetId: rulesetId, ruleId: ruleId, rule: draft
+            )
             return true
         } catch {
             self.error = error.localizedDescription

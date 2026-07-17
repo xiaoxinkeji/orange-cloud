@@ -17,7 +17,17 @@ import WidgetKit
 /// `-[UINavigationBar layoutSubviews]` 对此硬断言（"top item belongs to a different
 /// navigation bar"）——冷启动账号加载完成时 id 从 nil 翻转，概览页必崩（17.1 起系统才修复）。
 /// 1.5.1 曾误诊为 TipKit popover。账号维度的 @Query 谓词刷新由栈内的 `.id` 完成。
+///
+/// **`.navigationDestination` 必须挂在这里（栈根直接子级）、且写在 `.id(账号)` 的内侧**：
+/// ① navdest 注册在栈内容的嵌套子视图（DashboardHomeView 内层）时，iOS 17.0 push 会陷入
+///   AttributeGraph 无限更新循环，主线程 100% 整 App 冻结（tab bar 都不响应）；26.5 无恙。
+///   与 `.id(账号)` 无关（实测二分，详见 ZoneListView 外壳注释）。
+/// ② 但 navdest 也不能写在 `.id()` 之后（`content.id(...).navigationDestination(...)`）：
+///   账号切换 id 翻转时 iOS 17.0 在 `-[UINavigationBar layoutSubviews]` 硬断言必崩（实测）。
+/// 唯一两全的形态 = 外壳栈根 + `.id` 内侧：`content.navigationDestination(...).id(...)`。
 struct DashboardView: View {
+
+    @Environment(AuthManager.self) private var auth
 
     private let session: SessionStore
 
@@ -25,9 +35,44 @@ struct DashboardView: View {
         self.session = session
     }
 
+    private var currentAccountId: String {
+        session.selectedAccount?.id ?? ""
+    }
+
     var body: some View {
         NavigationStack {
             DashboardHomeView(session: session)
+                .navigationDestination(for: CachedZone.self) { zone in
+                    ZoneDetailView(zone: zone, session: session)
+                }
+                // Tunnel 全链路（列表 → 详情 → 连接信息）都挂在栈根：单一栈、不嵌套，
+                // 逐级 push 才在 iOS 17.0 正常（同 DeveloperHubView 的 DevHubRoute 做法）
+                .navigationDestination(for: DashboardRoute.self) { route in
+                    switch route {
+                    case .tunnels:
+                        TunnelListView(session: session)
+                    case .tunnelConnect(let tunnel):
+                        TunnelConnectView(tunnel: tunnel, accountId: currentAccountId, session: session)
+                    case .accessApps:
+                        AccessAppsView(session: session)
+                    case .gatewayRules:
+                        GatewayRulesView(session: session)
+                    case .bulkRedirects:
+                        BulkRedirectListsView(session: session)
+                    }
+                }
+                .navigationDestination(for: Tunnel.self) { tunnel in
+                    TunnelDetailView(
+                        tunnel: tunnel,
+                        accountId: currentAccountId,
+                        session: session,
+                        canWrite: auth.hasScope("argotunnel.write"),
+                        canWriteDNS: auth.hasScope("dns.write")
+                    )
+                }
+                // 域名详情子树（规则 hub / 负载均衡 / Snippets / Bulk Redirects）从本栈
+                // push 的域名卡进入，其路由也要挂在本栈根
+                .zoneRouteDestinations(session: session)
                 .id(session.selectedAccount?.id)
         }
     }
@@ -168,9 +213,9 @@ private struct DashboardHomeView: View {
         }
         .background { SkyBackground() }
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: CachedZone.self) { zone in
-            ZoneDetailView(zone: zone, session: session)
-        }
+        // CachedZone / DashboardRoute / Tunnel 的 .navigationDestination 全部挂在外壳
+        // DashboardView 的栈根，不能挂回这里：iOS 17.0 上 navdest 注册在栈内容的嵌套
+        // 子视图会在 push 时触发 AttributeGraph 无限循环整 App 冻结（见外壳注释）。
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 accountMenu
@@ -182,10 +227,14 @@ private struct DashboardHomeView: View {
         .task(id: displayZones.map(\.id)) {
             await loadTraffic()
         }
-        .task(id: session.selectedAccount?.id) {
+        // 账号维度的重跑由外壳 `.id(selectedAccount?.id)` 重建本视图完成，这两个 task
+        // **不能再用 id: 键在同一个账号值上**：冷启动 selectedAccount 从 nil 翻转到账号时，
+        // 旧实例的 .task(id:) 会先于父级换代重启一次，把加载跑进 VM 的非结构化 Task（拆视图
+        // 也取消不掉），新实例又带全新 VM 再跑一遍 → 概览页全部请求成对翻倍（logs-3 已坐实）。
+        .task {
             await loadAssets()
         }
-        .task(id: session.selectedAccount?.id) {
+        .task {
             await loadUsage()
         }
         .onChange(of: accountPrefs.billingCycleDay) {
@@ -274,7 +323,7 @@ private struct DashboardHomeView: View {
             value.formatted(.number.notation(.compactName))
         }
         func bytes(_ value: Int) -> String {
-            Int64(value).formatted(.byteCount(style: .decimal))
+            Int64(value).ocBytes
         }
 
         var services: [WidgetUsageService] = []
@@ -722,7 +771,7 @@ private struct DashboardHomeView: View {
         if !effectiveR2Paid {
             candidates.append(GaugedMetric(
                 context: String(localized: "存储"),
-                valueText: Int64(usage.r2StorageBytes).formatted(.byteCount(style: .decimal)),
+                valueText: Int64(usage.r2StorageBytes).ocBytes,
                 quotaText: "/ 10 GB",
                 ratio: Double(usage.r2StorageBytes) / 10_000_000_000
             ))
@@ -754,7 +803,7 @@ private struct DashboardHomeView: View {
         if let storage = usage.d1StorageBytes {
             candidates.append(GaugedMetric(
                 context: String(localized: "存储"),
-                valueText: Int64(storage).formatted(.byteCount(style: .file)),
+                valueText: Int64(storage).ocBytes,
                 quotaText: "/ 5 GB",
                 ratio: Double(storage) / 5_000_000_000
             ))
@@ -786,7 +835,7 @@ private struct DashboardHomeView: View {
         if let storage = usage.kvStorageBytes {
             candidates.append(GaugedMetric(
                 context: String(localized: "存储"),
-                valueText: Int64(storage).formatted(.byteCount(style: .file)),
+                valueText: Int64(storage).ocBytes,
                 quotaText: "/ 1 GB",
                 ratio: Double(storage) / 1_000_000_000
             ))
@@ -871,7 +920,7 @@ private struct DashboardHomeView: View {
             UsageRow(
                 icon: "externaldrive",
                 title: String(localized: "R2 存储"),
-                valueText: Int64(usage.r2StorageBytes).formatted(.byteCount(style: .decimal))
+                valueText: Int64(usage.r2StorageBytes).ocBytes
                     + (effectiveR2Paid ? "" : " / 10 GB"),
                 used: effectiveR2Paid ? nil : usage.r2StorageBytes,
                 quota: effectiveR2Paid ? nil : 10_000_000_000
@@ -930,7 +979,7 @@ private struct DashboardHomeView: View {
                 UsageRow(
                     icon: "cylinder",
                     title: String(localized: "D1 存储"),
-                    valueText: Int64(d1Storage).formatted(.byteCount(style: .file)) + " / 5 GB",
+                    valueText: Int64(d1Storage).ocBytes + " / 5 GB",
                     used: d1Storage,
                     quota: 5_000_000_000
                 )
@@ -974,7 +1023,7 @@ private struct DashboardHomeView: View {
                 UsageRow(
                     icon: "square.grid.2x2",
                     title: String(localized: "KV 存储"),
-                    valueText: Int64(kvStorage).formatted(.byteCount(style: .file)) + " / 1 GB",
+                    valueText: Int64(kvStorage).ocBytes + " / 1 GB",
                     used: kvStorage,
                     quota: 1_000_000_000
                 )
@@ -1047,35 +1096,36 @@ private struct DashboardHomeView: View {
 
     private var networkSection: some View {
         VStack(spacing: 10) {
-            ProGatedNavigationLink(
+            // Tunnel 列表点行还要继续 push 详情/连接页：必须走值式 + 栈根 navdest，
+            // eager NavigationLink(destination:) 的目的页内部再 push 在 iOS 17.0 会卡死。
+            ProGatedValueLink(
                 label: "Cloudflare Tunnel",
                 systemImage: "arrow.triangle.2.circlepath",
                 requiredScope: "argotunnel.read",
                 feature: .tunnel,
-                showsChevron: true
-            ) {
-                TunnelListView(session: session)
-            }
+                showsChevron: true,
+                value: DashboardRoute.tunnels
+            )
             Divider().padding(.leading, 44)
-            ProGatedNavigationLink(
+            // Access / Gateway 同样必须值式：本岛（非 List 容器）里 eager 构造的目的页
+            // 在 iOS 17.0 点击即整 App 冻结/看门狗杀（TF 用户实测，与 Tunnel 当年同症）。
+            ProGatedValueLink(
                 label: "Access 应用",
                 systemImage: "lock.shield",
                 requiredScope: "access.read",
                 feature: .zeroTrust,
-                showsChevron: true
-            ) {
-                AccessAppsView(session: session)
-            }
+                showsChevron: true,
+                value: DashboardRoute.accessApps
+            )
             Divider().padding(.leading, 44)
-            ProGatedNavigationLink(
+            ProGatedValueLink(
                 label: "Gateway 策略",
                 systemImage: "shield.lefthalf.filled",
                 requiredScope: "teams.read",
                 feature: .zeroTrust,
-                showsChevron: true
-            ) {
-                GatewayRulesView(session: session)
-            }
+                showsChevron: true,
+                value: DashboardRoute.gatewayRules
+            )
         }
         .padding(.horizontal, OCLayout.islandPadding + 2)
         .padding(.vertical, 12)
@@ -1085,20 +1135,30 @@ private struct DashboardHomeView: View {
     // MARK: - Bulk Redirects（account 级）
 
     private var bulkRedirectsSection: some View {
-        ProGatedNavigationLink(
+        // 列表页内部还要 push 条目详情，且带 .searchable：eager 形态在 iOS 17.0 点击必卡死，走值式
+        ProGatedValueLink(
             label: "Bulk Redirects",
             systemImage: "arrowshape.turn.up.right",
             requiredScope: "account-rule-lists.read",
             feature: .bulkRedirects,
-            showsChevron: true
-        ) {
-            BulkRedirectListsView(session: session)
-        }
+            showsChevron: true,
+            value: DashboardRoute.bulkRedirects
+        )
         .padding(.horizontal, OCLayout.islandPadding + 2)
         .padding(.vertical, 12)
         .glassIsland(cornerRadius: 24)
     }
 
+}
+
+/// 概览页玻璃岛入口路由（走栈根 navdest，同 DevHubRoute）。本岛为非 List 容器，
+/// eager `NavigationLink(destination:)` 在 iOS 17.0 点击即冻结（叶子目的页也一样），一律值式。
+enum DashboardRoute: Hashable {
+    case tunnels
+    case tunnelConnect(Tunnel)
+    case accessApps
+    case gatewayRules
+    case bulkRedirects
 }
 
 // MARK: - 用量宫格的服务与瓦片

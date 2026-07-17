@@ -33,6 +33,8 @@ struct Orange_CloudApp: App {
         let manager = AuthManager()
         _authManager = State(initialValue: manager)
         CrashReporter.recordBreadcrumb("AppStart auth manager created")
+        // 串行预热缓存库实体解析（iOS 17.x 冷启动首次并发 fetch 竞态，Sentry APPLE-IOS-Y）
+        CacheContainer.warmUp()
         WhatsNewGate.wasLoggedInAtLaunch = manager.isLoggedIn
         BackgroundRefresh.register(authManager: manager)
         // iOS 26 连续后台任务（R2 大对象 copy/move 续传），须在启动时注册处理器
@@ -41,6 +43,9 @@ struct Orange_CloudApp: App {
         }
         WatchSessionManager.shared.start(authManager: manager)
         EntitlementStore.shared.start()
+        // 体验者计划：仅当用户此前已同意才会真正拉起 Sentry（默认不初始化）。
+        // 须在 CrashReporter.install() 之后，让 Sentry 链式保留我们的崩溃 handler。
+        _ = TelemetryStore.shared
         Self.reapOrphanTailActivities()
         try? Tips.configure()
         AppLog.logLaunch(

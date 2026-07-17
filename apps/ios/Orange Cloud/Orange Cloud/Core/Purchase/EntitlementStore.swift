@@ -29,6 +29,8 @@ final class EntitlementStore {
     /// 按 ProductID.all 顺序排列，付费墙直接展示
     private(set) var products: [Product] = []
     private(set) var isLoadingProducts = false
+    /// 恢复购买进行中（防并发 AppStore.sync 互相取消；付费墙据此禁用按钮）
+    private(set) var isRestoring = false
     var purchaseError: String?
 
     private var updatesTask: Task<Void, Never>?
@@ -101,13 +103,29 @@ final class EntitlementStore {
 
     func restorePurchases() async {
         #if !OPENSOURCE_UNLOCKED
+        // 防重入：连点「恢复购买」会并发调用 AppStore.sync()，StoreKit 把前一个取消
+        //（成对的 "restorePurchases failed: 请求已取消"）。进行中直接忽略后续调用。
+        guard !isRestoring else { return }
+        isRestoring = true
+        defer { isRestoring = false }
         do {
             try await AppStore.sync()
             await refreshEntitlements()
             AppLog.purchase.notice("restorePurchases synced, pro=\(entitled)")
         } catch {
-            AppLog.purchase.error("restorePurchases failed: \(error.localizedDescription)")
-            purchaseError = error.localizedDescription
+            // 用户主动取消（关掉 App Store 登录弹窗等）不是故障：不弹错误、降级 info 不进遥测
+            let isCancellation: Bool = {
+                if error is CancellationError { return true }
+                if let urlError = error as? URLError, urlError.code == .cancelled { return true }
+                if case StoreKitError.userCancelled = error { return true }
+                return false
+            }()
+            if isCancellation {
+                AppLog.purchase.info("restorePurchases cancelled by user")
+            } else {
+                AppLog.purchase.error("restorePurchases failed: \(error.localizedDescription)")
+                purchaseError = error.localizedDescription
+            }
         }
         #endif
     }

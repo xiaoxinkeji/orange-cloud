@@ -139,7 +139,7 @@ struct PagesService {
 
     // MARK: - 自定义域名
 
-    /// GET /accounts/{id}/pages/projects/{name}/domains
+    /// 项目自定义域名列表
     func listDomains(accountId: String, projectName: String) async throws -> [PagesDomain] {
         let response: CFAPIResponseArray<PagesDomain> = try await client.get(
             "accounts/\(accountId)/pages/projects/\(projectName)/domains"
@@ -148,19 +148,28 @@ struct PagesService {
         return response.result ?? []
     }
 
-    /// POST /accounts/{id}/pages/projects/{name}/domains
-    func addDomain(accountId: String, projectName: String, domain: String) async throws -> PagesDomain {
+    /// 挂载自定义域名（page.write）。挂载后仍需 DNS 指向 <project>.pages.dev 才能生效。
+    func addDomain(accountId: String, projectName: String, name: String) async throws -> PagesDomain {
         let response: CFAPIResponse<PagesDomain> = try await client.post(
             "accounts/\(accountId)/pages/projects/\(projectName)/domains",
-            body: PagesDomainAddRequest(domain: domain)
+            body: PagesDomainAddRequest(name: name)
         )
-        guard response.success, let result = response.result else { throw response.toAPIError() }
-        return result
+        guard response.success, let domain = response.result else { throw response.toAPIError() }
+        return domain
     }
 
-    /// DELETE /accounts/{id}/pages/projects/{name}/domains/{domainId}
-    func deleteDomain(accountId: String, projectName: String, domainId: String) async throws {
-        try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)/domains/\(domainId)")
+    /// 重新验证域名（PATCH 触发重试；DNS 记录补好后用它催一次）
+    func retryDomain(accountId: String, projectName: String, domainName: String) async throws {
+        let response: CFAPIResponse<JSONValue> = try await client.patch(
+            "accounts/\(accountId)/pages/projects/\(projectName)/domains/\(domainName)",
+            body: PagesEmptyBody()
+        )
+        guard response.success else { throw response.toAPIError() }
+    }
+
+    /// 从项目移除自定义域名（不动 DNS 记录）
+    func deleteDomain(accountId: String, projectName: String, domainName: String) async throws {
+        try await client.delete("accounts/\(accountId)/pages/projects/\(projectName)/domains/\(domainName)")
     }
 
     // MARK: - 直接上传部署（Direct Upload）

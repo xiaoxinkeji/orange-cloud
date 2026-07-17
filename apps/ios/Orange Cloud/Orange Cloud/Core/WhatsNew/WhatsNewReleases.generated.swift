@@ -10,6 +10,60 @@ import Foundation
 
 nonisolated enum WhatsNewGenerated {
     static let releases: [WhatsNewRelease] = [
+        WhatsNewRelease(version: "1.8.4", items: [
+            WhatsNewItem(
+                icon:   "shield.lefthalf.filled",
+                title:  String(localized: "编辑 WAF 规则", table: "WhatsNew"),
+                detail: String(localized: "WAF 自定义防火墙规则现在支持编辑：点按任意规则即可修改动作、表达式、名称与启用状态，无需再删除后重建。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "wrench.and.screwdriver.fill",
+                title:  String(localized: "稳定性修复", table: "WhatsNew"),
+                detail: String(localized: "进一步收敛 iOS 17 上由缓存数据库引发的偶发闪退：缓存读写全部加上异常兜底并在启动时预热，个别设备上残留的启动崩溃不再发生。", table: "WhatsNew")
+            )
+        ]),
+        WhatsNewRelease(version: "1.8.2", items: [
+            WhatsNewItem(
+                icon:   "arrow.triangle.branch",
+                title:  String(localized: "规则中心", table: "WhatsNew"),
+                detail: String(localized: "域名详情新增「规则」统一入口：单条重定向、源站、配置、压缩与自定义错误五类规则支持查看、启停、新建、编辑与删除；Page Rules 与 URL 正规化支持查看与启停。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "globe",
+                title:  String(localized: "Pages 自定义域名", table: "WhatsNew"),
+                detail: String(localized: "Pages 项目现可直接管理自定义域名：添加、删除、重新验证并检查解析状态；域名在当前账号时，还能一键添加指向项目的 CNAME 记录。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "arrow.up.arrow.down",
+                title:  String(localized: "列表排序", table: "WhatsNew"),
+                detail: String(localized: "Workers 与 Pages 列表新增排序：默认（名称）、创建日期、最近更新，选择会被记住。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "person.badge.key.fill",
+                title:  String(localized: "登录更稳定", table: "WhatsNew"),
+                detail: String(localized: "根治部分用户「自动退出账号」的问题：授权流程补齐长期凭证，登录状态不再随令牌到期而失效；若授权仍失效，概览页会提供「一键重新授权」引导。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "waveform.path.ecg",
+                title:  String(localized: "体验者计划", table: "WhatsNew"),
+                detail: String(localized: "新增可随时开关的体验者计划：默认关闭，加入后才会匿名上报诊断信息，帮助我们更快定位闪退与登录问题；不收集任何个人身份数据。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "textformat.123",
+                title:  String(localized: "数据单位显示", table: "WhatsNew"),
+                detail: String(localized: "存储与流量单位在所有语言下统一显示为国际通用符号（KB / MB / GB），不再随语言翻译。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "wrench.and.screwdriver.fill",
+                title:  String(localized: "稳定性修复", table: "WhatsNew"),
+                detail: String(localized: "根治 iOS 17.0 上概览页、资源列表与域名详情的多处闪退与冻结；同时修复 Tunnel 页面卡死与冷启动请求翻倍的问题。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "speedometer",
+                title:  String(localized: "滑动更流畅", table: "WhatsNew"),
+                detail: String(localized: "重做玻璃卡片的渲染方式：观感不变，滚动开销大幅下降，列表与概览页滑动明显更顺滑，旧机型尤其受益。", table: "WhatsNew")
+            )
+        ]),
         WhatsNewRelease(version: "1.8.0", items: [
             WhatsNewItem(
                 icon:   "bell.badge.fill",

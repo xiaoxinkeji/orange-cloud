@@ -356,6 +356,9 @@
     <string name="waf_deleted">Silindi</string>
     <string name="waf_delete_confirm_title">Bu kural silinsin mi?</string>
     <string name="waf_delete_confirm_msg">Bu geri alınamaz; kural hemen uygulanmayı durdurur.</string>
+    <string name="waf_edit_title">Kuralı düzenle</string>
+    <string name="waf_edit_unsupported_title">Düzenleme desteklenmiyor</string>
+    <string name="waf_edit_unsupported_msg">Ek parametreler içeren kurallar (ör. Atla) şimdilik uygulama içinde düzenlenemez. Lütfen Cloudflare panosundan değiştirin.</string>
     <string name="tunnel_title">Tüneller</string>
     <string name="tunnel_empty">Henüz tünel yok</string>
     <string name="tunnel_connections">%1$d etkin bağlantı</string>
@@ -1104,4 +1107,34 @@
     <string name="alerting_empty">Bu hesap için uyarı türü yok.</string>
     <string name="perm_notifications">Bildirimler</string>
     <string name="perm_notifications_desc">Cloudflare uyarılarını cihazınıza gönderin</string>
+    <!-- Pages 自定义域名 + 列表排序 -->
+    <string name="pages_domains_section">Özel alan adları</string>
+    <string name="pages_domain_add">Alan adı ekle</string>
+    <string name="pages_domain_add_hint">Ekledikten sonra alan adının DNS\'ini bu projeye yönlendirin.</string>
+    <string name="pages_domain_empty">Özel alan adı yok</string>
+    <string name="pages_domain_delete_title">Alan adı silinsin mi?</string>
+    <string name="pages_domain_delete_msg">%1$s bu Pages projesinden kaldırılacak. Mevcut DNS kayıtları etkilenmez.</string>
+    <string name="pages_domain_retry">Yeniden doğrula</string>
+    <string name="pages_domain_added">Alan adı eklendi</string>
+    <string name="pages_domain_deleted">Alan adı silindi</string>
+    <string name="pages_cname_created">CNAME kaydı eklendi</string>
+    <string name="pages_domain_status_active">Etkin</string>
+    <string name="pages_domain_status_pending">Doğrulanıyor</string>
+    <string name="pages_domain_status_initializing">Başlatılıyor</string>
+    <string name="pages_domain_status_deactivated">Devre dışı</string>
+    <string name="pages_domain_status_blocked">Engellendi</string>
+    <string name="pages_domain_status_error">Hata</string>
+    <string name="pages_txt_title">Doğrulama TXT kaydı</string>
+    <string name="pages_txt_name">Kayıt adı</string>
+    <string name="pages_txt_value">Kayıt değeri</string>
+    <string name="pages_dns_resolved">Bu projeye yönlendirilmiş</string>
+    <string name="pages_dns_conflicting">Bu projeye yönlendirilmemiş</string>
+    <string name="pages_dns_missing">Henüz DNS kaydı yok</string>
+    <string name="pages_dns_add_cname">CNAME kaydı ekle</string>
+    <string name="pages_dns_add_cname_hint">Alan adının bölgesine %1$s adresini gösteren proxy\'li bir CNAME kaydı eklenecek.</string>
+    <string name="pages_dns_external">Bu alan adı bu hesaptaki bir Cloudflare bölgesinde değil. DNS sağlayıcınızda %1$s adresini gösteren bir CNAME kaydı ekleyin.</string>
+    <string name="sort_label">Sırala</string>
+    <string name="sort_default">Varsayılan (ad)</string>
+    <string name="sort_created">Oluşturma tarihi</string>
+    <string name="sort_modified">Son güncelleme</string>
 </resources>

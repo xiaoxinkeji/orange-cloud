@@ -14,8 +14,13 @@ struct PagesProjectDetailView: View {
     @State private var deployViewModel: PagesDeployViewModel
     @State private var showDeleteConfirm = false
     @State private var showDeploy = false
-    let session: SessionStore
+    // 子页（域名 / 部署详情 / 构建配置）走 sheet，不走 push：见 infoSection 内注释
+    @State private var showDomains = false
+    @State private var showBuildConfig = false
+    @State private var deploymentDetail: PagesDeployment?
     @Environment(\.dismiss) private var dismiss
+
+    private let session: SessionStore
 
     init(project: PagesProject, session: SessionStore) {
         self.session = session
@@ -60,6 +65,36 @@ struct PagesProjectDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showDomains) {
+            NavigationStack {
+                PagesDomainsView(project: project, session: session)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("完成") { showDomains = false }
+                        }
+                    }
+            }
+        }
+        .sheet(item: $deploymentDetail) { dep in
+            NavigationStack {
+                PagesDeploymentDetailView(deployment: dep, viewModel: viewModel)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("完成") { deploymentDetail = nil }
+                        }
+                    }
+            }
+        }
+        .sheet(isPresented: $showBuildConfig) {
+            NavigationStack {
+                PagesBuildConfigEditorView(viewModel: viewModel)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("取消") { showBuildConfig = false }
+                        }
+                    }
+            }
+        }
         .sensoryFeedback(.success, trigger: viewModel.didMutate)
         .sensoryFeedback(.success, trigger: deployViewModel.phase == .done)
         .confirmationDialog("删除项目「\(project.name)」？", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
@@ -98,9 +133,23 @@ struct PagesProjectDetailView: View {
             if let repo = project.source?.config?.repoLabel {
                 infoRow(project.source?.type == "gitlab" ? "GitLab" : "GitHub", value: repo)
             }
-            if let domains = project.domains, !domains.isEmpty {
-                ForEach(domains, id: \.self) { domain in
-                    infoRow("自定义域名", value: domain)
+            // ⚠️ 本页经两层 value push 进 DevHub 栈后，行内 eager NavigationLink 在
+            // iOS 17.0 点击不触发（2026-07-07 模拟器实测；26.5 正常）。子页一律改 sheet
+            // （同 Workers 实时日志的先例），别改回 push。
+            Button {
+                showDomains = true
+            } label: {
+                HStack {
+                    Text("自定义域名")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    if let domains = project.domains, !domains.isEmpty {
+                        Text("\(domains.count) 个域名")
+                            .foregroundStyle(.secondary)
+                    }
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
             }
             if let date = WorkerScript.parseDate(project.createdOn) {
@@ -144,11 +193,12 @@ struct PagesProjectDetailView: View {
                 Text("暂无部署").font(.footnote).foregroundStyle(.secondary)
             } else {
                 ForEach(viewModel.deployments.prefix(20)) { dep in
-                    NavigationLink {
-                        PagesDeploymentDetailView(deployment: dep, viewModel: viewModel)
+                    Button {
+                        deploymentDetail = dep
                     } label: {
                         deploymentRow(dep)
                     }
+                    .buttonStyle(.plain)
                 }
             }
         } header: {
@@ -216,24 +266,17 @@ struct PagesProjectDetailView: View {
 
     private var configSection: some View {
         Section {
-            NavigationLink {
-                PagesDomainsView(
-                    accountId: viewModel.accountId,
-                    projectName: viewModel.projectName,
-                    session: session
-                )
-            } label: {
-                HStack(spacing: 12) {
-                    TintIcon(systemImage: "globe", color: .blue)
-                    Text("自定义域名")
-                }
-            }
-            NavigationLink {
-                PagesBuildConfigEditorView(viewModel: viewModel)
+            Button {
+                showBuildConfig = true
             } label: {
                 HStack(spacing: 12) {
                     TintIcon(systemImage: "hammer", color: .blue)
                     Text("构建配置")
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
                 }
             }
         } header: {

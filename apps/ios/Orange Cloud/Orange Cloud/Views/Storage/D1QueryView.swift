@@ -17,6 +17,7 @@ struct D1QueryView: View {
 
     @Environment(AuthManager.self) private var auth
     @State private var viewModel: D1QueryViewModel
+    @State private var showLimitReminder = false
     @FocusState private var sqlFocused: Bool
 
     init(database: D1Database, session: SessionStore) {
@@ -46,7 +47,14 @@ struct D1QueryView: View {
                 }
 
                 ForEach(Array(viewModel.results.enumerated()), id: \.offset) { index, result in
-                    D1ResultCard(result: result, index: index, total: viewModel.results.count)
+                    D1ResultCard(
+                        result: result,
+                        index: index,
+                        total: viewModel.results.count,
+                        originalRowCount: viewModel.originalRowCounts.indices.contains(index)
+                            ? viewModel.originalRowCounts[index]
+                            : (result.results?.count ?? 0)
+                    )
                 }
             }
             .padding()
@@ -59,7 +67,12 @@ struct D1QueryView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     sqlFocused = false
-                    Task { await viewModel.run() }
+                    // 不带 LIMIT 的 SELECT 在大表上会整包返回：先提醒，确认后再执行
+                    if viewModel.needsLimitReminder {
+                        showLimitReminder = true
+                    } else {
+                        Task { await viewModel.run() }
+                    }
                 } label: {
                     if viewModel.isRunning {
                         ProgressView()
@@ -71,6 +84,14 @@ struct D1QueryView: View {
             }
         }
         .sensoryFeedback(.success, trigger: viewModel.didRun)
+        .confirmationDialog("查询未带 LIMIT", isPresented: $showLimitReminder, titleVisibility: .visible) {
+            Button("仍要执行") {
+                Task { await viewModel.run() }
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("大表可能返回大量行，造成等待和内存占用。建议加 LIMIT 后执行。")
+        }
     }
 
     /// 表入口：玻璃岛列表，点按进入 D1TableView 浏览/编辑行
@@ -158,8 +179,12 @@ private struct D1ResultCard: View {
     let result: D1QueryResult
     let index: Int
     let total: Int
+    /// 截断前的原始行数（ViewModel 只保留前 maxStoredRows 行驻留内存）
+    let originalRowCount: Int
 
     private static let maxRows = 100
+    /// 单元格展示截断：完整大字段进 Text 会把 CoreText 排版拖上主线程
+    private static let cellLimit = 256
 
     private var rows: [[String: JSONValue]] { result.results ?? [] }
 
@@ -194,7 +219,7 @@ private struct D1ResultCard: View {
                         ForEach(Array(rows.prefix(Self.maxRows).enumerated()), id: \.offset) { _, row in
                             GridRow {
                                 ForEach(columns, id: \.self) { column in
-                                    Text(row[column]?.displayText ?? "NULL")
+                                    Text(cellDisplay(row[column]))
                                         .font(.caption.monospaced())
                                         .lineLimit(1)
                                 }
@@ -205,8 +230,8 @@ private struct D1ResultCard: View {
                 }
                 // 查询结果表（列名/数据值）保持 LTR 列序
                 .environment(\.layoutDirection, .leftToRight)
-                if rows.count > Self.maxRows {
-                    Text("仅显示前 \(Self.maxRows) 行（共 \(rows.count) 行）")
+                if originalRowCount > Self.maxRows {
+                    Text("仅显示前 \(Self.maxRows) 行（共 \(originalRowCount) 行）")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
@@ -231,5 +256,11 @@ private struct D1ResultCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .glassIsland()
+    }
+
+    private func cellDisplay(_ value: JSONValue?) -> String {
+        guard let value else { return "NULL" }
+        let text = value.displayText
+        return text.count > Self.cellLimit ? String(text.prefix(Self.cellLimit)) + "…" : text
     }
 }

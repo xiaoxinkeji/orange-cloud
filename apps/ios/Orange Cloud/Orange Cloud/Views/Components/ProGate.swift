@@ -16,6 +16,7 @@ nonisolated enum ProFeature: String, Identifiable, Sendable {
     case auditLog, emailRouting, rateLimit, zeroTrust, trafficMap
     case aiInsights, aiDNS, filesApp
     case queues, aiGateway, durableObjects, workersAI, hyperdrive
+    case zoneRules
 
     var id: String { rawValue }
 
@@ -48,6 +49,7 @@ nonisolated enum ProFeature: String, Identifiable, Sendable {
         case .durableObjects: String(localized: "Durable Objects 需要 Pro")
         case .workersAI:      String(localized: "Workers AI 需要 Pro")
         case .hyperdrive:     String(localized: "Hyperdrive 需要 Pro")
+        case .zoneRules:      String(localized: "规则管理需要 Pro")
         }
     }
 
@@ -80,6 +82,7 @@ nonisolated enum ProFeature: String, Identifiable, Sendable {
         case .durableObjects: String(localized: "查看 Durable Objects 命名空间，并浏览其中的对象实例属于 Orange Cloud Pro。")
         case .workersAI:      String(localized: "浏览 Workers AI 模型目录，并试运行文本生成模型属于 Orange Cloud Pro。")
         case .hyperdrive:     String(localized: "查看与管理 Hyperdrive 数据库加速配置（缓存设置、改源连接、新建 / 删除）属于 Orange Cloud Pro。")
+        case .zoneRules:      String(localized: "单条重定向、源站 / 配置 / 压缩规则、自定义错误与 Page Rules 的查看、启停与删除属于 Orange Cloud Pro。")
         }
     }
 
@@ -112,6 +115,7 @@ nonisolated enum ProFeature: String, Identifiable, Sendable {
         case .durableObjects: "cube.transparent"
         case .workersAI:      "brain"
         case .hyperdrive:     "bolt.horizontal.circle"
+        case .zoneRules:      "list.bullet.rectangle"
         }
     }
 }
@@ -151,6 +155,52 @@ struct ProGatedNavigationLink<Destination: View>: View {
                 tint: tint,
                 showsChevron: showsChevron,
                 destination: destination
+            )
+        } else {
+            Button {
+                paywallPresented = true
+            } label: {
+                HStack(spacing: 12) {
+                    TintIcon(systemImage: systemImage, color: tint)
+                    Text(label)
+                        .foregroundStyle(.primary)
+                    Spacer()
+                    ProBadge()
+                }
+            }
+            .foregroundStyle(.primary)
+            .sheet(isPresented: $paywallPresented) {
+                PaywallView(feature: feature)
+            }
+        }
+    }
+}
+
+/// 行级 Pro 闸门（值式导航版）：目的页自身还要继续 push 的入口用它——eager
+/// `NavigationLink(destination:)` 构造的目的页内部再 push 在 iOS 17.0 会卡死
+/// （详见 PermissionGatedValueLink / DevHubRoute 注释），值式 + 宿主栈根 navdest 才安全。
+struct ProGatedValueLink<V: Hashable>: View {
+
+    let label:         String
+    let systemImage:   String
+    let requiredScope: String
+    let feature:       ProFeature
+    var tint: Color = .ocOrange
+    var showsChevron: Bool = false
+    let value:         V
+
+    @Environment(EntitlementStore.self) private var entitlements
+    @State private var paywallPresented = false
+
+    var body: some View {
+        if entitlements.isPro {
+            PermissionGatedValueLink(
+                label: label,
+                systemImage: systemImage,
+                requiredScope: requiredScope,
+                tint: tint,
+                showsChevron: showsChevron,
+                value: value
             )
         } else {
             Button {

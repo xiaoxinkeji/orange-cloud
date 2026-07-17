@@ -16,6 +16,7 @@ struct PagesProjectListView: View {
     @State private var searchText = ""
     @State private var showCreate = false
     @State private var writeDenied = false
+    @AppStorage("pagesListSort") private var sort: ResourceSort = .name
 
     /// 创建项目需要写权限（page.read 已是进入本页的前置条件）
     private var canWrite: Bool { auth.hasScope("page.write") }
@@ -26,8 +27,14 @@ struct PagesProjectListView: View {
     }
 
     private var filtered: [PagesProject] {
-        guard !searchText.isEmpty else { return viewModel.projects }
-        return viewModel.projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        let projects = searchText.isEmpty
+            ? viewModel.projects
+            : viewModel.projects.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return sort.sorted(
+            projects,
+            created: \.createdOn,
+            modified: { $0.latestDeployment?.modifiedOn ?? $0.latestDeployment?.createdOn ?? $0.createdOn }
+        )
     }
 
     var body: some View {
@@ -53,9 +60,9 @@ struct PagesProjectListView: View {
                 List {
                     Section {
                         ForEach(filtered) { project in
-                            NavigationLink {
-                                PagesProjectDetailView(project: project, session: session)
-                            } label: {
+                            // 项目详情自身还要 push（域名/部署/构建配置），行必须值式：
+                            // 本页已被 value push 进 DevHub 栈，行内 eager 目的页再 push 会失灵
+                            NavigationLink(value: PagesProjectRoute(project: project)) {
                                 PagesProjectRow(project: project)
                             }
                         }
@@ -73,6 +80,9 @@ struct PagesProjectListView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $searchText, prompt: "搜索项目")
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                ResourceSortMenu(sort: $sort)
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("创建项目", systemImage: "plus") {
                     if canWrite { showCreate = true } else { writeDenied = true }
@@ -150,4 +160,13 @@ struct PagesStatusBadge: View {
         case .canceled, .unknown: .gray
         }
     }
+}
+
+/// Pages 项目行的值式路由（宿主 DevHub 栈根解析）。PagesProject 嵌套配置类型多、
+/// 未整体 Hashable，按项目名做导航身份（同账号下项目名唯一）。
+nonisolated struct PagesProjectRoute: Hashable {
+    let project: PagesProject
+
+    static func == (lhs: Self, rhs: Self) -> Bool { lhs.project.name == rhs.project.name }
+    func hash(into hasher: inout Hasher) { hasher.combine(project.name) }
 }

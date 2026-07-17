@@ -121,7 +121,7 @@ private struct AIModelDetailSheet: View {
         ))
     }
 
-    private var isTextGen: Bool { model.taskName == "Text Generation" }
+    private var isPlaygroundSupported: Bool { model.isTextGen || model.isImageGen }
     private var hasAIWrite: Bool { auth.hasScope("ai.write") }
 
     var body: some View {
@@ -141,7 +141,7 @@ private struct AIModelDetailSheet: View {
                 }
                 .glassRow()
 
-                if isTextGen {
+                if isPlaygroundSupported {
                     if hasAIWrite {
                         playground(text: $playVM.prompt, vm: playVM)
                     } else {
@@ -152,7 +152,7 @@ private struct AIModelDetailSheet: View {
                         } header: {
                             Text("试运行")
                         } footer: {
-                            Text("试运行文本生成模型需要 Workers AI 写权限（ai.write）。点上方按钮一键补齐授权，无需退出登录。")
+                            Text("试运行模型需要 Workers AI 写权限（ai.write）。点击上方按钮一键补齐授权，无需退出登录。")
                         }
                         .glassRow()
                     }
@@ -175,7 +175,7 @@ private struct AIModelDetailSheet: View {
     @ViewBuilder
     private func playground(text: Binding<String>, vm: AIPlaygroundViewModel) -> some View {
         Section {
-            TextField("输入提示词", text: text, axis: .vertical)
+            TextField(model.isImageGen ? "输入提示词" : "输入提示词", text: text, axis: .vertical)
                 .lineLimit(3...8)
             Button {
                 Task { await vm.run() }
@@ -194,16 +194,32 @@ private struct AIModelDetailSheet: View {
         } header: {
             Text("试运行")
         } footer: {
-            Text("发送一条用户消息并显示模型回复。会消耗账号的 Workers AI 用量（每天 1 万 Neuron 免费额度）。")
+            Text(model.isImageGen ? "输入提示词，Workers AI 将为您生成对应的图片。每日有免费的 Neuron 额度。" : "发送一条用户消息并显示模型回复。会消耗账号的 Workers AI 用量（每天 1 万 Neuron 免费额度）。")
         }
         .glassRow()
 
-        if vm.isRunning || !vm.output.isEmpty || vm.error != nil {
+        if vm.isRunning || !vm.output.isEmpty || vm.imageData != nil || vm.error != nil {
             Section {
                 if let error = vm.error {
                     Text(error).font(.footnote).foregroundStyle(.red)
-                } else if vm.output.isEmpty && vm.isRunning {
+                } else if vm.isRunning {
                     HStack { Spacer(); ProgressView(); Spacer() }
+                } else if let data = vm.imageData, let uiImage = UIImage(data: data) {
+                    VStack(spacing: 12) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .cornerRadius(12)
+                            .shadow(radius: 4)
+                        
+                        ShareLink(item: Image(uiImage: uiImage), preview: SharePreview("Generated Image", image: Image(uiImage: uiImage))) {
+                            Label("分享 / 保存图片", systemImage: "square.and.arrow.up")
+                        }
+                        .tint(Color.ocOrangePressed)
+                        .buttonStyle(.borderedProminent)
+                        .fontWeight(.bold)
+                    }
+                    .padding(.vertical, 8)
                 } else {
                     Text(vm.output).font(.callout).textSelection(.enabled)
                 }

@@ -411,6 +411,7 @@ final class AIPlaygroundViewModel {
 
     var prompt = ""
     private(set) var output = ""
+    private(set) var imageData: Data? = nil
     var isRunning = false
     var error: String?
 
@@ -432,13 +433,22 @@ final class AIPlaygroundViewModel {
         isRunning = true
         error = nil
         output = ""
+        imageData = nil
         defer { isRunning = false }
         do {
-            output = try await service.runTextGeneration(
-                accountId: accountId,
-                model: model.name ?? model.id,
-                messages: [AIChatMessage(role: "user", content: trimmedPrompt)]
-            )
+            if model.isImageGen {
+                imageData = try await service.runTextToImage(
+                    accountId: accountId,
+                    model: model.name ?? model.id,
+                    prompt: trimmedPrompt
+                )
+            } else {
+                output = try await service.runTextGeneration(
+                    accountId: accountId,
+                    model: model.name ?? model.id,
+                    messages: [AIChatMessage(role: "user", content: trimmedPrompt)]
+                )
+            }
         } catch {
             self.error = error.localizedDescription
         }

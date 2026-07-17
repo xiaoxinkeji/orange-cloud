@@ -218,6 +218,8 @@ nonisolated struct AIModel: Codable, Identifiable, Sendable {
     /// 模型短名（去掉 @cf/ 前缀的最后一段）
     var shortName: String { (name ?? id).split(separator: "/").last.map(String.init) ?? (name ?? id) }
     var taskName:  String { task?.name ?? "" }
+    var isTextGen: Bool { taskName == "Text Generation" }
+    var isImageGen: Bool { taskName == "Text-to-Image" }
 }
 
 nonisolated struct AITask: Codable, Sendable {
@@ -226,6 +228,11 @@ nonisolated struct AITask: Codable, Sendable {
 }
 
 // MARK: - Workers AI 文本生成试运行（POST /accounts/{id}/ai/run/{model}，需 ai.read + ai.write）
+
+// MARK: - Workers AI 鍥剧墖鐢熸垚璇曡繍琛?
+nonisolated struct AITextToImageRequest: Codable, Sendable {
+    let prompt: String
+}
 
 nonisolated struct AIChatMessage: Codable, Sendable {
     let role:    String

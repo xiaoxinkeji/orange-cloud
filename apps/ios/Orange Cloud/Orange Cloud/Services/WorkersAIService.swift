@@ -32,4 +32,10 @@ struct WorkersAIService {
         guard response.success, let result = response.result else { throw response.toAPIError() }
         return result.response ?? ""
     }
+
+    /// 鍥剧墖鐢熸垚璇曡繍琛岋紙POST /accounts/{id}/ai/run/{model}锛夈€傝繑鍥炲浘鐗囨暟鎹紙Data锛夈€?
+    func runTextToImage(accountId: String, model: String, prompt: String) async throws -> Data {
+        let requestBody = AITextToImageRequest(prompt: prompt)
+        return try await client.postRaw("accounts/\(accountId)/ai/run/\(model)", body: requestBody)
+    }
 }

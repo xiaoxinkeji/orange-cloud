@@ -67,6 +67,14 @@ actor CFAPIClient {
         return try Self.decode(data, path: path)
     }
 
+    /// 原始响应体 POST（用于 Workers AI 图片生成等返回原始 Data 的站点）
+    func postRaw<B: Codable & Sendable>(_ path: String, body: B) async throws -> Data {
+        let data = try JSONEncoder().encode(body)
+        return try await performRequest(
+            method: "POST", path: path, queryItems: [], body: data, contentType: "application/json"
+        ).0
+    }
+
     // MARK: - 流式文件传输（R2 大对象 copy/move：过临时文件，不把整个对象灌进内存）
 
     /// 流式下载到临时文件（不进内存）。返回我们自管的临时文件 URL，调用方负责删除。

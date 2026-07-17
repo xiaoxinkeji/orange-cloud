@@ -88,7 +88,7 @@ jobs:
         run: |
           echo "=== Xcode Build Issues ==="
           if [ -d "$RUNNER_TEMP/OrangeCloud.xcresult" ]; then
-            xcrun xcresulttool get --path "$RUNNER_TEMP/OrangeCloud.xcresult" --format json | jq '.issues' || true
+            xcrun xcresulttool get --legacy --path "$RUNNER_TEMP/OrangeCloud.xcresult" --format json | jq '.issues' || true
           else
             echo "No xcresult bundle found"
           fi

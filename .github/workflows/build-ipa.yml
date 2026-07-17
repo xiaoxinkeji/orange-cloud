@@ -78,15 +78,8 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED" \
-            2>&1 | tee build.log
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="OPENSOURCE_UNLOCKED"
           echo "=== Build completed ==="
-
-      - name: Print build log on failure
-        if: failure()
-        run: |
-          echo "=== Xcodebuild build.log ==="
-          cat "apps/ios/Orange Cloud/build.log" || true
 
       - name: Create unsigned IPA
         id: ipa

@@ -2,14 +2,14 @@
 //  PagesModels.swift
 //  Orange Cloud
 //
-//  Cloudflare Pages锛坅ccount 绾э級锛氶」鐩?+ 閮ㄧ讲銆傝 page.read锛屽啓 page.write銆?
-//  瀛楁鍚嶆牳瀵硅嚜 Cloudflare 瀹樻柟 SDK锛坈loudflare-python types/pages锛夈€?
-//  娉ㄦ剰锛欸ET 椤圭洰鏃?secret_text 绫诲瀷鐨勭幆澧冨彉閲?value 涓?null锛堝凡鑴辨晱锛夛紝鏁?App 鍐呯幆澧冨彉閲忓彧璇诲睍绀恒€?
+//  Cloudflare Pages（account 级）：项目 + 部署。读 page.read，写 page.write。
+//  字段名核对自 Cloudflare 官方 SDK（cloudflare-python types/pages）。
+//  注意：GET 项目时 secret_text 类型的环境变量 value 为 null（已脱敏），故 App 内环境变量只读展示。
 //
 
 import Foundation
 
-// MARK: - 椤圭洰
+// MARK: - 项目
 
 nonisolated struct PagesProject: Codable, Identifiable, Sendable {
     let name:              String
@@ -61,7 +61,7 @@ nonisolated struct PagesEnvConfig: Codable, Sendable {
 
 nonisolated struct PagesEnvVar: Codable, Sendable {
     var type:  String?     // plain_text | secret_text
-    var value: String?     // secret_text 鏃朵负 null
+    var value: String?     // secret_text 时为 null
 
     var isSecret: Bool { type == "secret_text" }
 }
@@ -82,14 +82,14 @@ nonisolated struct PagesSourceConfig: Codable, Sendable {
         case productionBranch = "production_branch"
     }
 
-    /// owner/repo 灞曠ず
+    /// owner/repo 展示
     var repoLabel: String? {
         guard let repoName else { return nil }
         return owner.map { "\($0)/\(repoName)" } ?? repoName
     }
 }
 
-// MARK: - 閮ㄧ讲
+// MARK: - 部署
 
 nonisolated struct PagesDeployment: Codable, Identifiable, Sendable {
     let id:                String
@@ -116,7 +116,7 @@ nonisolated struct PagesDeployment: Codable, Identifiable, Sendable {
         case deploymentTrigger = "deployment_trigger"
     }
 
-    /// 鏁翠綋鐘舵€侊紙鍙栨渶鏂伴樁娈碉級
+    /// 整体状态（取最新阶段）
     var status: PagesDeployStatus { PagesDeployStatus(rawValue: latestStage?.status ?? "") ?? .unknown }
 
     var isProduction: Bool { environment == "production" }
@@ -155,11 +155,11 @@ nonisolated struct PagesTriggerMetadata: Codable, Sendable {
         case commitMessage = "commit_message"
     }
 
-    /// 鐭搱甯?
+    /// 短哈希
     var shortHash: String? { commitHash.map { String($0.prefix(8)) } }
 }
 
-// MARK: - 閮ㄧ讲鐘舵€?
+// MARK: - 部署状态
 
 nonisolated enum PagesDeployStatus: String, Sendable {
     case success, idle, active, failure, canceled
@@ -167,24 +167,24 @@ nonisolated enum PagesDeployStatus: String, Sendable {
 
     var label: String {
         switch self {
-        case .success:  String(localized: "鎴愬姛")
-        case .idle:     String(localized: "鎺掗槦涓?)
-        case .active:   String(localized: "杩涜涓?)
-        case .failure:  String(localized: "澶辫触")
-        case .canceled: String(localized: "宸插彇娑?)
-        case .unknown:  String(localized: "鏈煡")
+        case .success:  String(localized: "成功")
+        case .idle:     String(localized: "排队中")
+        case .active:   String(localized: "进行中")
+        case .failure:  String(localized: "失败")
+        case .canceled: String(localized: "已取消")
+        case .unknown:  String(localized: "未知")
         }
     }
 }
 
-// MARK: - 鑷畾涔夊煙鍚?
+// MARK: - 自定义域名
 
-/// 椤圭洰鑷畾涔夊煙鍚嶃€侴ET /accounts/{id}/pages/projects/{name}/domains
+/// 项目自定义域名。GET /accounts/{id}/pages/projects/{name}/domains
 nonisolated struct PagesDomain: Codable, Identifiable, Sendable {
     let id:                   String
     let name:                 String
     let status:               String?   // initializing | pending | active | deactivated | blocked | error
-    let zoneTag:              String?   // 鍩熷悕鎵€鍦?Zone锛堝湪褰撳墠 Cloudflare 涓婃墠鏈夋剰涔夛級
+    let zoneTag:              String?   // 域名所在 Zone（在当前 Cloudflare 上才有意义）
     let createdOn:            String?
     let certificateAuthority: String?
     let validationData:       PagesDomainValidationData?
@@ -202,7 +202,7 @@ nonisolated struct PagesDomain: Codable, Identifiable, Sendable {
     var statusValue: PagesDomainStatus { PagesDomainStatus(rawValue: status ?? "") ?? .unknown }
 }
 
-/// 璇佷功楠岃瘉淇℃伅锛坢ethod == txt 鏃剁粰鍑哄緟娣诲姞鐨?TXT 璁板綍锛?
+/// 证书验证信息（method == txt 时给出待添加的 TXT 记录）
 nonisolated struct PagesDomainValidationData: Codable, Sendable {
     let status:       String?
     let method:       String?    // http | txt
@@ -218,7 +218,7 @@ nonisolated struct PagesDomainValidationData: Codable, Sendable {
     }
 }
 
-/// 鍩熷悕褰掑睘楠岃瘉淇℃伅
+/// 域名归属验证信息
 nonisolated struct PagesDomainVerificationData: Codable, Sendable {
     let status:       String?
     let errorMessage: String?
@@ -235,25 +235,25 @@ nonisolated enum PagesDomainStatus: String, Sendable {
 
     var label: String {
         switch self {
-        case .active:       String(localized: "鐢熸晥涓?)
-        case .pending:      String(localized: "楠岃瘉涓?)
-        case .initializing: String(localized: "鍒濆鍖?)
-        case .deactivated:  String(localized: "宸插仠鐢?)
-        case .blocked:      String(localized: "宸插皝閿?)
-        case .error:        String(localized: "閿欒")
-        case .unknown:      String(localized: "鏈煡")
+        case .active:       String(localized: "生效中")
+        case .pending:      String(localized: "验证中")
+        case .initializing: String(localized: "初始化")
+        case .deactivated:  String(localized: "已停用")
+        case .blocked:      String(localized: "已封锁")
+        case .error:        String(localized: "错误")
+        case .unknown:      String(localized: "未知")
         }
     }
 }
 
-/// POST .../domains 璇锋眰浣?
+/// POST .../domains 请求体
 nonisolated struct PagesDomainAddRequest: Codable, Sendable {
     let name: String
 }
 
-// MARK: - 鍐欏叆杞借嵎
+// MARK: - 写入载荷
 
-/// PATCH 椤圭洰锛氫粎浼犺鏀圭殑瀛楁锛堥《灞傚悎骞讹紝鐪佺暐瀛楁涓嶅彉锛夈€傜幆澧冨彉閲忎笉鍦ㄦ锛堣劚鏁忛闄╋紝App 鍐呭彧璇伙級銆?
+/// PATCH 项目：仅传要改的字段（顶层合并，省略字段不变）。环境变量不在此（脱敏风险，App 内只读）。
 nonisolated struct PagesProjectUpdate: Codable, Sendable {
     var buildConfig:      PagesBuildConfig?
     var productionBranch: String?
@@ -264,8 +264,8 @@ nonisolated struct PagesProjectUpdate: Codable, Sendable {
     }
 }
 
-/// POST /accounts/{id}/pages/projects 璇锋眰浣撱€備粎寤轰竴涓?Direct Upload 绌洪」鐩?
-/// 锛堟墜鏈虹鏃犳硶涓婁紶鏋勫缓浜х墿 / 杩?Git锛屽缓鍚庨渶鐢?Wrangler 鎴?Dashboard 閮ㄧ讲锛夈€?
+/// POST /accounts/{id}/pages/projects 请求体。仅建一个 Direct Upload 空项目
+/// （手机端无法上传构建产物 / 连 Git，建后需用 Wrangler 或 Dashboard 部署）。
 nonisolated struct PagesCreateRequest: Codable, Sendable {
     let name:             String
     let productionBranch: String
@@ -276,17 +276,17 @@ nonisolated struct PagesCreateRequest: Codable, Sendable {
     }
 }
 
-/// retry / rollback 鐨勭┖ POST 浣?
+/// retry / rollback 的空 POST 体
 nonisolated struct PagesEmptyBody: Codable, Sendable {}
 
-// MARK: - 鐩存帴涓婁紶閮ㄧ讲锛圖irect Upload锛?
+// MARK: - 直接上传部署（Direct Upload）
 
-/// GET .../upload-token 鐨?result锛堣祫婧愪笂浼犵敤鐨勭煭鏈?JWT锛?
+/// GET .../upload-token 的 result（资源上传用的短期 JWT）
 nonisolated struct PagesUploadToken: Codable, Sendable {
     let jwt: String
 }
 
-/// POST /pages/assets/upload 鐨勫崟鏉¤浇鑽凤紙key=璧勬簮鍝堝笇锛寁alue=base64 鍐呭锛?
+/// POST /pages/assets/upload 的单条载荷（key=资源哈希，value=base64 内容）
 nonisolated struct PagesAssetUpload: Codable, Sendable {
     let key:      String
     let value:    String
@@ -295,15 +295,15 @@ nonisolated struct PagesAssetUpload: Codable, Sendable {
 }
 
 nonisolated struct PagesAssetMetadata: Codable, Sendable {
-    let contentType: String     // CF 鏈熸湜 camelCase contentType
+    let contentType: String     // CF 期望 camelCase contentType
 }
 
-/// check-missing / upsert-hashes 鐨勮姹備綋
+/// check-missing / upsert-hashes 的请求体
 nonisolated struct PagesHashesBody: Codable, Sendable {
     let hashes: [String]
 }
 
-/// 寰呴儴缃茬殑鍗曚釜鏂囦欢銆俻ath 浠?/ 寮€澶达紙濡?/index.html锛夛紱contentType 鎸夋墿灞曞悕鎺ㄦ柇銆?
+/// 待部署的单个文件。path 以 / 开头（如 /index.html）；contentType 按扩展名推断。
 nonisolated struct PagesDeployFile: Sendable, Identifiable {
     let path: String
     let data: Data
@@ -312,7 +312,7 @@ nonisolated struct PagesDeployFile: Sendable, Identifiable {
     var contentType: String { PagesMime.type(forPath: path) }
 }
 
-/// 鎸夋墿灞曞悕鎺ㄦ柇 MIME锛堣鐩栧父瑙侀潤鎬佽祫婧愶紝鍏朵綑鍥為€€ octet-stream锛?
+/// 按扩展名推断 MIME（覆盖常见静态资源，其余回退 octet-stream）
 nonisolated enum PagesMime {
     static func type(forPath path: String) -> String {
         switch (path as NSString).pathExtension.lowercased() {

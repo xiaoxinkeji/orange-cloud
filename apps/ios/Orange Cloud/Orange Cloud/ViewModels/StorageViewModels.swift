@@ -625,7 +625,7 @@ final class D1TableViewModel {
     static let rowidKey = "_oc_rowid_"
     /// 单元格取数截断长度：分页 SQL 里 substr 只取前 cellLimit+1 个字符，
     /// 防大 TEXT/BLOB 字段拖爆网络包 / JSON 解码内存 / CoreText 排版（主线程 hang 源）
-    static let cellLimit = 256
+    nonisolated(unsafe) static let cellLimit = 256
     /// 已加载行数上限：到顶停止翻页，引导用查询控制台加 WHERE 筛选
     static let maxLoadedRows = 1000
 

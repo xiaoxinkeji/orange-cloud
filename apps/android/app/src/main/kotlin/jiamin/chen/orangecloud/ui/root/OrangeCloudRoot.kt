@@ -49,6 +49,7 @@ import jiamin.chen.orangecloud.R
 import jiamin.chen.orangecloud.core.design.SkyBackground
 import jiamin.chen.orangecloud.core.design.SkyPhase
 import jiamin.chen.orangecloud.ui.analytics.ZoneAnalyticsScreen
+import jiamin.chen.orangecloud.ui.dashboard.DashboardResourceType
 import jiamin.chen.orangecloud.ui.dashboard.DashboardScreen
 import jiamin.chen.orangecloud.ui.dns.DnsListScreen
 import jiamin.chen.orangecloud.ui.network.TunnelDetailScreen
@@ -106,6 +107,7 @@ import jiamin.chen.orangecloud.ui.storage.R2BucketSettingsScreen
 import jiamin.chen.orangecloud.ui.storage.R2ObjectListScreen
 import jiamin.chen.orangecloud.ui.storage.StorageHubScreen
 import jiamin.chen.orangecloud.ui.workers.WorkerCreateScreen
+import jiamin.chen.orangecloud.ui.workers.WorkerDeploymentsScreen
 import jiamin.chen.orangecloud.ui.workers.WorkerDetailScreen
 import jiamin.chen.orangecloud.ui.workers.WorkerListScreen
 import jiamin.chen.orangecloud.ui.workers.WorkerRoutesScreen
@@ -221,9 +223,11 @@ private object Dest {
     const val LB_POOLS = "lb/pools"
     const val LB_MONITORS = "lb/monitors"
     const val WORKER_ROUTE = "worker/{scriptName}"
+    const val WORKER_EDIT_ROUTE = "worker_edit/{editScript}"
     const val WORKER_SECRETS_ROUTE = "worker/{scriptName}/secrets"
     const val WORKER_TRIGGERS_ROUTE = "worker/{scriptName}/triggers"
     const val WORKER_DOMAINS_ROUTE = "worker/{scriptName}/domains"
+    const val WORKER_DEPLOYMENTS_ROUTE = "worker/{scriptName}/deployments"
     const val TAIL_ROUTE = "tail/{scriptName}"
     private fun zoneScoped(prefix: String, zoneId: String, zoneName: String) =
         "$prefix/$zoneId?zoneName=${Uri.encode(zoneName)}"
@@ -251,9 +255,11 @@ private object Dest {
     fun identity(sessionId: String): String = "identity/${Uri.encode(sessionId)}"
     fun tunnelDetail(id: String, name: String): String = "tunnel/$id?tunnelName=${Uri.encode(name)}"
     fun worker(scriptName: String): String = "worker/${Uri.encode(scriptName)}"
+    fun workerEdit(scriptName: String): String = "worker_edit/${Uri.encode(scriptName)}"
     fun workerSecrets(scriptName: String): String = "worker/${Uri.encode(scriptName)}/secrets"
     fun workerTriggers(scriptName: String): String = "worker/${Uri.encode(scriptName)}/triggers"
     fun workerDomains(scriptName: String): String = "worker/${Uri.encode(scriptName)}/domains"
+    fun workerDeployments(scriptName: String): String = "worker/${Uri.encode(scriptName)}/deployments"
     fun tail(scriptName: String): String = "tail/${Uri.encode(scriptName)}"
     fun r2Objects(bucket: String): String = "r2/objects/${Uri.encode(bucket)}"
     fun r2Settings(bucket: String): String = "r2/settings/${Uri.encode(bucket)}"
@@ -328,6 +334,25 @@ private fun MainScaffold(onOpenToolbox: () -> Unit) {
         route?.let { navController.navigate(it) }
     }
 
+    // Dashboard 置顶 / 命令搜索 / 告警的统一跳转：六类资源 → 已有 Dest（不另造路由体系）。
+    // title 用于 zone/D1/KV/隧道 这些「路由带展示名」的页面，取自当前目录的现查名称。
+    val openResource: (DashboardResourceType, String, String) -> Unit = { type, id, title ->
+        val route = when (type) {
+            DashboardResourceType.ZONE -> Dest.zoneDetail(id, title)
+            DashboardResourceType.WORKER -> Dest.worker(id)
+            DashboardResourceType.R2_BUCKET -> Dest.r2Objects(id)
+            DashboardResourceType.D1_DATABASE -> Dest.d1Query(id, title)
+            DashboardResourceType.KV_NAMESPACE -> Dest.kvKeys(id, title)
+            DashboardResourceType.TUNNEL -> Dest.tunnelDetail(id, title)
+        }
+        // 存储三类的下钻页平时只能从「存储」Tab（整页 Pro 闸门）进入，
+        // 这里直达会绕过闸门，故非 Pro 直接送付费墙；隧道详情路由自带 ProGate。
+        val needsPro = type == DashboardResourceType.R2_BUCKET ||
+            type == DashboardResourceType.D1_DATABASE ||
+            type == DashboardResourceType.KV_NAMESPACE
+        navController.navigate(if (needsPro && !isPro) Dest.PAYWALL else route)
+    }
+
     NavigationSuiteScaffold(
         navigationSuiteItems = {
             TopDestination.entries.forEach { dest ->
@@ -362,6 +387,7 @@ private fun MainScaffold(onOpenToolbox: () -> Unit) {
                     onAddAccount = onAddAccount,
                     onOpenRedirects = { navController.navigate(Dest.REDIRECTS) },
                     onOpenZeroTrust = { navController.navigate(Dest.ZERO_TRUST) },
+                    onOpenResource = openResource,
                 )
             }
             composable(Dest.ZERO_TRUST) {
@@ -619,10 +645,25 @@ private fun MainScaffold(onOpenToolbox: () -> Unit) {
                 )
             }
             composable(Dest.WORKER_CREATE) {
-                WorkerCreateScreen(
-                    onBack = { navController.popBackStack() },
-                    onCreated = { navController.popBackStack() },
-                )
+                // 新建 Worker 进 Pro（查看免费）
+                ProGate {
+                    WorkerCreateScreen(
+                        onBack = { navController.popBackStack() },
+                        onCreated = { navController.popBackStack() },
+                    )
+                }
+            }
+            composable(
+                route = Dest.WORKER_EDIT_ROUTE,
+                arguments = listOf(navArgument("editScript") { type = NavType.StringType }),
+            ) {
+                // 编辑代码进 Pro（查看免费）
+                ProGate {
+                    WorkerCreateScreen(
+                        onBack = { navController.popBackStack() },
+                        onCreated = { navController.popBackStack() },
+                    )
+                }
             }
             composable(Dest.DEV_WORKERS_AI) {
                 ProGate {
@@ -668,6 +709,11 @@ private fun MainScaffold(onOpenToolbox: () -> Unit) {
                     onOpenSecrets = { navController.navigate(Dest.workerSecrets(scriptName)) },
                     onOpenTriggers = { navController.navigate(Dest.workerTriggers(scriptName)) },
                     onOpenDomains = { navController.navigate(Dest.workerDomains(scriptName)) },
+                    onOpenDeployments = { navController.navigate(Dest.workerDeployments(scriptName)) },
+                    onEditCode = { navController.navigate(Dest.workerEdit(scriptName)) },
+                    // 查看详情免费；删除按 isPro 拦到付费墙（编辑/新建走各自路由的 ProGate）
+                    isPro = isPro,
+                    onShowPaywall = { navController.navigate(Dest.PAYWALL) },
                 )
             }
             composable(
@@ -687,6 +733,12 @@ private fun MainScaffold(onOpenToolbox: () -> Unit) {
                 arguments = listOf(navArgument("scriptName") { type = NavType.StringType }),
             ) {
                 ProGate { WorkerRoutesScreen(onBack = { navController.popBackStack() }) }
+            }
+            composable(
+                route = Dest.WORKER_DEPLOYMENTS_ROUTE,
+                arguments = listOf(navArgument("scriptName") { type = NavType.StringType }),
+            ) {
+                ProGate { WorkerDeploymentsScreen(onBack = { navController.popBackStack() }) }
             }
             composable(
                 route = Dest.TAIL_ROUTE,

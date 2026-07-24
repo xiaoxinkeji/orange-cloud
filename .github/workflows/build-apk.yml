@@ -52,7 +52,13 @@ jobs:
         id: apk
         run: |
           TAG="${{ steps.version.outputs.tag }}"
-          SRC="apps/android/app/build/outputs/apk/oss/release/app-oss-release.apk"
+          SRC=$(find apps/android/app/build/outputs/apk/oss/release -name "*.apk" | head -1)
+          if [ -z "$SRC" ]; then
+            echo "::error::No APK found in build outputs"
+            ls -lR apps/android/app/build/outputs/apk/oss/release/ || true
+            exit 1
+          fi
+          echo "Found APK: $SRC"
           DEST="OrangeCloud-$TAG-oss-unsigned.apk"
           cp "$SRC" "$DEST"
           ls -lh "$DEST"

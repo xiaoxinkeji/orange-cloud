@@ -8,6 +8,7 @@ internal val whatsNewReleases: List<WhatsNewRelease> = listOf(
         version = "1.7.1",
         items = listOf(
             WhatsNewItem(R.string.whatsnew_1_7_1_0_title, R.string.whatsnew_1_7_1_0_detail),
+            WhatsNewItem(R.string.whatsnew_1_7_1_1_title, R.string.whatsnew_1_7_1_1_detail),
         ),
     ),
     WhatsNewRelease(

@@ -14,12 +14,37 @@ nonisolated enum WhatsNewGenerated {
             WhatsNewItem(
                 icon:   "wrench.and.screwdriver",
                 title:  String(localized: "编译稳定性修复", table: "WhatsNew"),
-                detail: String(localized: "修复上游代码合并后引入的重复方法声明、类型不匹配等编译错误，以及 Swift 6 严格并发模式下的 actor 隔离警告。", table: "WhatsNew")
+                detail: String(localized: "修复上游代码合并后引入的重复方法声明、类型不匹配等 68 处编译错误，涉及 Worker 服务、Pages 部署、防火墙规则、负载均衡、缓存规则、转换规则等 20+ 文件。", table: "WhatsNew")
             ),
             WhatsNewItem(
                 icon:   "doc.text.magnifyingglass",
                 title:  String(localized: "编码兼容性修复", table: "WhatsNew"),
                 detail: String(localized: "修复 Swift 源文件 CRLF 行尾在 macOS CI 上导致的「字符串字面量未终止」错误，确保跨平台编译一致。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "checkmark.seal",
+                title:  String(localized: "iOS 17 兼容性", table: "WhatsNew"),
+                detail: String(localized: "移除 5 个页面中仅 iOS 18+ 支持的 .symbolEffect 动画，确保部署目标 iOS 17.0 的设备不再崩溃。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "lock.shield",
+                title:  String(localized: "Swift 6 并发安全", table: "WhatsNew"),
+                detail: String(localized: "修复严格并发模式下的 actor 隔离警告：cellLimit 标记为 nonisolated(unsafe)，EntitlementStore 闭包添加 weak self 捕获，PaywallView 购买流程改用 EntitlementStore.purchase(product:)。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "hammer",
+                title:  String(localized: "Worker 与 Pages 修复", table: "WhatsNew"),
+                detail: String(localized: "WorkerService 新增 createScript/deleteScript 方法，WorkerUploadMetadata 初始化补全所有参数；Pages 部署视图修复 latestStage 状态访问与域名列表加载。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "shield.lefthalf.filled",
+                title:  String(localized: "域名、防火墙与缓存修复", table: "WhatsNew"),
+                detail: String(localized: "ZoneDetailView 修复 SSL 证书类型（EdgeCertificate/CustomCertificate → SSLCertificatePack）与缓存清理方法名；IPRulesListView 改用 FirewallAccessRule；TransformRule 新增 actionLabel/isURLRewrite 等属性；CacheRules 修复 edgeTTL/browserTTL 字段名与 ruleset 读取；LoadBalancer 修复 Pool/Monitor 类型引用。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "icloud.slash",
+                title:  String(localized: "移除 iCloud 同步", table: "WhatsNew"),
+                detail: String(localized: "移除设置页中已失效的 iCloud 同步开关（引用了未定义的属性），清理 AuthManager 中的 mergeSessionsFromCloud 残留方法。", table: "WhatsNew")
             )
         ]),
         WhatsNewRelease(version: "1.9.1", items: [

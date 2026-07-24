@@ -2,7 +2,9 @@
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
     <string name="whatsnew_1_7_1_0_title">빌드 안정성 수정</string>
-    <string name="whatsnew_1_7_1_0_detail">상위 코드 병합 후 발생한 컴파일 오류를 수정하고 iOS 측 Swift 6 동시성 안전 수정을 동기화했습니다.</string>
+    <string name="whatsnew_1_7_1_0_detail">상위 코드 병합 후 발생한 컴파일 오류를 수정하고 iOS 측 Swift 6 동시성 안전 수정과 iOS 17 호환성 수정을 동기화했습니다.</string>
+    <string name="whatsnew_1_7_1_1_title">iCloud 동기화 제거</string>
+    <string name="whatsnew_1_7_1_1_detail">설정 페이지에서 손상된 iCloud 동기화 토글을 제거하고 관련 잔여 코드를 정리했습니다.</string>
     <string name="whatsnew_1_7_0_0_title">모든 리소스를 한 곳에서 검색</string>
     <string name="whatsnew_1_7_0_0_detail">개요 화면 상단의 돋보기로 도메인, Worker, R2 버킷, D1 데이터베이스, KV 네임스페이스, 터널을 한 번에 검색하고 바로 이동할 수 있습니다. 이제 어떤 리소스든 별표로 개요 화면에 고정할 수 있습니다.</string>
     <string name="whatsnew_1_7_0_1_title">알림 센터</string>

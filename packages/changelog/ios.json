@@ -19,23 +19,23 @@
           "pt-PT": "Correcoes de estabilidade de compilacao",
           "de": "Build-Stabilitatskorrekturen",
           "fr": "Corrections de stabilite de compilation",
-          "ar": "اصلاحات استقرار البناء",
+          "ar": "إصلاحات استقرار البناء",
           "tr": "Derleme kararliklik duzeltmeleri"
         },
         "detail": {
-          "zh-Hans": "修复上游代码合并后引入的重复方法声明、类型不匹配等编译错误，以及 Swift 6 严格并发模式下的 actor 隔离警告。",
-          "en": "Fixes compilation errors introduced after upstream code merge: duplicate method declarations, type mismatches, and resolves Swift 6 strict concurrency actor isolation warnings.",
-          "zh-Hant": "修復上游程式碼合併後引入的重複方法宣告、型別不符等編譯錯誤，以及 Swift 6 嚴格並行模式下的 actor 隔離警告。",
-          "zh-HK": "修復上游代碼合併後引入的重複方法聲明、類型不匹配等編譯錯誤，以及 Swift 6 嚴格並發模式下的 actor 隔離警告。",
-          "ja": "上流コード統合後に発生した重複メソッド宣言や型不一致などのコンパイルエラーと、Swift 6 厳密並行処理の actor 分離警告を修正しました。",
-          "es-MX": "Corrige errores de compilacion tras la fusion de codigo ascendente: declaraciones de metodos duplicadas, tipos no coincidentes, y resuelve las advertencias de aislamiento de actor en el modo de concurrencia estricta de Swift 6.",
-          "ko": "상위 코드 병합 후 발생한 중복 메서드 선언, 타입 불일치 등 컴파일 오류를 수정하고 Swift 6 엄격 동시성 actor 격리 경고를 해결했습니다.",
-          "pt-BR": "Corrige erros de compilacao apos mesclagem de codigo upstream: declaracoes de metodos duplicadas, tipos incompativeis, e resolve avisos de isolamento de actor no modo de concorrencia estrita do Swift 6.",
-          "pt-PT": "Corrige erros de compilacao apos fusao de codigo upstream: declaracoes de metodos duplicadas, tipos incompativeis, e resolve avisos de isolamento de actor no modo de concorrencia estrita do Swift 6.",
-          "de": "Behebt Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung: doppelte Methodendeklarationen, Typkonflikte, und loest Actor-Isolation-Warnungen im strikten Swift-6-Parallelitaetsmodus.",
-          "fr": "Corrige les erreurs de compilation apparues apres la fusion du code amont: declarations de methodes en double, types incompatibles, et resout les avertissements d'isolation d'actor en mode de concurrence stricte de Swift 6.",
-          "ar": "اصلاح اخطاء التجميع بعد دمج الكود المنبعث: تصريحات الطرق المكررة، عدم تطابق الانواع، وحل تحذيرات عزل الممثل في وضع التزامن الصارم لـ Swift 6.",
-          "tr": "Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini: yinelenen yontem bildirimleri, tur uyumsuzluklari duzeltir ve Swift 6 kati ezamanlik actor izolasyon uyarilarini cozer."
+          "zh-Hans": "修复上游代码合并后引入的重复方法声明、类型不匹配等 68 处编译错误，涉及 Worker 服务、Pages 部署、防火墙规则、负载均衡、缓存规则、转换规则等 20+ 文件。",
+          "en": "Fixes 68 compilation errors introduced after upstream code merge across 20+ files: Worker service, Pages deployments, firewall rules, load balancers, cache rules, transform rules and more.",
+          "zh-Hant": "修復上游程式碼合併後引入的重複方法宣告、型別不符等 68 處編譯錯誤，涉及 Worker 服務、Pages 部署、防火牆規則、負載均衡、快取規則、轉換規則等 20+ 檔案。",
+          "zh-HK": "修復上游代碼合併後引入的重複方法聲明、類型不匹配等 68 處編譯錯誤，涉及 Worker 服務、Pages 部署、防火牆規則、負載均衡、緩存規則、轉換規則等 20+ 檔案。",
+          "ja": "上流コード統合後に発生した重複メソッド宣言や型不一致など 68 件のコンパイルエラーを修正しました。Worker サービス、Pages デプロイ、ファイアウォールルール、ロードバランサー、キャッシュルール、変換ルールなど 20 以上のファイルに及びます。",
+          "es-MX": "Corrige 68 errores de compilacion tras la fusion de codigo ascendente en mas de 20 archivos: servicio Worker, despliegues de Pages, reglas de firewall, balanceadores de carga, reglas de cache, reglas de transformacion y mas.",
+          "ko": "상위 코드 병합 후 20개 이상의 파일에 걸쳐 발생한 68개 컴파일 오류를 수정했습니다: Worker 서비스, Pages 배포, 방화벽 규칙, 로드 밸런서, 캐시 규칙, 변환 규칙 등.",
+          "pt-BR": "Corrige 68 erros de compilacao apos mesclagem de codigo upstream em mais de 20 arquivos: servico Worker, implantacoes de Pages, regras de firewall, balanceadores de carga, regras de cache, regras de transformacao e mais.",
+          "pt-PT": "Corrige 68 erros de compilacao apos fusao de codigo upstream em mais de 20 ficheiros: servico Worker, implementacoes de Pages, regras de firewall, balanceadores de carga, regras de cache, regras de transformacao e mais.",
+          "de": "Behebt 68 Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung in ueber 20 Dateien: Worker-Service, Pages-Deployments, Firewall-Regeln, Load Balancer, Cache-Regeln, Transform-Regeln und mehr.",
+          "fr": "Corrige 68 erreurs de compilation apparues apres la fusion du code amont dans plus de 20 fichiers: service Worker, deploiements Pages, regles de pare-feu, equilibrages de charge, regles de cache, regles de transformation et plus.",
+          "ar": "إصلاح 68 خطأ تجميع بعد دمج الكود المنبعث في أكثر من 20 ملفًا: خدمة Worker، عمليات نشر Pages، قواعد الجدار الناري، موازني الحمل، قواعد التخزين المؤقت، قواعد التحويل والمزيد.",
+          "tr": "Yukari akis kod birlestirmesinden sonra 20'den fazla dosyada 68 derleme hatasini duzeltir: Worker servisi, Pages deploymanlari, guvenlik duvari kurallari, yuk dengeleyiciler, onbellek kurallari, donusum kurallari ve daha fazlasi."
         }
       },
       {
@@ -52,7 +52,7 @@
           "pt-PT": "Correcao de compatibilidade de codificacao",
           "de": "Kodierungskompatibilitatskorrektur",
           "fr": "Correction de compatibilite d'encodage",
-          "ar": "اصلاح توافق الترميز",
+          "ar": "إصلاح توافق الترميز",
           "tr": "Kodlama uyumluluk duzeltmesi"
         },
         "detail": {
@@ -67,8 +67,173 @@
           "pt-PT": "Corrige erros de literal de cadeia nao terminado no CI do macOS causados por finais de linha CRLF em ficheiros Swift, garantindo compilacao consistente entre plataformas.",
           "de": "Behebt nicht beendetes Zeichenkettenliteral-Fehler auf macOS-CI durch CRLF-Zeilenenden in Swift-Dateien und stellt konsistente plattformuebergreifende Kompilierung sicher.",
           "fr": "Corrige les erreurs de litteral de chaine non termine sur CI macOS causes par les fins de ligne CRLF dans les fichiers Swift, assurant une compilation coherente multiplateforme.",
-          "ar": "اصلاح اخطاء السلسلة النصية غير المنتهية على macOS CI الناتجة عن نهايات اسطر CRLF في ملفات Swift، مما يضمن تجميعاً متسقاً عبر الانظمة الاساسية.",
+          "ar": "إصلاح أخطاء السلسلة النصية غير المنتهية على macOS CI الناتجة عن نهايات أسطر CRLF في ملفات Swift، مما يضمن تجميعاً متسقاً عبر الأنظمة الأساسية.",
           "tr": "Swift kaynak dosyalarindaki CRLF satir sonlarinin macOS CI'da neden oldugu sonlandirilmamis dize literal hatalarini duzeltir ve platformlar arasi tutarli derleme saglar."
+        }
+      },
+      {
+        "icon": "checkmark.seal",
+        "title": {
+          "zh-Hans": "iOS 17 兼容性",
+          "en": "iOS 17 compatibility",
+          "zh-Hant": "iOS 17 相容性",
+          "zh-HK": "iOS 17 相容性",
+          "ja": "iOS 17 互換性",
+          "es-MX": "Compatibilidad con iOS 17",
+          "ko": "iOS 17 호환성",
+          "pt-BR": "Compatibilidade com iOS 17",
+          "pt-PT": "Compatibilidade com iOS 17",
+          "de": "iOS 17-Kompatibilitat",
+          "fr": "Compatibilite iOS 17",
+          "ar": "توافق iOS 17",
+          "tr": "iOS 17 uyumlulugu"
+        },
+        "detail": {
+          "zh-Hans": "移除 5 个页面中仅 iOS 18+ 支持的 .symbolEffect 动画，确保部署目标 iOS 17.0 的设备不再崩溃。",
+          "en": "Removes .symbolEffect animations (iOS 18+ only) from 5 views, ensuring devices on the iOS 17.0 deployment target no longer crash.",
+          "zh-Hant": "移除 5 個頁面中僅 iOS 18+ 支援的 .symbolEffect 動畫，確保部署目標 iOS 17.0 的裝置不再崩潰。",
+          "zh-HK": "移除 5 個頁面中僅 iOS 18+ 支援的 .symbolEffect 動畫，確保部署目標 iOS 17.0 的裝置不再崩潰。",
+          "ja": "iOS 18 以降でのみサポートされる .symbolEffect アニメーションを 5 つのビューから削除し、デプロイメントターゲット iOS 17.0 のデバイスでのクラッシュを防ぎます。",
+          "es-MX": "Elimina animaciones .symbolEffect (solo iOS 18+) de 5 vistas, evitando que los dispositivos con destino de despliegue iOS 17.0 fallen.",
+          "ko": "5개 뷰에서 iOS 18+ 전용 .symbolEffect 애니메이션을 제거하여 배포 대상 iOS 17.0 기기에서 충돌이 발생하지 않도록 합니다.",
+          "pt-BR": "Remove animacoes .symbolEffect (apenas iOS 18+) de 5 telas, evitando falhas em dispositivos com destino de implantacao iOS 17.0.",
+          "pt-PT": "Remove animacoes .symbolEffect (apenas iOS 18+) de 5 ecas, evitando falhas em dispositivos com destino de implementacao iOS 17.0.",
+          "de": "Entfernt .symbolEffect-Animationen (nur iOS 18+) aus 5 Ansichten, um Abstuerze auf Geraeten mit iOS 17.0 Bereitstellungsziel zu verhindern.",
+          "fr": "Supprime les animations .symbolEffect (iOS 18+ uniquement) de 5 vues, evitant les plantages sur les appareils avec cible de deploiement iOS 17.0.",
+          "ar": "إزالة رسوم .symbolEffect المتحركة (حصرياً لـ iOS 18+) من 5 طرق عرض، لمنع تعطل الأجهزة التي تعمل بنظام iOS 17.0 كهدف للنشر.",
+          "tr": "5 gorunumden (yalnizca iOS 18+) .symbolEffect animasyonlarini kaldirir ve iOS 17.0 dagitim hedefindeki cihazlarda cokmeyi engeller."
+        }
+      },
+      {
+        "icon": "lock.shield",
+        "title": {
+          "zh-Hans": "Swift 6 并发安全",
+          "en": "Swift 6 concurrency safety",
+          "zh-Hant": "Swift 6 並行安全",
+          "zh-HK": "Swift 6 並發安全",
+          "ja": "Swift 6 並行処理安全性",
+          "es-MX": "Seguridad de concurrencia de Swift 6",
+          "ko": "Swift 6 동시성 안전",
+          "pt-BR": "Seguranca de concorrencia do Swift 6",
+          "pt-PT": "Seguranca de concorrencia do Swift 6",
+          "de": "Swift 6 Parallelitaetssicherheit",
+          "fr": "Securite de concurrence Swift 6",
+          "ar": "أمن التزامن لـ Swift 6",
+          "tr": "Swift 6 ezamanlik guvenligi"
+        },
+        "detail": {
+          "zh-Hans": "修复严格并发模式下的 actor 隔离警告：cellLimit 标记为 nonisolated(unsafe)，EntitlementStore 闭包添加 weak self 捕获，PaywallView 购买流程改用 EntitlementStore.purchase(product:)。",
+          "en": "Fixes actor isolation warnings in strict concurrency mode: marks cellLimit as nonisolated(unsafe), adds weak self capture in EntitlementStore closures, and updates PaywallView purchase flow to use EntitlementStore.purchase(product:).",
+          "zh-Hant": "修復嚴格並行模式下的 actor 隔離警告：cellLimit 標記為 nonisolated(unsafe)，EntitlementStore 閉包加入 weak self 捕獲，PaywallView 購買流程改用 EntitlementStore.purchase(product:)。",
+          "zh-HK": "修復嚴格並發模式下的 actor 隔離警告：cellLimit 標記為 nonisolated(unsafe)，EntitlementStore 閉包加入 weak self 捕獲，PaywallView 購買流程改用 EntitlementStore.purchase(product:)。",
+          "ja": "厳密並行処理モードでの actor 分離警告を修正: cellLimit を nonisolated(unsafe) に設定、EntitlementStore クロージャに weak self キャプチャを追加、PaywallView の購入フローを EntitlementStore.purchase(product:) に更新。",
+          "es-MX": "Corrige advertencias de aislamiento de actor en modo de concurrencia estricta: marca cellLimit como nonisolated(unsafe), agrega captura weak self en cierres de EntitlementStore y actualiza el flujo de compra de PaywallView a EntitlementStore.purchase(product:).",
+          "ko": "엄격 동시성 모드의 actor 격리 경고 수정: cellLimit를 nonisolated(unsafe)로 표시, EntitlementStore 클로저에 weak self 캡처 추가, PaywallView 구매 흐름을 EntitlementStore.purchase(product:)로 업데이트.",
+          "pt-BR": "Corrige avisos de isolamento de actor no modo de concorrencia estrita: marca cellLimit como nonisolated(unsafe), adiciona captura weak self em closures de EntitlementStore e atualiza o fluxo de compra do PaywallView para EntitlementStore.purchase(product:).",
+          "pt-PT": "Corrige avisos de isolamento de actor no modo de concorrencia estrita: marca cellLimit como nonisolated(unsafe), adiciona captura weak self em closures de EntitlementStore e atualiza o fluxo de compra do PaywallView para EntitlementStore.purchase(product:).",
+          "de": "Behebt Actor-Isolation-Warnungen im strikten Parallelitaetsmodus: markiert cellLimit als nonisolated(unsafe), fuegt weak self-Capture in EntitlementStore-Closures hinzu und aktualisiert den Kaufablauf in PaywallView auf EntitlementStore.purchase(product:).",
+          "fr": "Corrige les avertissements d'isolation d'actor en mode de concurrence stricte: marque cellLimit comme nonisolated(unsafe), ajoute la capture weak self dans les closures d'EntitlementStore et met a jour le flux d'achat de PaywallView vers EntitlementStore.purchase(product:).",
+          "ar": "إصلاح تحذيرات عزل الممثل في وضع التزامن الصارم: وضع علامة cellLimit كـ nonisolated(unsafe)، وإضافة التقاط weak self في إغلاقات EntitlementStore، وتحديث تدفق شراء PaywallView إلى EntitlementStore.purchase(product:).",
+          "tr": "Kati ezamanliklik modunda actor izolasyon uyarilarini duzeltir: cellLimit'i nonisolated(unsafe) olarak isaretler, EntitlementStore kapanislarina weak self yakalamasi ekler ve PaywallView satin alma akisini EntitlementStore.purchase(product:) ile gunceller."
+        }
+      },
+      {
+        "icon": "hammer",
+        "title": {
+          "zh-Hans": "Worker 与 Pages 修复",
+          "en": "Worker & Pages fixes",
+          "zh-Hant": "Worker 與 Pages 修復",
+          "zh-HK": "Worker 與 Pages 修復",
+          "ja": "Worker と Pages の修正",
+          "es-MX": "Correcciones de Worker y Pages",
+          "ko": "Worker 및 Pages 수정",
+          "pt-BR": "Correcoes de Worker e Pages",
+          "pt-PT": "Correcoes de Worker e Pages",
+          "de": "Worker- und Pages-Korrekturen",
+          "fr": "Corrections Worker et Pages",
+          "ar": "إصلاحات Worker و Pages",
+          "tr": "Worker ve Pages duzeltmeleri"
+        },
+        "detail": {
+          "zh-Hans": "WorkerService 新增 createScript/deleteScript 方法，WorkerUploadMetadata 初始化补全所有参数；Pages 部署视图修复 latestStage 状态访问与域名列表加载。",
+          "en": "WorkerService gains createScript/deleteScript methods with full WorkerUploadMetadata parameters; Pages deployment view fixes latestStage status access and domain list loading.",
+          "zh-Hant": "WorkerService 新增 createScript/deleteScript 方法，WorkerUploadMetadata 初始化補全所有參數；Pages 部署檢視修復 latestStage 狀態存取與網域清單載入。",
+          "zh-HK": "WorkerService 新增 createScript/deleteScript 方法，WorkerUploadMetadata 初始化補全所有參數；Pages 部署視圖修復 latestStage 狀態存取與域名清單載入。",
+          "ja": "WorkerService に createScript/deleteScript メソッドを追加し、WorkerUploadMetadata の初期化ですべてのパラメータを指定するように修正。Pages デプロイビューの latestStage ステータスアクセスとドメインリスト読み込みを修正しました。",
+          "es-MX": "WorkerService gaina metodos createScript/deleteScript con todos los parametros de WorkerUploadMetadata; la vista de despliegue de Pages corrige el acceso al estado de latestStage y la carga de lista de dominios.",
+          "ko": "WorkerService에 createScript/deleteScript 메서드를 추가하고 WorkerUploadMetadata의 모든 매개변수를 초기화하도록 수정했습니다. Pages 배포 뷰의 latestStage 상태 접근 및 도메인 목록 로딩을 수정했습니다.",
+          "pt-BR": "WorkerService ganha metodos createScript/deleteScript com todos os parametros de WorkerUploadMetadata; a tela de implantacao de Pages corrige o acesso ao status de latestStage e o carregamento da lista de dominios.",
+          "pt-PT": "O WorkerService ganha metodos createScript/deleteScript com todos os parametros de WorkerUploadMetadata; a ecra de implementacao de Pages corrige o acesso ao estado de latestStage e o carregamento da lista de dominios.",
+          "de": "WorkerService erhaelt createScript/deleteScript-Methoden mit vollstaendigen WorkerUploadMetadata-Parametern; die Pages-Deployment-Ansicht korrigiert den latestStage-Statuszugriff und das Laden der Domainliste.",
+          "fr": "WorkerService gagne les methodes createScript/deleteScript avec tous les parametres WorkerUploadMetadata; la vue de deploiement Pages corrige l'acces au statut latestStage et le chargement de la liste de domaines.",
+          "ar": "يكتسب WorkerService طرق createScript/deleteScript مع جميع معاملات WorkerUploadMetadata؛ وتصحح طريقة عرض نشر Pages الوصول إلى حالة latestStage وتحميل قائمة النطاقات.",
+          "tr": "WorkerService, tum WorkerUploadMetadata parametreleriyle createScript/deleteScript yontemlerini kazanir; Pages deployman gorunumu latestStage durum erisimini ve domain listesi yuklemeyi duzeltir."
+        }
+      },
+      {
+        "icon": "shield.lefthalf.filled",
+        "title": {
+          "zh-Hans": "域名、防火墙与缓存修复",
+          "en": "Zone, firewall & cache fixes",
+          "zh-Hant": "網域、防火牆與快取修復",
+          "zh-HK": "域名、防火牆與緩存修復",
+          "ja": "ゾーン、ファイアウォール、キャッシュの修正",
+          "es-MX": "Correcciones de zona, firewall y cache",
+          "ko": "영역, 방화벽 및 캐시 수정",
+          "pt-BR": "Correcoes de zona, firewall e cache",
+          "pt-PT": "Correcoes de zona, firewall e cache",
+          "de": "Zone-, Firewall- und Cache-Korrekturen",
+          "fr": "Corrections de zone, pare-feu et cache",
+          "ar": "إصلاحات المنطقة والجدار الناري والتخزين المؤقت",
+          "tr": "Bolge, guvenlik duvari ve onbellek duzeltmeleri"
+        },
+        "detail": {
+          "zh-Hans": "ZoneDetailView 修复 SSL 证书类型（EdgeCertificate/CustomCertificate → SSLCertificatePack）与缓存清理方法名；IPRulesListView 改用 FirewallAccessRule；TransformRule 新增 actionLabel/isURLRewrite 等属性；CacheRules 修复 edgeTTL/browserTTL 字段名与 ruleset 读取；LoadBalancer 修复 Pool/Monitor 类型引用。",
+          "en": "ZoneDetailView fixes SSL certificate types and cache purge method names; IPRulesListView switches to FirewallAccessRule; TransformRule gains actionLabel/isURLRewrite properties; CacheRules fixes edgeTTL/browserTTL field names and ruleset access; LoadBalancer fixes Pool/Monitor type references.",
+          "zh-Hant": "ZoneDetailView 修復 SSL 憑證型別（EdgeCertificate/CustomCertificate → SSLCertificatePack）與快取清理方法名；IPRulesListView 改用 FirewallAccessRule；TransformRule 新增 actionLabel/isURLRewrite 等屬性；CacheRules 修復 edgeTTL/browserTTL 欄位名與 ruleset 讀取；LoadBalancer 修復 Pool/Monitor 型別參照。",
+          "zh-HK": "ZoneDetailView 修復 SSL 證書類型（EdgeCertificate/CustomCertificate → SSLCertificatePack）與緩存清理方法名；IPRulesListView 改用 FirewallAccessRule；TransformRule 新增 actionLabel/isURLRewrite 等屬性；CacheRules 修復 edgeTTL/browserTTL 字段名與 ruleset 讀取；LoadBalancer 修復 Pool/Monitor 類型引用。",
+          "ja": "ZoneDetailView で SSL 証明書のタイプ（EdgeCertificate/CustomCertificate → SSLCertificatePack）とキャッシュパージのメソッド名を修正。IPRulesListView を FirewallAccessRule に切り替え。TransformRule に actionLabel/isURLRewite プロパティを追加。CacheRules の edgeTTL/browserTTL フィールド名と ruleset アクセスを修正。LoadBalancer の Pool/Monitor 型参照を修正。",
+          "es-MX": "ZoneDetailView corrige los tipos de certificado SSL (EdgeCertificate/CustomCertificate → SSLCertificatePack) y los nombres de metodos de purga de cache; IPRulesListView cambia a FirewallAccessRule; TransformRule gana propiedades actionLabel/isURLRewrite; CacheRules corrige nombres de campo edgeTTL/browserTTL y acceso a ruleset; LoadBalancer corrige referencias de tipo Pool/Monitor.",
+          "ko": "ZoneDetailView에서 SSL 인증서 유형(EdgeCertificate/CustomCertificate → SSLCertificatePack)과 캐시 삭제 메서드 이름을 수정했습니다. IPRulesListView를 FirewallAccessRule로 전환했습니다. TransformRule에 actionLabel/isURLRewrite 속성을 추가했습니다. CacheRules의 edgeTTL/browserTTL 필드 이름과 ruleset 접근을 수정했습니다. LoadBalancer의 Pool/Monitor 타입 참조를 수정했습니다.",
+          "pt-BR": "ZoneDetailView corrige os tipos de certificado SSL (EdgeCertificate/CustomCertificate → SSLCertificatePack) e nomes de metodos de limpeza de cache; IPRulesListView muda para FirewallAccessRule; TransformRule ganha propriedades actionLabel/isURLRewrite; CacheRules corrige nomes de campo edgeTTL/browserTTL e acesso ao ruleset; LoadBalancer corrige referencias de tipo Pool/Monitor.",
+          "pt-PT": "O ZoneDetailView corrige os tipos de certificado SSL (EdgeCertificate/CustomCertificate → SSLCertificatePack) e nomes de metodos de limpeza de cache; IPRulesListView muda para FirewallAccessRule; TransformRule ganha propriedades actionLabel/isURLRewrite; CacheRules corrige nomes de campo edgeTTL/browserTTL e acesso ao ruleset; LoadBalancer corrige referencias de tipo Pool/Monitor.",
+          "de": "ZoneDetailView korrigiert SSL-Zertifikatstypen (EdgeCertificate/CustomCertificate → SSLCertificatePack) und Cache-Purge-Methodennamen; IPRulesListView wechselt zu FirewallAccessRule; TransformRule erhaelt actionLabel/isURLRewrite-Eigenschaften; CacheRules korrigiert edgeTTL/browserTTL-Feldnamen und Ruleset-Zugriff; LoadBalancer korrigiert Pool/Monitor-Typreferenzen.",
+          "fr": "ZoneDetailView corrige les types de certificat SSL (EdgeCertificate/CustomCertificate → SSLCertificatePack) et les noms de methodes de purge de cache; IPRulesListView passe a FirewallAccessRule; TransformRule gagne les proprietes actionLabel/isURLRewrite; CacheRules corrige les noms de champ edgeTTL/browserTTL et l'acces au ruleset; LoadBalancer corrige les references de type Pool/Monitor.",
+          "ar": "يصحح ZoneDetailView أنواع شهادة SSL (EdgeCertificate/CustomCertificate → SSLCertificatePack) وأسماء طرق مسح التخزين المؤقت؛ يتحول IPRulesListView إلى FirewallAccessRule؛ يكتسب TransformRule خصائص actionLabel/isURLRewrite؛ يصحح CacheRules أسماء حقول edgeTTL/browserTTL والوصول إلى ruleset؛ يصحح LoadBalancer مراجع نوع Pool/Monitor.",
+          "tr": "ZoneDetailView SSL sertifika tiplerini (EdgeCertificate/CustomCertificate → SSLCertificatePack) ve onbellek temizleme yontem adlarini duzeltir; IPRulesListView FirewallAccessRule'a gecer; TransformRule actionLabel/isURLRewrite ozelliklerini kazanir; CacheRules edgeTTL/browserTTL alan adlarini ve ruleset erisimini duzeltir; LoadBalancer Pool/Monitor tur referanslarini duzeltir."
+        }
+      },
+      {
+        "icon": "icloud.slash",
+        "title": {
+          "zh-Hans": "移除 iCloud 同步",
+          "en": "iCloud sync removed",
+          "zh-Hant": "移除 iCloud 同步",
+          "zh-HK": "移除 iCloud 同步",
+          "ja": "iCloud 同期の削除",
+          "es-MX": "Sincronizacion de iCloud eliminada",
+          "ko": "iCloud 동기화 제거",
+          "pt-BR": "Sincronizacao do iCloud removida",
+          "pt-PT": "Sincronizacao do iCloud removida",
+          "de": "iCloud-Synchronisierung entfernt",
+          "fr": "Synchronisation iCloud supprimee",
+          "ar": "إزالة مزامنة iCloud",
+          "tr": "iCloud senkronizasyonu kaldirildi"
+        },
+        "detail": {
+          "zh-Hans": "移除设置页中已失效的 iCloud 同步开关（引用了未定义的属性），清理 AuthManager 中的 mergeSessionsFromCloud 残留方法。",
+          "en": "Removes the broken iCloud sync toggle from Settings (referenced undefined properties) and cleans up the mergeSessionsFromCloud method in AuthManager.",
+          "zh-Hant": "移除設定頁中已失效的 iCloud 同步開關（參照了未定義的屬性），清理 AuthManager 中的 mergeSessionsFromCloud 殘留方法。",
+          "zh-HK": "移除設定頁中已失效的 iCloud 同步開關（引用了未定義的屬性），清理 AuthManager 中的 mergeSessionsFromCloud 殘留方法。",
+          "ja": "設定ページの壊れた iCloud 同期トグル（未定義のプロパティを参照）を削除し、AuthManager の mergeSessionsFromCloud メソッドをクリーンアップしました。",
+          "es-MX": "Elimina el interruptor de sincronizacion de iCloud roto en Configuracion (que referenciaba propiedades no definidas) y limpia el metodo mergeSessionsFromCloud en AuthManager.",
+          "ko": "설정 페이지에서 손상된 iCloud 동기화 토글(정의되지 않은 속성 참조)을 제거하고 AuthManager의 mergeSessionsFromCloud 메서드를 정리했습니다.",
+          "pt-BR": "Remove o interruptor de sincronizacao do iCloud quebrado em Configuracoes (que referenciava propriedades indefinidas) e limpa o metodo mergeSessionsFromCloud no AuthManager.",
+          "pt-PT": "Remove o interruptor de sincronizacao do iCloud com falha em Configuracoes (que referenciava propriedades indefinidas) e limpa o metodo mergeSessionsFromCloud no AuthManager.",
+          "de": "Entfernt den defekten iCloud-Sync-Schalter aus den Einstellungen (verwies auf undefinierte Eigenschaften) und bereinigt die mergeSessionsFromCloud-Methode im AuthManager.",
+          "fr": "Supprime l'interrupteur de synchronisation iCloud defectueux dans les Parametres (qui referencait des proprietes non definies) et nettoie la methode mergeSessionsFromCloud dans AuthManager.",
+          "ar": "إزالة مفتاح مزامنة iCloud المعطل من الإعدادات (الذي يشير إلى خصائص غير محددة) وتنظيف طريقة mergeSessionsFromCloud في AuthManager.",
+          "tr": "Ayarlar'daki bozuk iCloud senkronizasyon dugmesini (tanimlanmamis ozelliklere basvuruyordu) kaldirir ve AuthManager'daki mergeSessionsFromCloud yontemini temizler."
         }
       }
     ]

@@ -19,23 +19,56 @@
           "pt-PT": "Correcoes de estabilidade de compilacao",
           "de": "Build-Stabilitatskorrekturen",
           "fr": "Corrections de stabilite de compilation",
-          "ar": "اصلاحات استقرار البناء",
-          "tr": "Derleme kararliklik duzeltmeleri"
+          "ar": "إصلاحات استقرار البناء",
+          "tr": "Derleme karariklik duzeltmeleri"
         },
         "detail": {
-          "zh-Hans": "修复上游代码合并后引入的编译错误，同步 iOS 端 Swift 6 并发安全修复。",
-          "en": "Fixes compilation errors introduced after upstream code merge, syncing iOS-side Swift 6 concurrency safety fixes.",
-          "zh-Hant": "修復上游程式碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並行安全修復。",
-          "zh-HK": "修復上游代碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並發安全修復。",
-          "ja": "上流コード統合後に発生したコンパイルエラーを修正し、iOS側のSwift 6並行処理安全性修正を同期しました。",
-          "es-MX": "Corrige errores de compilacion tras la fusion de codigo ascendente, sincronizando las correcciones de seguridad de concurrencia de Swift 6 del lado de iOS.",
-          "ko": "상위 코드 병합 후 발생한 컴파일 오류를 수정하고 iOS 측 Swift 6 동시성 안전 수정을 동기화했습니다.",
-          "pt-BR": "Corrige erros de compilacao apos mesclagem de codigo upstream, sincronizando as correcoes de seguranca de concorrencia do Swift 6 do lado do iOS.",
-          "pt-PT": "Corrige erros de compilacao apos fusao de codigo upstream, sincronizando as correcoes de seguranca de concorrencia do Swift 6 do lado do iOS.",
-          "de": "Behebt Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung und synchronisiert iOS-Seite Swift-6-Parallelitaetssicherheitskorrekturen.",
-          "fr": "Corrige les erreurs de compilation apparues apres la fusion du code amont, en synchronisant les corrections de securite de concurrence Swift 6 cote iOS.",
-          "ar": "اصلاح اخطاء التجميع بعد دمج الكود المنبعث، ومزامنة اصلاحات امن التزامن لـ Swift 6 من جانب iOS.",
-          "tr": "Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini duzeltir ve iOS tarafindaki Swift 6 ezamanliklik guvenlik duzeltmelerini senkronize eder."
+          "zh-Hans": "修复上游代码合并后引入的编译错误，同步 iOS 端 Swift 6 并发安全修复与 iOS 17 兼容性修复。",
+          "en": "Fixes compilation errors introduced after upstream code merge, syncing iOS-side Swift 6 concurrency safety fixes and iOS 17 compatibility fixes.",
+          "zh-Hant": "修復上游程式碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並行安全修復與 iOS 17 相容性修復。",
+          "zh-HK": "修復上游代碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並發安全修復與 iOS 17 相容性修復。",
+          "ja": "上流コード統合後に発生したコンパイルエラーを修正し、iOS側のSwift 6並行処理安全性修正とiOS 17互換性修正を同期しました。",
+          "es-MX": "Corrige errores de compilacion tras la fusion de codigo ascendente, sincronizando las correcciones de seguridad de concurrencia de Swift 6 del lado de iOS y las correcciones de compatibilidad con iOS 17.",
+          "ko": "상위 코드 병합 후 발생한 컴파일 오류를 수정하고 iOS 측 Swift 6 동시성 안전 수정과 iOS 17 호환성 수정을 동기화했습니다.",
+          "pt-BR": "Corrige erros de compilacao apos mesclagem de codigo upstream, sincronizando as correcoes de seguranca de concorrencia do Swift 6 do lado do iOS e as correcoes de compatibilidade do iOS 17.",
+          "pt-PT": "Corrige erros de compilacao apos fusao de codigo upstream, sincronizando as correcoes de seguranca de concorrencia do Swift 6 do lado do iOS e as correcoes de compatibilidade do iOS 17.",
+          "de": "Behebt Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung und synchronisiert iOS-Seite Swift-6-Parallelitaetssicherheitskorrekturen und iOS 17-Kompatibilitaetskorrekturen.",
+          "fr": "Corrige les erreurs de compilation apparues apres la fusion du code amont, en synchronisant les corrections de securite de concurrence Swift 6 cote iOS et les corrections de compatibilite iOS 17.",
+          "ar": "إصلاح أخطاء التجميع بعد دمج الكود المنبعث، ومزامنة اصلاحات امن التزامن لـ Swift 6 من جانب iOS واصلاحات توافق iOS 17.",
+          "tr": "Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini duzeltir ve iOS tarafindaki Swift 6 ezamanliklik guvenlik duzeltmeleri ile iOS 17 uyumluluk duzeltmelerini senkronize eder."
+        }
+      },
+      {
+        "icon": "icloud.slash",
+        "title": {
+          "zh-Hans": "移除 iCloud 同步",
+          "en": "iCloud sync removed",
+          "zh-Hant": "移除 iCloud 同步",
+          "zh-HK": "移除 iCloud 同步",
+          "ja": "iCloud 同期の削除",
+          "es-MX": "Sincronizacion de iCloud eliminada",
+          "ko": "iCloud 동기화 제거",
+          "pt-BR": "Sincronizacao do iCloud removida",
+          "pt-PT": "Sincronizacao do iCloud removida",
+          "de": "iCloud-Synchronisierung entfernt",
+          "fr": "Synchronisation iCloud supprimee",
+          "ar": "إزالة مزامنة iCloud",
+          "tr": "iCloud senkronizasyonu kaldirildi"
+        },
+        "detail": {
+          "zh-Hans": "移除设置页中已失效的 iCloud 同步开关，清理相关残留代码。",
+          "en": "Removes the broken iCloud sync toggle from Settings and cleans up related residual code.",
+          "zh-Hant": "移除設定頁中已失效的 iCloud 同步開關，清理相關殘留程式碼。",
+          "zh-HK": "移除設定頁中已失效的 iCloud 同步開關，清理相關殘留代碼。",
+          "ja": "設定ページの壊れた iCloud 同期トグルを削除し、関連する残余コードをクリーンアップしました。",
+          "es-MX": "Elimina el interruptor de sincronizacion de iCloud roto en Configuracion y limpia el codigo residual relacionado.",
+          "ko": "설정 페이지에서 손상된 iCloud 동기화 토글을 제거하고 관련 잔여 코드를 정리했습니다.",
+          "pt-BR": "Remove o interruptor de sincronizacao do iCloud quebrado em Configuracoes e limpa o codigo residual relacionado.",
+          "pt-PT": "Remove o interruptor de sincronizacao do iCloud com falha em Configuracoes e limpa o codigo residual relacionado.",
+          "de": "Entfernt den defekten iCloud-Sync-Schalter aus den Einstellungen und bereinigt den zugehorigen Restcode.",
+          "fr": "Supprime l'interrupteur de synchronisation iCloud defectueux dans les Parametres et nettoie le code residual associe.",
+          "ar": "إزالة مفتاح مزامنة iCloud المعطل من الإعدادات وتنظيف الكود المتبقي المرتبط.",
+          "tr": "Ayarlar'daki bozuk iCloud senkronizasyon dugmesini kaldirir ve ilgili artik kodu temizler."
         }
       }
     ]

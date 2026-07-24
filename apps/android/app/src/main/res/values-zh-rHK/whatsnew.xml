@@ -2,7 +2,9 @@
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
     <string name="whatsnew_1_7_1_0_title">編譯穩定性修復</string>
-    <string name="whatsnew_1_7_1_0_detail">修復上游代碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並發安全修復。</string>
+    <string name="whatsnew_1_7_1_0_detail">修復上游代碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並發安全修復與 iOS 17 相容性修復。</string>
+    <string name="whatsnew_1_7_1_1_title">移除 iCloud 同步</string>
+    <string name="whatsnew_1_7_1_1_detail">移除設定頁中已失效的 iCloud 同步開關，清理相關殘留代碼。</string>
     <string name="whatsnew_1_7_0_0_title">一處搜遍所有資源</string>
     <string name="whatsnew_1_7_0_0_detail">概覽頁頂部的放大鏡可一次搜尋域名、Worker、R2 儲存桶、D1 資料庫、KV 命名空間與隧道，點一下直達；任何資源都可以加星固定到概覽頁。</string>
     <string name="whatsnew_1_7_0_1_title">告警中心</string>

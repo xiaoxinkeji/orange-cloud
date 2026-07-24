@@ -2,7 +2,9 @@
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
     <string name="whatsnew_1_7_1_0_title">Corrections de stabilite de compilation</string>
-    <string name="whatsnew_1_7_1_0_detail">Corrige les erreurs de compilation apparues apres la fusion du code amont, en synchronisant les corrections de securite de concurrence Swift 6 cote iOS.</string>
+    <string name="whatsnew_1_7_1_0_detail">Corrige les erreurs de compilation apparues apres la fusion du code amont, en synchronisant les corrections de securite de concurrence Swift 6 cote iOS et les corrections de compatibilite iOS 17.</string>
+    <string name="whatsnew_1_7_1_1_title">Synchronisation iCloud supprimee</string>
+    <string name="whatsnew_1_7_1_1_detail">Supprime l\'interrupteur de synchronisation iCloud defectueux dans les Parametres et nettoie le code residual associe.</string>
     <string name="whatsnew_1_7_0_0_title">Tout chercher au même endroit</string>
     <string name="whatsnew_1_7_0_0_detail">La loupe de l’aperçu recherche d’un coup les domaines, Workers, buckets R2, bases D1, espaces de noms KV et tunnels : touchez un résultat pour y aller. Et n’importe quelle ressource peut désormais être épinglée à l’aperçu.</string>
     <string name="whatsnew_1_7_0_1_title">Centre d’alertes</string>

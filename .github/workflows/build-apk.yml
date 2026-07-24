@@ -1,0 +1,76 @@
+name: Build Unsigned APK
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version tag (e.g. v1.7.1)"
+        required: true
+        default: "v1.7.1"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set version info
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RAW="${{ github.event.inputs.version }}"
+          else
+            RAW="${{ github.ref_name }}"
+          fi
+          echo "tag=$RAW" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build ossRelease APK
+        working-directory: apps/android
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleOssRelease --no-daemon --stacktrace
+
+      - name: Prepare APK
+        id: apk
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          SRC="apps/android/app/build/outputs/apk/oss/release/app-oss-release.apk"
+          DEST="OrangeCloud-$TAG-oss-unsigned.apk"
+          cp "$SRC" "$DEST"
+          ls -lh "$DEST"
+
+          CKSUM=$(sha256sum "$DEST" | awk '{print $1}')
+          echo "checksum=$CKSUM" >> $GITHUB_OUTPUT
+          echo "SHA256: $CKSUM"
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: OrangeCloud-unsigned-apk
+          path: OrangeCloud-${{ steps.version.outputs.tag }}-oss-unsigned.apk
+
+      - name: Attach APK to GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          files: OrangeCloud-${{ steps.version.outputs.tag }}-oss-unsigned.apk
+          draft: false
+          prerelease: false

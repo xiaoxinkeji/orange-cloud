@@ -10,6 +10,18 @@ import Foundation
 
 nonisolated enum WhatsNewGenerated {
     static let releases: [WhatsNewRelease] = [
+        WhatsNewRelease(version: "1.9.2", items: [
+            WhatsNewItem(
+                icon:   "wrench.and.screwdriver",
+                title:  String(localized: "编译稳定性修复", table: "WhatsNew"),
+                detail: String(localized: "修复上游代码合并后引入的重复方法声明、类型不匹配等编译错误，以及 Swift 6 严格并发模式下的 actor 隔离警告。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "doc.text.magnifyingglass",
+                title:  String(localized: "编码兼容性修复", table: "WhatsNew"),
+                detail: String(localized: "修复 Swift 源文件 CRLF 行尾在 macOS CI 上导致的「字符串字面量未终止」错误，确保跨平台编译一致。", table: "WhatsNew")
+            )
+        ]),
         WhatsNewRelease(version: "1.9.1", items: [
             WhatsNewItem(
                 icon:   "magnifyingglass",

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
+    <string name="whatsnew_1_7_1_0_title">编译稳定性修复</string>
+    <string name="whatsnew_1_7_1_0_detail">修复上游代码合并后引入的编译错误，同步 iOS 端 Swift 6 并发安全修复。</string>
     <string name="whatsnew_1_7_0_0_title">一处搜遍所有资源</string>
     <string name="whatsnew_1_7_0_0_detail">概览页顶栏的放大镜可一次搜索域名、Worker、R2 存储桶、D1 数据库、KV 命名空间与隧道，点一下直达；任意资源都能星标固定到概览页。</string>
     <string name="whatsnew_1_7_0_1_title">告警中心</string>

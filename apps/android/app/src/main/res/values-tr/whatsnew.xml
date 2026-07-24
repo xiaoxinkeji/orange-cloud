@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
+    <string name="whatsnew_1_7_1_0_title">Derleme kararliklik duzeltmeleri</string>
+    <string name="whatsnew_1_7_1_0_detail">Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini duzeltir ve iOS tarafindaki Swift 6 ezamanliklik guvenlik duzeltmelerini senkronize eder.</string>
     <string name="whatsnew_1_7_0_0_title">Her şeyi tek yerden arayın</string>
     <string name="whatsnew_1_7_0_0_detail">Genel bakıştaki büyüteç; alan adlarını, Worker’ları, R2 bucket’larını, D1 veritabanlarını, KV ad alanlarını ve tünelleri tek seferde arar, dokununca doğrudan açar. Artık her kaynağı yıldızlayıp genel bakışa sabitleyebilirsiniz.</string>
     <string name="whatsnew_1_7_0_1_title">Uyarı merkezi</string>

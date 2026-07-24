@@ -1,5 +1,46 @@
 [
   {
+    "version": "1.7.1",
+    "date": "2026.07.24",
+    "channel": "Google Play",
+    "inApp": true,
+    "items": [
+      {
+        "icon": "wrench.and.screwdriver",
+        "title": {
+          "zh-Hans": "编译稳定性修复",
+          "en": "Build stability fixes",
+          "zh-Hant": "編譯穩定性修復",
+          "zh-HK": "編譯穩定性修復",
+          "ja": "ビルド安定性の修正",
+          "es-MX": "Correcciones de estabilidad de compilacion",
+          "ko": "빌드 안정성 수정",
+          "pt-BR": "Correcoes de estabilidade de build",
+          "pt-PT": "Correcoes de estabilidade de compilacao",
+          "de": "Build-Stabilitatskorrekturen",
+          "fr": "Corrections de stabilite de compilation",
+          "ar": "اصلاحات استقرار البناء",
+          "tr": "Derleme kararliklik duzeltmeleri"
+        },
+        "detail": {
+          "zh-Hans": "修复上游代码合并后引入的编译错误，同步 iOS 端 Swift 6 并发安全修复。",
+          "en": "Fixes compilation errors introduced after upstream code merge, syncing iOS-side Swift 6 concurrency safety fixes.",
+          "zh-Hant": "修復上游程式碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並行安全修復。",
+          "zh-HK": "修復上游代碼合併後引入的編譯錯誤，同步 iOS 端 Swift 6 並發安全修復。",
+          "ja": "上流コード統合後に発生したコンパイルエラーを修正し、iOS側のSwift 6並行処理安全性修正を同期しました。",
+          "es-MX": "Corrige errores de compilacion tras la fusion de codigo ascendente, sincronizando las correcciones de seguridad de concurrencia de Swift 6 del lado de iOS.",
+          "ko": "상위 코드 병합 후 발생한 컴파일 오류를 수정하고 iOS 측 Swift 6 동시성 안전 수정을 동기화했습니다.",
+          "pt-BR": "Corrige erros de compilacao apos mesclagem de codigo upstream, sincronizando as correcoes de seguranca de concorrencia do Swift 6 do lado do iOS.",
+          "pt-PT": "Corrige erros de compilacao apos fusao de codigo upstream, sincronizando as correcoes de seguranca de concorrencia do Swift 6 do lado do iOS.",
+          "de": "Behebt Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung und synchronisiert iOS-Seite Swift-6-Parallelitaetssicherheitskorrekturen.",
+          "fr": "Corrige les erreurs de compilation apparues apres la fusion du code amont, en synchronisant les corrections de securite de concurrence Swift 6 cote iOS.",
+          "ar": "اصلاح اخطاء التجميع بعد دمج الكود المنبعث، ومزامنة اصلاحات امن التزامن لـ Swift 6 من جانب iOS.",
+          "tr": "Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini duzeltir ve iOS tarafindaki Swift 6 ezamanliklik guvenlik duzeltmelerini senkronize eder."
+        }
+      }
+    ]
+  },
+  {
     "version": "1.7.0",
     "date": "2026.07.20",
     "channel": "Google Play",

@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- ⚠️ 自动生成 —— 请勿手改。改 packages/changelog/android.json 后运行 `pnpm changelog:gen`。 -->
 <resources>
+    <string name="whatsnew_1_7_1_0_title">Correcciones de estabilidad de compilacion</string>
+    <string name="whatsnew_1_7_1_0_detail">Corrige errores de compilacion tras la fusion de codigo ascendente, sincronizando las correcciones de seguridad de concurrencia de Swift 6 del lado de iOS.</string>
     <string name="whatsnew_1_7_0_0_title">Busca todo desde un solo lugar</string>
     <string name="whatsnew_1_7_0_0_detail">La lupa de la pantalla de resumen busca a la vez dominios, Workers, buckets R2, bases de datos D1, espacios de nombres KV y túneles; toca un resultado para ir directo. Además, ahora puedes fijar cualquier recurso al resumen con una estrella.</string>
     <string name="whatsnew_1_7_0_1_title">Centro de alertas</string>

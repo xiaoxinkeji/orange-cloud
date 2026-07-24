@@ -1,5 +1,79 @@
 [
   {
+    "version": "1.9.2",
+    "date": "2026.07.24",
+    "channel": "App Store",
+    "inApp": true,
+    "items": [
+      {
+        "icon": "wrench.and.screwdriver",
+        "title": {
+          "zh-Hans": "编译稳定性修复",
+          "en": "Build stability fixes",
+          "zh-Hant": "編譯穩定性修復",
+          "zh-HK": "編譯穩定性修復",
+          "ja": "ビルド安定性の修正",
+          "es-MX": "Correcciones de estabilidad de compilacion",
+          "ko": "빌드 안정성 수정",
+          "pt-BR": "Correcoes de estabilidade de build",
+          "pt-PT": "Correcoes de estabilidade de compilacao",
+          "de": "Build-Stabilitatskorrekturen",
+          "fr": "Corrections de stabilite de compilation",
+          "ar": "اصلاحات استقرار البناء",
+          "tr": "Derleme kararliklik duzeltmeleri"
+        },
+        "detail": {
+          "zh-Hans": "修复上游代码合并后引入的重复方法声明、类型不匹配等编译错误，以及 Swift 6 严格并发模式下的 actor 隔离警告。",
+          "en": "Fixes compilation errors introduced after upstream code merge: duplicate method declarations, type mismatches, and resolves Swift 6 strict concurrency actor isolation warnings.",
+          "zh-Hant": "修復上游程式碼合併後引入的重複方法宣告、型別不符等編譯錯誤，以及 Swift 6 嚴格並行模式下的 actor 隔離警告。",
+          "zh-HK": "修復上游代碼合併後引入的重複方法聲明、類型不匹配等編譯錯誤，以及 Swift 6 嚴格並發模式下的 actor 隔離警告。",
+          "ja": "上流コード統合後に発生した重複メソッド宣言や型不一致などのコンパイルエラーと、Swift 6 厳密並行処理の actor 分離警告を修正しました。",
+          "es-MX": "Corrige errores de compilacion tras la fusion de codigo ascendente: declaraciones de metodos duplicadas, tipos no coincidentes, y resuelve las advertencias de aislamiento de actor en el modo de concurrencia estricta de Swift 6.",
+          "ko": "상위 코드 병합 후 발생한 중복 메서드 선언, 타입 불일치 등 컴파일 오류를 수정하고 Swift 6 엄격 동시성 actor 격리 경고를 해결했습니다.",
+          "pt-BR": "Corrige erros de compilacao apos mesclagem de codigo upstream: declaracoes de metodos duplicadas, tipos incompativeis, e resolve avisos de isolamento de actor no modo de concorrencia estrita do Swift 6.",
+          "pt-PT": "Corrige erros de compilacao apos fusao de codigo upstream: declaracoes de metodos duplicadas, tipos incompativeis, e resolve avisos de isolamento de actor no modo de concorrencia estrita do Swift 6.",
+          "de": "Behebt Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung: doppelte Methodendeklarationen, Typkonflikte, und loest Actor-Isolation-Warnungen im strikten Swift-6-Parallelitaetsmodus.",
+          "fr": "Corrige les erreurs de compilation apparues apres la fusion du code amont: declarations de methodes en double, types incompatibles, et resout les avertissements d'isolation d'actor en mode de concurrence stricte de Swift 6.",
+          "ar": "اصلاح اخطاء التجميع بعد دمج الكود المنبعث: تصريحات الطرق المكررة، عدم تطابق الانواع، وحل تحذيرات عزل الممثل في وضع التزامن الصارم لـ Swift 6.",
+          "tr": "Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini: yinelenen yontem bildirimleri, tur uyumsuzluklari duzeltir ve Swift 6 kati ezamanlik actor izolasyon uyarilarini cozer."
+        }
+      },
+      {
+        "icon": "doc.text.magnifyingglass",
+        "title": {
+          "zh-Hans": "编码兼容性修复",
+          "en": "Encoding compatibility fix",
+          "zh-Hant": "編碼相容性修復",
+          "zh-HK": "編碼相容性修復",
+          "ja": "エンコード互換性の修正",
+          "es-MX": "Correccion de compatibilidad de codificacion",
+          "ko": "인코딩 호환성 수정",
+          "pt-BR": "Correcao de compatibilidade de codificacao",
+          "pt-PT": "Correcao de compatibilidade de codificacao",
+          "de": "Kodierungskompatibilitatskorrektur",
+          "fr": "Correction de compatibilite d'encodage",
+          "ar": "اصلاح توافق الترميز",
+          "tr": "Kodlama uyumluluk duzeltmesi"
+        },
+        "detail": {
+          "zh-Hans": "修复 Swift 源文件 CRLF 行尾在 macOS CI 上导致的「字符串字面量未终止」错误，确保跨平台编译一致。",
+          "en": "Fixes unterminated string literal errors on macOS CI caused by CRLF line endings in Swift source files, ensuring consistent cross-platform compilation.",
+          "zh-Hant": "修復 Swift 原始碼 CRLF 行尾在 macOS CI 上導致的「字串字面量未終止」錯誤，確保跨平台編譯一致。",
+          "zh-HK": "修復 Swift 原始碼 CRLF 行尾在 macOS CI 上導致的「字串字面量未終止」錯誤，確保跨平台編譯一致。",
+          "ja": "Swift ソースファイルの CRLF 行末により macOS CI で発生する「文字列リテラルが終了していない」エラーを修正し、クロスプラットフォームのコンパイル一貫性を確保しました。",
+          "es-MX": "Corrige errores de literal de cadena sin terminar en CI de macOS causados por finales de linea CRLF en archivos Swift, garantizando compilacion consistente entre plataformas.",
+          "ko": "Swift 소스 파일의 CRLF 줄 끝으로 인해 macOS CI에서 발생하는 종료되지 않은 문자열 리터럴 오류를 수정하고 크로스 플랫폼 컴파일 일관성을 보장합니다.",
+          "pt-BR": "Corrige erros de literal de string nao terminado no CI do macOS causados por finais de linha CRLF em arquivos Swift, garantindo compilacao consistente entre plataformas.",
+          "pt-PT": "Corrige erros de literal de cadeia nao terminado no CI do macOS causados por finais de linha CRLF em ficheiros Swift, garantindo compilacao consistente entre plataformas.",
+          "de": "Behebt nicht beendetes Zeichenkettenliteral-Fehler auf macOS-CI durch CRLF-Zeilenenden in Swift-Dateien und stellt konsistente plattformuebergreifende Kompilierung sicher.",
+          "fr": "Corrige les erreurs de litteral de chaine non termine sur CI macOS causes par les fins de ligne CRLF dans les fichiers Swift, assurant une compilation coherente multiplateforme.",
+          "ar": "اصلاح اخطاء السلسلة النصية غير المنتهية على macOS CI الناتجة عن نهايات اسطر CRLF في ملفات Swift، مما يضمن تجميعاً متسقاً عبر الانظمة الاساسية.",
+          "tr": "Swift kaynak dosyalarindaki CRLF satir sonlarinin macOS CI'da neden oldugu sonlandirilmamis dize literal hatalarini duzeltir ve platformlar arasi tutarli derleme saglar."
+        }
+      }
+    ]
+  },
+  {
     "version": "1.9.1",
     "date": "2026.07.22",
     "channel": "App Store",

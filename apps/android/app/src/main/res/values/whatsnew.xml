@@ -5,6 +5,8 @@
     <string name="whatsnew_1_7_1_0_detail">修复上游代码合并后引入的编译错误，同步 iOS 端 Swift 6 并发安全修复与 iOS 17 兼容性修复。</string>
     <string name="whatsnew_1_7_1_1_title">移除 iCloud 同步</string>
     <string name="whatsnew_1_7_1_1_detail">移除设置页中已失效的 iCloud 同步开关，清理相关残留代码。</string>
+    <string name="whatsnew_1_7_1_2_title">Brotli 压缩自动启用</string>
+    <string name="whatsnew_1_7_1_2_detail">移除已废弃的 Brotli 区域设置开关（Cloudflare 2024-08-15 废弃），Brotli 压缩现在对所有非 Enterprise 区域自动启用。Enterprise 区域请使用压缩规则。</string>
     <string name="whatsnew_1_7_0_0_title">一处搜遍所有资源</string>
     <string name="whatsnew_1_7_0_0_detail">概览页顶栏的放大镜可一次搜索域名、Worker、R2 存储桶、D1 数据库、KV 命名空间与隧道，点一下直达；任意资源都能星标固定到概览页。</string>
     <string name="whatsnew_1_7_0_1_title">告警中心</string>

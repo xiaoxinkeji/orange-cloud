@@ -5,6 +5,8 @@
     <string name="whatsnew_1_7_1_0_detail">上流コード統合後に発生したコンパイルエラーを修正し、iOS側のSwift 6並行処理安全性修正とiOS 17互換性修正を同期しました。</string>
     <string name="whatsnew_1_7_1_1_title">iCloud 同期の削除</string>
     <string name="whatsnew_1_7_1_1_detail">設定ページの壊れた iCloud 同期トグルを削除し、関連する残余コードをクリーンアップしました。</string>
+    <string name="whatsnew_1_7_1_2_title">Brotli 圧縮の自動有効化</string>
+    <string name="whatsnew_1_7_1_2_detail">廃止された Brotli ゾーン設定トグルを削除しました（Cloudflare は 2024-08-15 に廃止）。Brotli 圧縮は非 Enterprise ゾーンで自動的に有効になります。Enterprise ゾーンでは圧縮ルールを使用してください。</string>
     <string name="whatsnew_1_7_0_0_title">すべてのリソースをまとめて検索</string>
     <string name="whatsnew_1_7_0_0_detail">概要ページの虫めがねから、ドメイン・Worker・R2 バケット・D1 データベース・KV ネームスペース・トンネルをまとめて検索でき、タップですぐ移動できます。どのリソースもスターを付けて概要ページに固定できます。</string>
     <string name="whatsnew_1_7_0_1_title">アラートセンター</string>

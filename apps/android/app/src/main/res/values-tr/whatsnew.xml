@@ -5,6 +5,8 @@
     <string name="whatsnew_1_7_1_0_detail">Yukari akis kod birlestirmesinden sonra olusan derleme hatalarini duzeltir ve iOS tarafindaki Swift 6 ezamanliklik guvenlik duzeltmeleri ile iOS 17 uyumluluk duzeltmelerini senkronize eder.</string>
     <string name="whatsnew_1_7_1_1_title">iCloud senkronizasyonu kaldirildi</string>
     <string name="whatsnew_1_7_1_1_detail">Ayarlar\'daki bozuk iCloud senkronizasyon dugmesini kaldirir ve ilgili artik kodu temizler.</string>
+    <string name="whatsnew_1_7_1_2_title">Brotli sikistirma otomatik etkin</string>
+    <string name="whatsnew_1_7_1_2_detail">Kullanimdan kaldirilan Brotli bolge ayar dugmesini kaldirir (Cloudflare 2024-08-15\'te kullanima kapatmisti). Brotli sikistirma artik tum Enterprise disi bolgelerde otomatik olarak etkin. Enterprise bolgeler Sikistirma Kurallari\'ni kullanmalidir.</string>
     <string name="whatsnew_1_7_0_0_title">Her şeyi tek yerden arayın</string>
     <string name="whatsnew_1_7_0_0_detail">Genel bakıştaki büyüteç; alan adlarını, Worker’ları, R2 bucket’larını, D1 veritabanlarını, KV ad alanlarını ve tünelleri tek seferde arar, dokununca doğrudan açar. Artık her kaynağı yıldızlayıp genel bakışa sabitleyebilirsiniz.</string>
     <string name="whatsnew_1_7_0_1_title">Uyarı merkezi</string>

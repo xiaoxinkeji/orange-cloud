@@ -5,6 +5,8 @@
     <string name="whatsnew_1_7_1_0_detail">Behebt Kompilierungsfehler nach Upstream-Code-Zusammenfuehrung und synchronisiert iOS-Seite Swift-6-Parallelitaetssicherheitskorrekturen und iOS 17-Kompatibilitaetskorrekturen.</string>
     <string name="whatsnew_1_7_1_1_title">iCloud-Synchronisierung entfernt</string>
     <string name="whatsnew_1_7_1_1_detail">Entfernt den defekten iCloud-Sync-Schalter aus den Einstellungen und bereinigt den zugehorigen Restcode.</string>
+    <string name="whatsnew_1_7_1_2_title">Brotli-Komprimierung automatisch aktiviert</string>
+    <string name="whatsnew_1_7_1_2_detail">Entfernt den veralteten Brotli-Zoneneinstellungsschalter (Cloudflare veraltete ihn am 2024-08-15). Brotli-Komprimierung ist nun fur alle nicht-Enterprise-Zonen automatisch aktiviert. Enterprise-Zonen sollten Komprimierungsregeln verwenden.</string>
     <string name="whatsnew_1_7_0_0_title">Alles an einer Stelle suchen</string>
     <string name="whatsnew_1_7_0_0_detail">Über die Lupe in der Übersicht durchsuchst du Domains, Workers, R2-Buckets, D1-Datenbanken, KV-Namespaces und Tunnel auf einmal – ein Tippen führt direkt hin. Und jede Ressource lässt sich per Stern an die Übersicht heften.</string>
     <string name="whatsnew_1_7_0_1_title">Warnungszentrale</string>

@@ -235,6 +235,39 @@
           "ar": "إزالة مفتاح مزامنة iCloud المعطل من الإعدادات (الذي يشير إلى خصائص غير محددة) وتنظيف طريقة mergeSessionsFromCloud في AuthManager.",
           "tr": "Ayarlar'daki bozuk iCloud senkronizasyon dugmesini (tanimlanmamis ozelliklere basvuruyordu) kaldirir ve AuthManager'daki mergeSessionsFromCloud yontemini temizler."
         }
+      },
+      {
+        "icon": "archivebox.slash",
+        "title": {
+          "zh-Hans": "Brotli 压缩自动启用",
+          "en": "Brotli compression auto-enabled",
+          "zh-Hant": "Brotli 壓縮自動啟用",
+          "zh-HK": "Brotli 壓縮自動啟用",
+          "ja": "Brotli 圧縮の自動有効化",
+          "es-MX": "Compresion Brotli habilitada automaticamente",
+          "ko": "Brotli 압축 자동 활성화",
+          "pt-BR": "Compressao Brotli ativada automaticamente",
+          "pt-PT": "Compressao Brotli ativada automaticamente",
+          "de": "Brotli-Komprimierung automatisch aktiviert",
+          "fr": "Compression Brotli activee automatiquement",
+          "ar": "تمكين ضغط Brotli تلقائياً",
+          "tr": "Brotli sikistirma otomatik etkin"
+        },
+        "detail": {
+          "zh-Hans": "移除已废弃的 Brotli 区域设置开关（Cloudflare 2024-08-15 废弃），Brotli 压缩现在对所有非 Enterprise 区域自动启用。Enterprise 区域请使用压缩规则。",
+          "en": "Removes the deprecated Brotli zone setting toggle (Cloudflare deprecated it 2024-08-15). Brotli compression is now automatically enabled for all non-Enterprise zones. Enterprise zones should use Compression Rules.",
+          "zh-Hant": "移除已廢棄的 Brotli 區域設定開關（Cloudflare 2024-08-15 廢棄），Brotli 壓縮現在對所有非 Enterprise 區域自動啟用。Enterprise 區域請使用壓縮規則。",
+          "zh-HK": "移除已廢棄的 Brotli 區域設定開關（Cloudflare 2024-08-15 廢棄），Brotli 壓縮現在對所有非 Enterprise 區域自動啟用。Enterprise 區域請使用壓縮規則。",
+          "ja": "廃止された Brotli ゾーン設定トグルを削除しました（Cloudflare は 2024-08-15 に廃止）。Brotli 圧縮は非 Enterprise ゾーンで自動的に有効になります。Enterprise ゾーンでは圧縮ルールを使用してください。",
+          "es-MX": "Elimina el interruptor de configuracion de zona Brotli obsoleto (Cloudflare lo declaro obsoleto el 2024-08-15). La compresion Brotli ahora esta habilitada automaticamente para todas las zonas no Enterprise. Las zonas Enterprise deben usar Reglas de compresion.",
+          "ko": "더 이상 사용되지 않는 Brotli 영역 설정 토글을 제거했습니다(Cloudflare 2024-08-15 폐지). Brotli 압축은 이제 모든 비 Enterprise 영역에서 자동으로 활성화됩니다. Enterprise 영역은 압축 규칙을 사용하세요.",
+          "pt-BR": "Remove o interruptor de configuracao de zona Brotli obsoleto (Cloudflare o descontinuou em 2024-08-15). A compressao Brotli agora esta ativada automaticamente para todas as zonas nao Enterprise. Zonas Enterprise devem usar Regras de compressao.",
+          "pt-PT": "Remove o interruptor de configuracao de zona Brotli obsoleto (Cloudflare o descontinuou em 2024-08-15). A compressao Brotli agora esta ativada automaticamente para todas as zonas nao Enterprise. Zonas Enterprise devem usar Regras de compressao.",
+          "de": "Entfernt den veralteten Brotli-Zoneneinstellungsschalter (Cloudflare veraltete ihn am 2024-08-15). Brotli-Komprimierung ist nun fur alle nicht-Enterprise-Zonen automatisch aktiviert. Enterprise-Zonen sollten Komprimierungsregeln verwenden.",
+          "fr": "Supprime l'interrupteur de parametre de zone Brotli obsolete (Cloudflare l'a rendu obsolete le 2024-08-15). La compression Brotli est maintenant activee automatiquement pour toutes les zones non-Enterprise. Les zones Enterprise doivent utiliser les Regles de compression.",
+          "ar": "إزالة مفتاح إعداد منطقة Brotli المهمل (أهملته Cloudflare في 2024-08-15). أصبح ضغط Brotli الآن ممكناً تلقائياً لجميع المناطق غير Enterprise. يجب على مناطق Enterprise استخدام قواعد الضغط.",
+          "tr": "Kullanimdan kaldirilan Brotli bolge ayar dugmesini kaldirir (Cloudflare 2024-08-15'te kullanima kapatmisti). Brotli sikistirma artik tum Enterprise disi bolgelerde otomatik olarak etkin. Enterprise bolgeler Sikistirma Kurallari'ni kullanmalidir."
+        }
       }
     ]
   },

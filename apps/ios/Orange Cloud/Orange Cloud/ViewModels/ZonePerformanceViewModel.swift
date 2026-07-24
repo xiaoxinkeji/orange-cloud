@@ -2,9 +2,10 @@
 //  ZonePerformanceViewModel.swift
 //  Orange Cloud
 //
-//  Zone 详情页「性能与缓存」面板：网络优化开关（Brotli / HTTP2 / HTTP3 / 0-RTT /
+//  Zone 详情页「性能与缓存」面板：网络优化开关（HTTP2 / HTTP3 / 0-RTT /
 //  Early Hints / WebSockets / IPv6）+ 缓存控制（缓存级别 / Always Online / 查询字符串排序）。
 //  全部走通用 zone 设置端点，读 zone-settings.read，写 zone-settings.write。
+//  Brotli 已废弃（Cloudflare 2024-08-15），非 Enterprise 自动启用，Enterprise 用压缩规则。
 //
 
 import Foundation
@@ -30,7 +31,8 @@ nonisolated enum CacheLevel: String, CaseIterable, Identifiable, Sendable {
 final class ZonePerformanceViewModel {
 
     /// 网络优化里的 on/off 设置，按 Cloudflare 仪表盘顺序
-    static let networkToggles = ["brotli", "http2", "http3", "0rtt", "early_hints", "websockets", "ipv6"]
+    /// brotli 已废弃（2024-08-15）：非 Enterprise 自动启用，Enterprise 用压缩规则
+    static let networkToggles = ["http2", "http3", "0rtt", "early_hints", "websockets", "ipv6"]
 
     private(set) var values: [String: String] = [:]
     private(set) var loaded = false
@@ -55,7 +57,6 @@ final class ZonePerformanceViewModel {
         isLoading = true
         defer { isLoading = false }
 
-        async let brotli      = service.getSetting(zoneId: zoneId, setting: "brotli")
         async let http2       = service.getSetting(zoneId: zoneId, setting: "http2")
         async let http3       = service.getSetting(zoneId: zoneId, setting: "http3")
         async let zeroRTT     = service.getSetting(zoneId: zoneId, setting: "0rtt")
@@ -67,7 +68,6 @@ final class ZonePerformanceViewModel {
         async let sortQS      = service.getSetting(zoneId: zoneId, setting: "sort_query_string_for_cache")
 
         var acc: [String: String] = [:]
-        if let v = try? await brotli       { acc["brotli"] = v }
         if let v = try? await http2        { acc["http2"] = v }
         if let v = try? await http3        { acc["http3"] = v }
         if let v = try? await zeroRTT      { acc["0rtt"] = v }

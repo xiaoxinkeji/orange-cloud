@@ -5,6 +5,8 @@
     <string name="whatsnew_1_7_1_0_detail">Fixes compilation errors introduced after upstream code merge, syncing iOS-side Swift 6 concurrency safety fixes and iOS 17 compatibility fixes.</string>
     <string name="whatsnew_1_7_1_1_title">iCloud sync removed</string>
     <string name="whatsnew_1_7_1_1_detail">Removes the broken iCloud sync toggle from Settings and cleans up related residual code.</string>
+    <string name="whatsnew_1_7_1_2_title">Brotli compression auto-enabled</string>
+    <string name="whatsnew_1_7_1_2_detail">Removes the deprecated Brotli zone setting toggle (Cloudflare deprecated it 2024-08-15). Brotli compression is now automatically enabled for all non-Enterprise zones. Enterprise zones should use Compression Rules.</string>
     <string name="whatsnew_1_7_0_0_title">Search everything from one place</string>
     <string name="whatsnew_1_7_0_0_detail">The magnifier on the overview searches domains, Workers, R2 buckets, D1 databases, KV namespaces and tunnels at once — tap a result to go straight there. And any resource can now be starred to the overview.</string>
     <string name="whatsnew_1_7_0_1_title">Alert center</string>

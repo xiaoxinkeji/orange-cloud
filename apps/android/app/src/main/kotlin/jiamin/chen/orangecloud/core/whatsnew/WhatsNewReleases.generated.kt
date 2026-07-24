@@ -9,6 +9,7 @@ internal val whatsNewReleases: List<WhatsNewRelease> = listOf(
         items = listOf(
             WhatsNewItem(R.string.whatsnew_1_7_1_0_title, R.string.whatsnew_1_7_1_0_detail),
             WhatsNewItem(R.string.whatsnew_1_7_1_1_title, R.string.whatsnew_1_7_1_1_detail),
+            WhatsNewItem(R.string.whatsnew_1_7_1_2_title, R.string.whatsnew_1_7_1_2_detail),
         ),
     ),
     WhatsNewRelease(

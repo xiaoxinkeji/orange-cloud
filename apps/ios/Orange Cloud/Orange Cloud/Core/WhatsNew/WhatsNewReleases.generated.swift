@@ -45,6 +45,11 @@ nonisolated enum WhatsNewGenerated {
                 icon:   "icloud.slash",
                 title:  String(localized: "移除 iCloud 同步", table: "WhatsNew"),
                 detail: String(localized: "移除设置页中已失效的 iCloud 同步开关（引用了未定义的属性），清理 AuthManager 中的 mergeSessionsFromCloud 残留方法。", table: "WhatsNew")
+            ),
+            WhatsNewItem(
+                icon:   "archivebox.slash",
+                title:  String(localized: "Brotli 压缩自动启用", table: "WhatsNew"),
+                detail: String(localized: "移除已废弃的 Brotli 区域设置开关（Cloudflare 2024-08-15 废弃），Brotli 压缩现在对所有非 Enterprise 区域自动启用。Enterprise 区域请使用压缩规则。", table: "WhatsNew")
             )
         ]),
         WhatsNewRelease(version: "1.9.1", items: [

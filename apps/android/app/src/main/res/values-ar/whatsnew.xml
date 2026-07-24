@@ -5,6 +5,8 @@
     <string name="whatsnew_1_7_1_0_detail">إصلاح أخطاء التجميع بعد دمج الكود المنبعث، ومزامنة اصلاحات امن التزامن لـ Swift 6 من جانب iOS واصلاحات توافق iOS 17.</string>
     <string name="whatsnew_1_7_1_1_title">إزالة مزامنة iCloud</string>
     <string name="whatsnew_1_7_1_1_detail">إزالة مفتاح مزامنة iCloud المعطل من الإعدادات وتنظيف الكود المتبقي المرتبط.</string>
+    <string name="whatsnew_1_7_1_2_title">تمكين ضغط Brotli تلقائياً</string>
+    <string name="whatsnew_1_7_1_2_detail">إزالة مفتاح إعداد منطقة Brotli المهمل (أهملته Cloudflare في 2024-08-15). أصبح ضغط Brotli الآن ممكناً تلقائياً لجميع المناطق غير Enterprise. يجب على مناطق Enterprise استخدام قواعد الضغط.</string>
     <string name="whatsnew_1_7_0_0_title">ابحث في كل شيء من مكان واحد</string>
     <string name="whatsnew_1_7_0_0_detail">تبحث العدسة في صفحة النظرة العامة دفعة واحدة في النطاقات وWorkers وحاويات R2 وقواعد بيانات D1 ومساحات أسماء KV والأنفاق، وانقر على النتيجة للانتقال مباشرة. ويمكن الآن تثبيت أي مورد في الصفحة بنجمة.</string>
     <string name="whatsnew_1_7_0_1_title">مركز التنبيهات</string>

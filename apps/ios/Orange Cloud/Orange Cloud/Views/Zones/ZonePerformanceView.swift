@@ -4,6 +4,7 @@
 //
 //  「性能与缓存」面板：网络优化开关 + 缓存控制。读走 zone-settings.read，
 //  写走 zone-settings.write。所有设置均为 /zones/{id}/settings/{id} 字符串值。
+//  Brotli 已废弃（Cloudflare 2024-08-15），非 Enterprise 自动启用，Enterprise 用压缩规则。
 //
 
 import SwiftUI
@@ -25,7 +26,6 @@ struct ZonePerformanceView: View {
 
     private var networkSpecs: [ToggleSpec] {
         [
-            .init(id: "brotli",      title: String(localized: "Brotli 压缩"),     subtitle: String(localized: "用 Brotli 压缩响应，体积更小"), icon: "archivebox"),
             .init(id: "http2",       title: "HTTP/2",                            subtitle: String(localized: "多路复用，降低连接开销"),       icon: "bolt.horizontal"),
             .init(id: "http3",       title: "HTTP/3 (QUIC)",                     subtitle: String(localized: "基于 QUIC 的更快传输"),         icon: "bolt.horizontal.circle"),
             .init(id: "0rtt",        title: String(localized: "0-RTT 连接恢复"),  subtitle: String(localized: "加快重复访客的握手"),           icon: "arrow.clockwise"),

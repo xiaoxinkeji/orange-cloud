@@ -146,26 +146,28 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
-          name: Orange Cloud ${{ steps.version.outputs.tag }} (寮€婧愬厤璐圭増)
+          name: Orange Cloud ${{ steps.version.outputs.tag }} (开源免费版)
           body: |
-            ## Orange Cloud ${{ steps.version.outputs.tag }} 鈥?寮€婧愬厤璐圭増
+            ## Orange Cloud ${{ steps.version.outputs.tag }} — 开源免费版
 
-            鍩轰簬 [chen2he/orange-cloud](https://github.com/chen2he/orange-cloud) 涓婃父浠ｇ爜鏋勫缓锛屾墍鏈?Pro 鍔熻兘宸茶В閿侊紝瀹屽叏鍏嶈垂浣跨敤銆?
-            ### 涓?App Store 鐗堟湰鐨勫尯鍒?
-            - **Pro 鍔熻兘鍏ㄩ儴鍏嶈垂** 鈥?澶氳处鍙枫€佸瓨鍌?(R2/D1/KV)銆乄orkers 瀹炴椂鏃ュ織銆乄AF銆乀unnel銆丼nippets銆? 澶?30 澶╁垎鏋愮瓑鍏ㄩ儴瑙ｉ攣锛屾棤闇€鍐呰喘
-            - **鏈鍚?* 鈥?闇€瑕佽嚜琛屼娇鐢ㄧ鍚嶅伐鍏风鍚嶅悗瀹夎
-            - **涓嶅寘鍚?Widget / Watch / Siri 鎵╁睍** 鈥?杩欎簺鎵╁睍浠?IPA 涓Щ闄や互绠€鍖栦晶杞?
-            ### 鍔熻兘浜偣
+            基于 [chen2he/orange-cloud](https://github.com/chen2he/orange-cloud) 上游代码构建，所有 Pro 功能已解锁，完全免费使用。
+            ### 与 App Store 版本的区别
+            - **Pro 功能全部免费** — 多账号、存储 (R2/D1/KV)、Workers 实时日志、WAF、Tunnel、Snippets、超 30 天分析等全部解锁，无需内购
+            - **未签名** — 需要自行使用签名工具签名后安装
+            - **不包含 Widget / Watch / Siri 扩展** — 这些扩展在 IPA 中移除以简化侧载
+            ### 功能亮点
 
-            - **OAuth 2.0 + PKCE 鐧诲綍** 鈥?鎸?scope 缁嗙矑搴︽巿鏉冿紝涓€閿噸鎺堟潈锛屾敮鎸佸璐﹀彿
-            - **鍩熷悕绠＄悊** 鈥?DNS 璁板綍 CRUD銆佺紦瀛樿鍒欍€佽礋杞藉潎琛°€丅ulk Redirects銆佹祦閲忓垎鏋愬浘琛?            - **寮€鍙戣€呭钩鍙?* 鈥?Workers & Pages 鑱氬悎绠＄悊锛屽疄鏃舵棩蹇楁祦 (WebSocket)锛岃祫婧愬垱寤轰笌閮ㄧ讲
-            - **瀛樺偍** 鈥?R2 瀵硅薄瀛樺偍锛孌1 SQL 鎺у埗鍙帮紝KV 閿€肩鐞?            - **瀹夊叏** 鈥?WAF 鑷畾涔夎鍒欑紪杈戝櫒锛孲SL/Transform Rules/IP 璁块棶瑙勫垯
-            - **Zero Trust** 鈥?Tunnel 鐘舵€侊紝Access 搴旂敤锛孏ateway 绛栫暐
-            - **璁惧绔?AI** 鈥?鏈湴 AI 鑳藉姏
-            - **13 璇█鏈湴鍖?*
-            - **iOS 17+** 鏀寔
+            - **OAuth 2.0 + PKCE 登录** — 按 scope 细粒度授权，一键重授权，支持多账号
+            - **域名管理** — DNS 记录 CRUD、缓存规则、负载均衡、Bulk Redirects、流量分析图表
+            - **开发者平台** — Workers & Pages 聚合管理，实时日志流 (WebSocket)，资源创建与部署
+            - **存储** — R2 对象存储、D1 SQL 控制台、KV 键值管理
+            - **安全** — WAF 自定义规则编辑器、SSL/Transform Rules/IP 访问规则
+            - **Zero Trust** — Tunnel 状态、Access 应用、Gateway 策略
+            - **设备端 AI** — 本地 AI 能力
+            - **13 语言本地化**
+            - **iOS 17+** 支持
 
-            ### 涓嬭浇鏍￠獙
+            ### 下载校验
 
             SHA256: `${{ steps.ipa.outputs.checksum }}`
 
@@ -173,18 +175,22 @@ jobs:
             shasum -a 256 OrangeCloud-*.ipa
             ```
 
-            ### 瀹夎鏂瑰紡
+            ### 安装方式
 
-            - **AltStore / SideStore** 鈥?Apple ID 鍏嶈垂绛惧悕锛? 澶╂湁鏁堟湡锛?            - **TrollStore** 鈥?姘镐箙鍏嶇锛堥渶璁惧鏀寔锛?            - **浼佷笟绛惧悕 / 寮€鍙戣€呯鍚?* 鈥?鑷閰嶇疆
+            - **AltStore / SideStore** — Apple ID 免费签名，7 天有效期。
+            - **TrollStore** — 永久免签（需设备支持）
+            - **企业签名 / 开发者签名** — 自行配置
 
-            ### 缂栬瘧淇℃伅
+            ### 编译信息
 
-            - 寮€婧愭瀯寤烘爣蹇?`OPENSOURCE_UNLOCKED` 鈥?鍏ㄥ姛鑳借В閿?            - 鍩轰簬涓婃父 `${{ steps.version.outputs.sha }}` 鏋勫缓
+            - 开源构建标志 `OPENSOURCE_UNLOCKED` — 全功能解锁
+            - 基于上游 `${{ steps.version.outputs.sha }}` 构建
             - Xcode 26
-            - 璁稿彲: AGPL-3.0 + Commons Clause
+            - 许可: AGPL-3.0 + Commons Clause
 
-            ### 涓婃父椤圭洰
+            ### 上游项目
 
-            鏈」鐩唬鐮佹潵鑷?[chen2he/orange-cloud](https://github.com/chen2he/orange-cloud)锛岄伒寰?AGPL-3.0 + Commons Clause 璁稿彲銆?          files: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
+            本项目代码来自 [chen2he/orange-cloud](https://github.com/chen2he/orange-cloud)，遵循 AGPL-3.0 + Commons Clause 许可。
+          files: ${{ runner.temp }}/OrangeCloud-${{ steps.version.outputs.tag }}-unsigned.ipa
           draft: false
           prerelease: false
